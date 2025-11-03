@@ -18,12 +18,6 @@ export default function App() {
       active: pathname.startsWith("/boards"),
     },
     {
-      key: "chat",
-      label: "채팅방",
-      onClick: () => navigate("/chat"),
-      active: pathname.startsWith("/chat"),
-    },
-    {
       key: "calendar",
       label: "캘린더",
       onClick: () => navigate("/calendar"),
@@ -60,7 +54,6 @@ export default function App() {
         }}
         user={{
           name: "두구다",
-          avatarUrl: "/assets/avatar.png",
         }}
         onLogin={() => {
           console.log("로그인");

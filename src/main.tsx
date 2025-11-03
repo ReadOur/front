@@ -7,7 +7,7 @@ import "./index.css";
 
 import App from "./App";
 import HOM_01 from "@/pages/HOM_01";
-import Boards from "@/pages/BRD_04";
+import BRD_04 from "@/pages/BRD_04";
 import PostShow from "@/pages/BRD_05";
 import ChatPage from "@/pages/MSG_07";
 import CAL_11 from "@/pages/CAL_11";
@@ -19,7 +19,7 @@ const router = createBrowserRouter([
     element: <App />, // 전역 레이아웃
     children: [
       { index: true, element: <HOM_01 /> },
-      { path: "boards", element: <Boards /> },
+      { path: "boards", element: <BRD_04 /> },
       { path: "boards/:postId", element: <PostShow /> },
       { path: "chat", element: <ChatPage /> },
       { path: "calendar", element: <CAL_11 /> },
