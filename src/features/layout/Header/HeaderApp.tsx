@@ -3,7 +3,7 @@ import React from "react";
 import logo from "@/assets/logo.png";
 
 type NavItem = { key: string; label: string; active?: boolean; onClick: () => void };
-type User = { name: string; avatarUrl?: string } | null;
+type User = { name: string; } | null;
 
 interface HeaderAppProps {
   navItems: NavItem[];
@@ -86,11 +86,9 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <img
-                src={user.avatarUrl || ""}
-                alt={user?.name || "user"}
-                className="w-9 h-9 rounded-full object-cover border border-[color:var(--color-border-subtle)]"
-              />
+              <span className={"text-sm font-medium text-[color:var(--color-fg-primary)]"}>
+                {user.name}
+              </span>
             ) : (
               <button
                 onClick={onLogin}
