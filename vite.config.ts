@@ -11,9 +11,11 @@ export default defineConfig({
     },
   },
   server: {
-    // 강제 캐시 비활성화
+    // 강제 캐시 비활성화 (더 강력하게)
     headers: {
-      'Cache-Control': 'no-store',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
     // HMR 활성화
     hmr: {
