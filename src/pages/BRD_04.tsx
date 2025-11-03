@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
+import { Loading } from "@/components/Loading";
 
 // 날짜 포맷 함수 (ISO -> yyyy.MM.dd)
 function formatDate(dateString: string): string {
@@ -61,6 +62,11 @@ export const BRD_List: React.FC = () => {
     setParams(params, { replace: true });
   };
 
+  // 로딩 중일 때 전체 화면 로딩 표시
+  if (isLoading) {
+    return <Loading message="게시글을 불러오는 중..." />;
+  }
+
   return (
     <div
       className="w-full min-w-[1431px] min-h-[1059px] relative
@@ -94,15 +100,7 @@ export const BRD_List: React.FC = () => {
       <div className="absolute top-[80px] left-[1125px] w-[68px] text-2xl text-center whitespace-nowrap">조회수</div>
 
       {/* 목록 영역 */}
-      <div className="absolute left-[100px] w-[1100px]" style={{ top: 300 }}>
-        {/* 로딩/에러 */}
-        {loading && (
-          <div className="w-full h-[68px] rounded-[var(--radius-md)]
-                          bg-[color:var(--color-bg-elev-2)]
-                          border border-[color:var(--color-border-default)]
-                          animate-pulse" />
-        )}
-
+      <div className="absolute left-[100px] w-[1250px]" style={{ top: 300 }}>
         {/* 에러 */}
         {error && (
           <div className="w-full h-[68px] rounded-[var(--radius-md)]
