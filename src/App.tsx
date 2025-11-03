@@ -70,7 +70,6 @@ export default function App() {
       <main className="mx-auto px-4 py-8" style={{ maxWidth: "var(--layout-max)" }}>
         <Outlet />
       </main>
-
       <ChatDock />
     </div>
   );
