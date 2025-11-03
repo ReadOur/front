@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
 import { X, Minus, Send, Circle, Loader2, MessageCircle } from "lucide-react";
+import { useThreads, useInfiniteMessages, useSendMessage, useMarkAsRead } from "@/hooks/api";
+import type {
+  ChatThread as ApiChatThread,
+  ChatMessage as ApiChatMessage,
+  ChatUser as ApiChatUser,
+} from "@/types";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -36,6 +42,36 @@ export interface ChatThread {
   users: ChatUser[]; // participants
   lastMessage?: ChatMessage;
   unreadCount?: number;
+}
+
+// ===== Type mapping functions =====
+// Convert API types to ChatDock types
+function mapApiUserToLocal(apiUser: ApiChatUser): ChatUser {
+  return {
+    id: apiUser.id,
+    name: apiUser.nickname,
+    avatarUrl: apiUser.profileImage,
+    online: apiUser.isOnline,
+  };
+}
+
+function mapApiMessageToLocal(apiMessage: ApiChatMessage): ChatMessage {
+  return {
+    id: apiMessage.id,
+    threadId: apiMessage.threadId,
+    fromId: apiMessage.senderId,
+    text: apiMessage.content,
+    createdAt: new Date(apiMessage.createdAt).getTime(),
+  };
+}
+
+function mapApiThreadToLocal(apiThread: ApiChatThread): ChatThread {
+  return {
+    id: apiThread.id,
+    users: apiThread.participants.map(mapApiUserToLocal),
+    lastMessage: apiThread.lastMessage ? mapApiMessageToLocal(apiThread.lastMessage) : undefined,
+    unreadCount: apiThread.unreadCount,
+  };
 }
 
 // ===== Mock socket (dev only) =====
@@ -93,6 +129,62 @@ function useMockSocket() {
       emit("typing", { threadId, userId, typing });
     },
   };
+}
+
+// ===== Chat window container with message fetching =====
+function ChatWindowContainer({
+  me,
+  thread,
+  typingUserIds,
+  onClose,
+  onMinimize,
+  onSend,
+  __onDragStart,
+}: {
+  me: ChatUser;
+  thread: ChatThread;
+  typingUserIds: string[];
+  onClose: () => void;
+  onMinimize: () => void;
+  onSend: (text: string) => void;
+  __onDragStart?: (e: React.PointerEvent) => void;
+}) {
+  // Fetch messages for this thread using infinite query
+  const {
+    data: messagesData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteMessages(thread.id, 50);
+
+  // Flatten all pages into single message array and convert to local format
+  const messages: ChatMessage[] = React.useMemo(() => {
+    if (!messagesData?.pages) return [];
+    return messagesData.pages
+      .flatMap((page) => page.items)
+      .map(mapApiMessageToLocal);
+  }, [messagesData]);
+
+  if (isLoading) {
+    return (
+      <div className="w-[320px] h-[420px] flex items-center justify-center rounded-[var(--radius-lg)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-strong)] shadow-xl">
+        <Loader2 className="w-6 h-6 animate-spin text-[color:var(--color-fg-muted)]" />
+      </div>
+    );
+  }
+
+  return (
+    <ChatWindow
+      me={me}
+      thread={thread}
+      messages={messages}
+      typingUserIds={typingUserIds}
+      onClose={onClose}
+      onMinimize={onMinimize}
+      onSend={onSend}
+      __onDragStart={__onDragStart}
+    />
+  );
 }
 
 // ===== Chat window =====
@@ -259,13 +351,12 @@ export default function ChatDock() {
     setZMap(prev => ({ ...prev, [id]: zSeed.current }));
   };
 
-  // Mock data
-  const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
-  const [threads, setThreads] = useState<ChatThread[]>([
-    { id: "t1", users: [{ id: "u1", name: "콩콩" }], unreadCount: 2, lastMessage: { id: "m0", threadId: "t1", fromId: "u1", text: "오늘 저녁?", createdAt: Date.now() - 600000 } },
-    { id: "t2", users: [{ id: "u2", name: "쭈꾸미" }], lastMessage: { id: "m1", threadId: "t2", fromId: "u2", text: "파일 확인했어!", createdAt: Date.now() - 3600000 } },
-    { id: "t3", users: [{ id: "u3", name: "자몽" }], lastMessage: { id: "m2", threadId: "t3", fromId: "u3", text: "굿굿", createdAt: Date.now() - 7200000 } },
-  ]);
+  // Fetch threads from API
+  const { data: threadsData, isLoading: threadsLoading } = useThreads();
+  const threads = threadsData?.items.map(mapApiThreadToLocal) || [];
+
+  // Current user - TODO: get from auth context when available
+  const me: ChatUser = { id: "me", name: "나", avatarUrl: "" };
   // ===== 추가 =====
 
 // 채팅창 위치 상태 (픽셀 단위)
@@ -313,13 +404,12 @@ export default function ChatDock() {
   };
 
   const [openIds, setOpenIds] = useState<string[]>([]); // opened window threadIds (order matters)
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({
-    t1: [
-      { id: "a", threadId: "t1", fromId: "u1", text: "안녕!", createdAt: Date.now() - 86400000 },
-    ],
-  });
   const [typing, setTyping] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
+
+  // API mutations
+  const sendMessageMutation = useSendMessage();
+  const markAsReadMutation = useMarkAsRead();
 
   // ===== 패널 자동 닫힘 타이머 관련 =====
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -348,12 +438,10 @@ export default function ChatDock() {
   }, []);
 
 
+  // TODO: Replace with real WebSocket when backend is ready
   const socket = useMockSocket();
   useEffect(() => {
-    const offMsg = socket.on("message", (m: ChatMessage) => {
-      setMessages((prev) => ({ ...prev, [m.threadId]: [...(prev[m.threadId] || []), m] }));
-      setThreads((prev) => prev.map((t) => (t.id === m.threadId ? { ...t, lastMessage: m, unreadCount: (t.unreadCount || 0) + (m.fromId === me.id ? 0 : 1) } : t)));
-    });
+    // Keep typing indicator socket for now (will be replaced with real WebSocket)
     const offTyping = socket.on("typing", ({ threadId, userId, typing }: { threadId: string; userId: string; typing: boolean }) => {
       setTyping((prev) => {
         const list = new Set(prev[threadId] || []);
@@ -363,7 +451,6 @@ export default function ChatDock() {
       });
     });
     return () => {
-      offMsg?.();
       offTyping?.();
     };
   }, []);
@@ -372,9 +459,11 @@ export default function ChatDock() {
 
   const openThread = (t: ChatThread) => {
     setOpenIds((ids) => (ids.includes(t.id) ? ids : [...ids, t.id].slice(-3)));
-    setThreads((prev) =>
-      prev.map((x) => (x.id === t.id ? { ...x, unreadCount: 0 } : x))
-    );
+
+    // Mark as read via API
+    if (t.unreadCount && t.unreadCount > 0) {
+      markAsReadMutation.mutate({ threadId: t.id });
+    }
 
     // ✨ 기본 위치 설정 (창이 처음 열릴 때만)
     setPositions((prev) => {
@@ -393,10 +482,11 @@ export default function ChatDock() {
   const minimizeThread = (id: string) => setOpenIds((ids) => [id, ...ids.filter((x) => x !== id)]); // move to leftmost
 
   const sendMessage = (threadId: string, text: string) => {
-    const msg: ChatMessage = { id: Math.random().toString(36).slice(2), threadId, fromId: me.id, text, createdAt: Date.now() };
-    setMessages((prev) => ({ ...prev, [threadId]: [...(prev[threadId] || []), msg] }));
-    setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, lastMessage: msg } : t)));
-    socket.sendMessage(msg);
+    sendMessageMutation.mutate({
+      threadId,
+      content: text,
+      type: "TEXT",
+    });
   };
 
   // 변경 2: 반환부 전체 교체 (return ...)
@@ -436,16 +526,26 @@ export default function ChatDock() {
               </button>
             </div>
             <div className="max-h-[60vh] overflow-auto p-1">
-              {threads.map((t) => (
-                <ThreadChip
-                  key={t.id}
-                  thread={t}
-                  onOpen={(thr) => {
-                    openThread(thr);
-                    setPanelOpen(false); // 항목 클릭하면 패널 닫기 (원하면 유지로 바꿔도 됨)
-                  }}
-                />
-              ))}
+              {threadsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-[color:var(--color-fg-muted)]" />
+                </div>
+              ) : threads.length === 0 ? (
+                <div className="py-8 text-center text-sm text-[color:var(--color-fg-muted)]">
+                  채팅 내역이 없습니다
+                </div>
+              ) : (
+                threads.map((t) => (
+                  <ThreadChip
+                    key={t.id}
+                    thread={t}
+                    onOpen={(thr) => {
+                      openThread(thr);
+                      setPanelOpen(false); // 항목 클릭하면 패널 닫기 (원하면 유지로 바꿔도 됨)
+                    }}
+                  />
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -455,7 +555,6 @@ export default function ChatDock() {
       {openIds.map((id) => {
           const t = threads.find((x) => x.id === id);
           if (!t) return null;
-          const msgs = messages[id] || [];
           const typingIds = typing[id] || [];
           const pos = positions[id] || { x: 0, y: 0 };
           const z = zMap[id] ?? 61; // 기본값(다른 전역 UI 위)
@@ -469,10 +568,9 @@ export default function ChatDock() {
               onPointerCancel={onDragEnd}
               onMouseDown={() => bringToFront(id)}   // ✅ 클릭 시 맨 위
             >
-              <ChatWindow
+              <ChatWindowContainer
                 me={me}
                 thread={t}
-                messages={msgs}
                 typingUserIds={typingIds}
                 onClose={() => closeThread(id)}
                 onMinimize={() => minimizeThread(id)}
