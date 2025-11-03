@@ -60,10 +60,6 @@ export default function App() {
         onLogin={() => {
           console.log("로그인");
         }}
-        onUserClick={() => {
-          console.log("유저 프로필 클릭");
-          navigate("/mypage");
-        }}
       />
 
       <main className="mx-auto px-4 py-8" style={{ maxWidth: "var(--layout-max)" }}>

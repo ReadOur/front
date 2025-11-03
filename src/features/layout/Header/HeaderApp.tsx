@@ -11,7 +11,6 @@ interface HeaderAppProps {
   onClickNotifications: () => void;
   user: User;
   onLogin?: () => void;
-  onUserClick?: () => void;
   onLogoClick: () => void;
 }
 
@@ -21,7 +20,6 @@ export default function HeaderApp({
                                     onClickNotifications,
                                     user,
                                     onLogin,
-                                    onUserClick,
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
@@ -88,15 +86,9 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <button
-                onClick={onUserClick}
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-[color:var(--color-fg-primary)] text-base font-medium transition-colors"
-              >
-                <span className="w-6 h-6 rounded-full bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] flex items-center justify-center text-sm font-semibold">
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
-                <span>{user.name}</span>
-              </button>
+              <span className="text-base font-medium text-[color:var(--color-fg-primary)]">
+                {user.name}
+              </span>
             ) : (
               <button
                 onClick={onLogin}
