@@ -7,7 +7,7 @@ import "./index.css";
 
 import App from "./App";
 // import HOM_01 from "@/pages/HOM_01";
-import BRD_04 from "@/pages/BRD_04";
+import { BRD_List } from "@/pages/BRD_04";
 import PostShow from "@/pages/BRD_05";
 import ChatPage from "@/pages/MSG_07";
 import CAL_11 from "@/pages/CAL_11";
@@ -19,10 +19,9 @@ const router = createBrowserRouter([
     element: <App />, // 전역 레이아웃
 
     children: [
-      { index: true, element: <BRD_04 /> },
-      { path: "boards", element: <BRD_04 /> },
+      { index: true, element: <BRD_List /> },
+      { path: "boards", element: <BRD_List /> },
       { path: "boards/:postId", element: <PostShow /> },
-      { path: "chat", element: <ChatPage /> },
       { path: "calendar", element: <CAL_11 /> },
       // 아직 없는 라우트들도 차후에 추가할 수 있음:
       // { path: "mypage", element: <MyPage /> },
