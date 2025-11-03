@@ -2,26 +2,54 @@
  * 게시글 관련 타입 정의
  */
 
-import { BaseEntity, PaginationParams } from "./api";
-import { UserProfile } from "./user";
+import { PaginationParams } from "./api";
 
 // ===== 게시글 엔티티 =====
 
 /**
- * 게시글 정보
+ * 게시글 카테고리
  */
-export interface Post extends BaseEntity {
+export type PostCategory = "NOTICE" | "GENERAL" | "QNA" | "FREE";
+
+/**
+ * 게시글 경고
+ */
+export interface PostWarning {
+  id: {
+    postId: number;
+    warning: string;
+  };
+}
+
+/**
+ * 게시글 댓글 (간략 버전)
+ */
+export interface PostComment {
+  commentId: number;
+  content: string;
+  authorNickname: string;
+  authorId: number;
+  createdAt: string;
+}
+
+/**
+ * 게시글 정보 (백엔드 응답과 동일)
+ */
+export interface Post {
+  postId: number;
   title: string;
   content: string;
-  author: UserProfile;
-  category?: string;
-  tags?: string[];
-  viewCount: number;
+  category: PostCategory;
+  authorNickname: string;
+  authorId: number;
+  hit: number;
   likeCount: number;
   commentCount: number;
-  attachments?: Attachment[];
-  isPinned?: boolean;
-  isLiked?: boolean; // 현재 사용자가 좋아요 했는지 여부
+  isLiked: boolean;
+  warnings?: PostWarning[];
+  createdAt: string;
+  updatedAt: string;
+  comments?: PostComment[];
 }
 
 /**
@@ -40,14 +68,16 @@ export interface Attachment {
  * 게시글 목록 아이템 (요약 정보)
  */
 export interface PostListItem {
-  id: string;
+  postId: number;
   title: string;
-  author: UserProfile;
-  category?: string;
-  viewCount: number;
+  authorNickname: string;
+  authorId: number;
+  category: PostCategory;
+  hit: number;
   likeCount: number;
   commentCount: number;
   createdAt: string;
+  updatedAt?: string;
   isPinned?: boolean;
 }
 

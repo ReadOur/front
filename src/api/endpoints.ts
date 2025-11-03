@@ -28,30 +28,30 @@ export const USER_ENDPOINTS = {
  * 게시글 관련 엔드포인트
  */
 export const POST_ENDPOINTS = {
-  LIST: "/posts",
-  CREATE: "/posts",
-  DETAIL: (postId: string) => `/posts/${postId}`,
-  UPDATE: (postId: string) => `/posts/${postId}`,
-  DELETE: (postId: string) => `/posts/${postId}`,
-  LIKE: (postId: string) => `/posts/${postId}/like`,
-  UNLIKE: (postId: string) => `/posts/${postId}/unlike`,
-  VIEW: (postId: string) => `/posts/${postId}/view`,
+  LIST: "/community/posts",
+  CREATE: "/community/posts",
+  DETAIL: (postId: string) => `/community/posts/${postId}`,
+  UPDATE: (postId: string) => `/community/posts/${postId}`,
+  DELETE: (postId: string) => `/community/posts/${postId}`,
+  LIKE: (postId: string) => `/community/posts/${postId}/like`,
+  UNLIKE: (postId: string) => `/community/posts/${postId}/unlike`,
+  VIEW: (postId: string) => `/community/posts/${postId}/view`,
 } as const;
 
 /**
  * 댓글 관련 엔드포인트
  */
 export const COMMENT_ENDPOINTS = {
-  LIST: (postId: string) => `/posts/${postId}/comments`,
-  CREATE: (postId: string) => `/posts/${postId}/comments`,
-  DETAIL: (commentId: string) => `/comments/${commentId}`,
-  UPDATE: (commentId: string) => `/comments/${commentId}`,
-  DELETE: (commentId: string) => `/comments/${commentId}`,
-  LIKE: (commentId: string) => `/comments/${commentId}/like`,
-  UNLIKE: (commentId: string) => `/comments/${commentId}/unlike`,
+  LIST: (postId: string) => `/community/posts/${postId}/comments`,
+  CREATE: (postId: string) => `/community/posts/${postId}/comments`,
+  DETAIL: (commentId: string) => `/community/comments/${commentId}`,
+  UPDATE: (commentId: string) => `/community/comments/${commentId}`,
+  DELETE: (commentId: string) => `/community/comments/${commentId}`,
+  LIKE: (commentId: string) => `/community/comments/${commentId}/like`,
+  UNLIKE: (commentId: string) => `/community/comments/${commentId}/unlike`,
   // 대댓글
-  REPLIES: (commentId: string) => `/comments/${commentId}/replies`,
-  CREATE_REPLY: (commentId: string) => `/comments/${commentId}/replies`,
+  REPLIES: (commentId: string) => `/community/comments/${commentId}/replies`,
+  CREATE_REPLY: (commentId: string) => `/community/comments/${commentId}/replies`,
 } as const;
 
 /**

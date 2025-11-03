@@ -2,19 +2,21 @@
  * 댓글 관련 타입 정의
  */
 
-import { BaseEntity, PaginationParams } from "./api";
-import { UserProfile } from "./user";
+import { PaginationParams } from "./api";
 
 // ===== 댓글 엔티티 =====
 
 /**
- * 댓글 정보
+ * 댓글 정보 (백엔드 응답과 동일)
  */
-export interface Comment extends BaseEntity {
-  postId: string;
+export interface Comment {
+  commentId: number;
+  postId?: number;
   content: string;
-  author: UserProfile;
-  parentId?: string | null; // 대댓글인 경우 부모 댓글 ID
+  authorNickname: string;
+  authorId: number;
+  createdAt: string;
+  parentId?: number | null; // 대댓글인 경우 부모 댓글 ID
   likeCount?: number;
   isLiked?: boolean; // 현재 사용자가 좋아요 했는지 여부
   replies?: Comment[]; // 대댓글 목록
@@ -27,9 +29,9 @@ export interface Comment extends BaseEntity {
  * 댓글 생성 요청
  */
 export interface CreateCommentRequest {
-  postId: string;
+  postId: string | number;
   content: string;
-  parentId?: string | null; // 대댓글인 경우 부모 댓글 ID
+  parentId?: number | null; // 대댓글인 경우 부모 댓글 ID
 }
 
 /**

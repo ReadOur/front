@@ -8,6 +8,7 @@ import {
   useDeleteComment,
 } from "@/hooks/api";
 import { CreateCommentRequest } from "@/types";
+import { Loading } from "@/components/Loading";
 
 /**
  * 게시글 상세 페이지 (API 연동 버전)
@@ -79,14 +80,7 @@ export default function PostShow() {
   }
 
   if (isPostLoading) {
-    return (
-      <div className="w-full min-h-[400px] flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-4 border-[color:var(--color-accent)] border-t-transparent rounded-full animate-spin mb-2"></div>
-          <p className="text-[color:var(--color-fg-muted)]">게시글을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <Loading message="게시글을 불러오는 중..." />;
   }
 
   if (postError || !post) {
@@ -120,8 +114,8 @@ export default function PostShow() {
           <h2 className="text-[color:var(--color-fg-secondary)] text-xl font-semibold">게시글</h2>
           <div className="flex items-center gap-4 text-[color:var(--color-fg-secondary)] text-sm">
             <span>작성: {new Date(post.createdAt).toLocaleString("ko-KR")}</span>
-            <span>조회: {post.viewCount.toLocaleString()}</span>
-            <span>작성자: {post.author.nickname}</span>
+            <span>조회: {post.hit.toLocaleString()}</span>
+            <span>작성자: {post.authorNickname}</span>
           </div>
         </div>
       </section>
@@ -220,25 +214,25 @@ export default function PostShow() {
           ) : (
             comments.map((comment) => (
               <div
-                key={comment.id}
+                key={comment.commentId}
                 className="grid grid-cols-[40px_1fr_auto] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]"
               >
                 {/* 아바타 */}
                 <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] flex items-center justify-center text-[color:var(--color-fg-muted)] text-sm font-semibold">
-                  {comment.author.nickname[0]?.toUpperCase() || "?"}
+                  {comment.authorNickname[0]?.toUpperCase() || "?"}
                 </div>
 
                 {/* 댓글 내용 */}
                 <div>
                   <div className="text-[color:var(--color-fg-primary)]">{comment.content}</div>
                   <div className="text-xs text-[color:var(--color-fg-secondary)] mt-1">
-                    {comment.author.nickname} · {new Date(comment.createdAt).toLocaleString("ko-KR")}
+                    {comment.authorNickname} · {new Date(comment.createdAt).toLocaleString("ko-KR")}
                   </div>
                 </div>
 
                 {/* 삭제 버튼 */}
                 <button
-                  onClick={() => handleCommentDelete(comment.id)}
+                  onClick={() => handleCommentDelete(String(comment.commentId))}
                   disabled={deleteCommentMutation.isPending}
                   className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-error)] disabled:opacity-50"
                   aria-label="댓글 삭제"
