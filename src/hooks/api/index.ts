@@ -7,3 +7,6 @@ export * from "./usePost";
 
 // 댓글
 export * from "./useComment";
+
+// 채팅
+export * from "./useChat";
