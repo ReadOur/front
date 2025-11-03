@@ -43,12 +43,14 @@ export default function App() {
     },
   ];
 
+  console.log("[App] rendered:", window.location.pathname);
+
   return (
     <div className="min-h-screen bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)]">
       <HeaderApp
         onLogoClick={() => navigate("/boards")}
         navItems={navItems}
-        unreadCount={2}
+        unreadCount={0}
         onClickNotifications={() => {
           console.log("알림 버튼 클릭");
         }}
