@@ -9,3 +9,4 @@ export type * from "./api";
 export type * from "./user";
 export type * from "./post";
 export type * from "./comment";
+export type * from "./chat";
