@@ -15,7 +15,7 @@ export default function App() {
       key: "board",
       label: "게시판",
       onClick: () => navigate("/boards"),
-      active: pathname.startsWith("/boards"),
+      active: pathname === "/" || pathname.startsWith("/boards"),
     },
     {
       key: "calendar",
@@ -46,7 +46,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)]">
       <HeaderApp
-        onLogoClick={() => navigate("/")}
+        onLogoClick={() => navigate("/boards")}
         navItems={navItems}
         unreadCount={2}
         onClickNotifications={() => {
