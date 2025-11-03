@@ -15,7 +15,7 @@ export default function App() {
       key: "board",
       label: "게시판",
       onClick: () => navigate("/boards"),
-      active: pathname === "/" || pathname.startsWith("/boards"),
+      active: pathname.startsWith("/boards"),
     },
     {
       key: "chat",

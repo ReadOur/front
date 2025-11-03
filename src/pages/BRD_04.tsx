@@ -1,230 +1,183 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePosts } from "@/hooks/api";
 
-type Post = {
-  id: number | string;
-  title: string;
-  author: string;
-  category: string;
-  date: string;   // ISO or yyyy.MM.dd
-  likes: number;
-  views: number;
-  badges?: { type: "hot" | "new" | "count"; value?: string | number }[];
-};
+/**
+ * 게시판 목록 페이지 (API 연동 버전)
+ * - React Query로 게시글 목록 fetching
+ * - 페이지네이션
+ * - 게시글 카드 클릭 시 상세 페이지로 이동
+ */
 
-type ListResponse = {
-  items: Post[];
-  page: number;
-  pageSize: number;
-  total: number;
-};
-
-export const BRD_List: React.FC = () => {
+export default function Boards() {
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const page = Number(params.get("page") || 1);
-  const pageSize = 10;
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
-  const [data, setData] = useState<ListResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // ===== API 훅 =====
+  const {
+    data: postsData,
+    isLoading,
+    error,
+  } = usePosts({ page, pageSize });
 
-  // 1) 에러 메시지 유틸 추가
-  function toErrorMessage(e: unknown): string {
-    if (e instanceof Error) return e.message;
-    if (typeof e === "string") return e;
-    try {
-      // 서버 에러 응답이 { message: string } 형태라면 이런 식으로 안전 접근
-      const maybe = e as { message?: string };
-      if (maybe?.message && typeof maybe.message === "string") return maybe.message;
-    } catch { /* noop */ }
-    return "Unknown error";
-  }
-
-// 2) fetchPosts는 그대로 둬도 되고, 에러 타입 명시는 하지 않음
-  async function fetchPosts(page = 1, pageSize = 10): Promise<ListResponse> {
-    const res = await fetch(`/api/posts?page=${page}&pageSize=${pageSize}`);
-    if (!res.ok) throw new Error("Failed to load posts");
-    return res.json();
-  }
-
-// 3) useEffect의 catch 부분 수정 (any 제거)
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const payload = await fetchPosts(page, pageSize);
-        if (alive) {
-          setData(payload);
-          setError(null);
-        }
-      } catch (e: unknown) {
-        if (alive) setError(toErrorMessage(e));
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
-  }, [page]);
-
-  const totalPages = useMemo(() => {
-    if (!data) return 1;
-    return Math.max(1, Math.ceil(data.total / data.pageSize));
-  }, [data]);
-
-  const goPage = (p: number) => {
-    const np = Math.min(Math.max(1, p), totalPages);
-    params.set("page", String(np));
-    setParams(params, { replace: true });
+  // ===== 이벤트 핸들러 =====
+  const handlePostClick = (postId: string) => {
+    navigate(`/boards/${postId}`);
   };
 
+  const handlePrevPage = () => {
+    if (page > 1) setPage(page - 1);
+  };
+
+  const handleNextPage = () => {
+    if (postsData?.meta.hasNext) setPage(page + 1);
+  };
+
+  // ===== 로딩 및 에러 처리 =====
+  if (isLoading) {
+    return (
+      <section className="w-full min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-10 h-10 border-4 border-[color:var(--color-accent)] border-t-transparent rounded-full animate-spin mb-3"></div>
+          <p className="text-[color:var(--color-fg-muted)]">게시글을 불러오는 중...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="w-full min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[color:var(--color-error)] text-lg mb-4">
+            게시글을 불러오는 데 실패했습니다.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[color:var(--color-accent)] rounded-lg hover:opacity-90"
+          >
+            다시 시도
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const posts = postsData?.items || [];
+  const meta = postsData?.meta;
+
   return (
-    <div
-      className="w-full min-w-[1431px] min-h-[1059px] relative
-                 bg-[color:var(--color-bg-canvas)]
-                 text-[color:var(--color-fg-primary)]"
-      style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
-      data-model-id="7:81"
-    >
-      {/* 상단 바 */}
-      <div className="absolute top-[174px] left-[100px] w-[1250px] h-[67px]
-                      bg-[color:var(--color-bg-elev-2)] rounded-[var(--radius-md)]" />
+    <section className="w-full max-w-5xl mx-auto">
+      {/* 헤더 */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-[color:var(--color-fg-primary)]">게시판</h1>
+          <p className="mt-2 text-[color:var(--color-fg-muted)]">
+            {meta ? `전체 ${meta.totalItems.toLocaleString()}개의 게시글` : "게시글 목록"}
+          </p>
+        </div>
 
-      {/* 리스트 박스 */}
-      <div className="absolute top-[237px] left-[100px] w-[1250px] h-[735px]
-                      bg-[color:var(--color-bg-elev-1)]
-                      rounded-[var(--radius-md)]" />
-
-      {/* 헤더 라인 */}
-      <div className="absolute top-[237px] left-[100px] w-[1250px] h-[63px]
-                      bg-[color:var(--color-bg-elev-2)]
-                      border-b border-[color:var(--color-border-default)]
-                      rounded-t-[var(--radius-md)]" />
-
-      {/* 컬럼 헤더 */}
-      <div className="absolute top-[266px] left-[111px] w-[115px] text-2xl text-center">번호</div>
-      <div className="absolute top-[266px] left-[219px] w-[115px] text-2xl text-center">카테고리</div>
-      <div className="absolute top-[269px] left-[250px] w-[850px] text-2xl text-center">제목</div>
-      <div className="absolute top-[271px] left-[895px] text-2xl text-center">좋아요</div>
-      <div className="absolute top-[271px] left-[1012px] text-2xl text-center">작성자</div>
-      <div className="absolute top-[271px] left-[1130px] w-[84px] text-2xl text-center whitespace-nowrap">작성일</div>
-      <div className="absolute top-[271px] left-[1276px] w-[68px] text-2xl text-center whitespace-nowrap">조회수</div>
-
-      {/* 목록 영역 */}
-      <div className="absolute left-[100px] w-[1250px]" style={{ top: 300 }}>
-        {/* 로딩/에러 */}
-        {loading && (
-          <div className="w-full h-[68px] rounded-[var(--radius-md)]
-                          bg-[color:var(--color-bg-elev-2)]
-                          border border-[color:var(--color-border-default)]
-                          animate-pulse" />
-        )}
-        {error && (
-          <div className="w-full h-[68px] rounded-[var(--radius-md)]
-                          bg-[color:var(--color-bg-elev-2)]
-                          border border-[color:var(--color-border-default)]
-                          flex items-center justify-center">
-            <span className="text-[color:var(--color-fg-danger)]">에러: {error}</span>
-          </div>
-        )}
-
-        {/* 아이템 */}
-        {data?.items.map((post, idx) => {
-          const top = 0 + idx * 68;
-          return (
-            <div
-              key={post.id}
-              className="relative w-full h-[68px] mb-2
-                         bg-[color:var(--color-bg-elev-2)]
-                         border border-[color:var(--color-border-default)]
-                         rounded-[var(--radius-md)]
-                         hover:bg-[color:var(--color-bg-elev-2-hover, var(--color-bg-elev-2)))]
-                         cursor-pointer transition"
-              style={{ top }}
-              onClick={() => navigate(`/board/${post.id}`)}
-              role="button"
-              aria-label={`${post.title} 상세로 이동`}
-            >
-              {/* 번호 */}
-              <div className="absolute top-[21px] left-4 w-[108px] h-[31px] flex items-center justify-center">
-                <div className="text-2xl">{(data.page - 1) * data.pageSize + idx + 1}</div>
-              </div>
-
-              {/* 카테고리/제목/작성자 */}
-              <div className="absolute top-[21px] left-[156px] w-[375px] h-[31px] flex items-center">
-                <div className="text-2xl">{post.category}</div>
-              </div>
-              <div className="absolute top-[21px] left-[243px] w-[375px] h-[31px] flex items-center">
-                <div className="text-2xl line-clamp-1">{post.title}</div>
-              </div>
-              <div className="absolute top-[21px] left-[1012px] w-[200px] h-[31px] flex items-center">
-                <div className="text-2xl">{post.author}</div>
-              </div>
-
-              {/* 보조 정보 */}
-              <div className="absolute top-[21px] left-[332px] w-[912px] h-[23px]">
-                <div className="absolute left-0 top-0 w-14 text-2xl text-center
-                                text-[color:var(--color-fg-danger)] whitespace-nowrap">
-                  {post.badges?.find(b => b.type === "count")?.value ? `[${post.badges?.find(b => b.type === "count")?.value}]` : null}
-                </div>
-                <div className="absolute left-[54px] top-0 w-14 text-2xl text-center
-                                text-[color:var(--color-fg-muted)] whitespace-nowrap">
-                  {post.badges?.find(b => b.type === "hot") ? "[H]" : ""}
-                </div>
-                <div className="absolute left-[100px] top-0 w-[78px] text-2xl text-center
-                                text-[color:var(--color-accent)] whitespace-nowrap">
-                  {post.badges?.find(b => b.type === "new") ? "[NEW]" : ""}
-                </div>
-
-                <div className="absolute left-[469px] top-0 w-14 text-2xl text-center">{post.likes}</div>
-                <div className="absolute left-[678px] top-0 w-[145px] text-2xl text-center">{post.date}</div>
-                <div className="absolute left-[844px] top-0 w-14 text-2xl text-center">{post.views}</div>
-              </div>
-            </div>
-          );
-        })}
+        {/* 새 글 작성 버튼 (추후 구현) */}
+        <button
+          onClick={() => alert("게시글 작성 기능은 준비 중입니다.")}
+          className="px-4 py-2 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90"
+        >
+          ✏️ 글쓰기
+        </button>
       </div>
+
+      {/* 게시글 목록 */}
+      {posts.length === 0 ? (
+        <div className="text-center py-16 bg-[color:var(--color-bg-elev-1)] rounded-xl border border-[color:var(--color-border-subtle)]">
+          <p className="text-[color:var(--color-fg-muted)] text-lg">
+            아직 게시글이 없습니다.
+          </p>
+          <p className="text-[color:var(--color-fg-muted)] text-sm mt-2">
+            첫 번째 게시글을 작성해보세요!
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {posts.map((post) => (
+            <article
+              key={post.id}
+              onClick={() => handlePostClick(post.id)}
+              className="bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-xl p-5 hover:border-[color:var(--color-accent)] hover:shadow-md transition-all cursor-pointer"
+            >
+              <div className="flex items-start justify-between gap-4">
+                {/* 게시글 정보 */}
+                <div className="flex-1 min-w-0">
+                  {/* 제목 */}
+                  <h2 className="text-lg font-bold text-[color:var(--color-fg-primary)] mb-2 truncate">
+                    {post.isPinned && (
+                      <span className="inline-block px-2 py-0.5 mr-2 text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded">
+                        공지
+                      </span>
+                    )}
+                    {post.title}
+                  </h2>
+
+                  {/* 메타 정보 */}
+                  <div className="flex items-center gap-4 text-sm text-[color:var(--color-fg-muted)]">
+                    <span className="flex items-center gap-1">
+                      👤 {post.author.nickname}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      📅 {new Date(post.createdAt).toLocaleDateString("ko-KR")}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      👁️ {post.viewCount.toLocaleString()}
+                    </span>
+                    {post.category && (
+                      <span className="px-2 py-0.5 bg-[color:var(--color-bg-elev-2)] rounded text-xs">
+                        {post.category}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 우측 통계 */}
+                <div className="flex flex-col items-end gap-2 text-sm shrink-0">
+                  <div className="flex items-center gap-1 text-[color:var(--color-fg-muted)]">
+                    ❤️ <span className="font-semibold">{post.likeCount}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[color:var(--color-fg-muted)]">
+                    💬 <span className="font-semibold">{post.commentCount}</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {/* 페이지네이션 */}
-      <div className="absolute top-[983px] left-[274px] flex items-center gap-2">
-        <button onClick={() => goPage(1)} className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                           bg-[color:var(--color-bg-elev-1)]
-                           border border-[color:var(--color-border-default)]" aria-label="첫 페이지">&laquo;</button>
-        <button onClick={() => goPage(page - 1)} className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                           bg-[color:var(--color-bg-elev-1)]
-                           border border-[color:var(--color-border-default)]" aria-label="이전 페이지">&lsaquo;</button>
+      {meta && meta.totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <button
+            onClick={handlePrevPage}
+            disabled={!meta.hasPrevious}
+            className="px-4 py-2 border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] rounded-lg hover:bg-[color:var(--color-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ← 이전
+          </button>
 
-        {Array.from({ length: Math.min(10, totalPages) }, (_, i) => i + Math.max(1, Math.min(page - 4, totalPages - 9)))
-          .map(n => (
-            <button key={n}
-                    onClick={() => goPage(n)}
-                    className={"w-[50px] h-[53px] rounded-[var(--radius-md)] border " + (n === page
-                      ? "bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] border-transparent font-medium"
-                      : "bg-[color:var(--color-bg-elev-1)] border-[color:var(--color-border-default)]")}>
-              {n}
-            </button>
-          ))}
+          <div className="flex items-center gap-2">
+            <span className="text-[color:var(--color-fg-muted)]">
+              {page} / {meta.totalPages}
+            </span>
+          </div>
 
-        <button onClick={() => goPage(page + 1)} className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                           bg-[color:var(--color-bg-elev-1)]
-                           border border-[color:var(--color-border-default)]" aria-label="다음 페이지">&rsaquo;</button>
-        <button onClick={() => goPage(totalPages)} className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                           bg-[color:var(--color-bg-elev-1)]
-                           border border-[color:var(--color-border-default)]" aria-label="마지막 페이지">&raquo;</button>
-      </div>
-
-      {/* 글쓰기 버튼 */}
-      <button
-        className="absolute top-[188px] left-[1211px] h-[45px] px-4
-                   rounded-[var(--radius-md)]
-                   bg-[color:var(--color-accent)]
-                   text-[color:var(--color-on-accent)]
-                   text-xl font-medium"
-        onClick={() => navigate("/board/write")}
-      >
-        글 쓰기
-      </button>
-    </div>
+          <button
+            onClick={handleNextPage}
+            disabled={!meta.hasNext}
+            className="px-4 py-2 border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] rounded-lg hover:bg-[color:var(--color-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            다음 →
+          </button>
+        </div>
+      )}
+    </section>
   );
-};
+}
