@@ -42,7 +42,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       attributes: {
         // 배경/라운드/보더는 바깥에서, 여기선 편집 영역 스타일만
         class:
-          "prose max-w-none outline-none bg-transparent min-h-full p-0" +
+          "prose max-w-none outline-none bg-transparent min-h-full pl-[10px] pr-0 py-0 " +
           "text-[color:var(--color-fg-primary)] selection:bg-[color:var(--color-accent)]/20 " +
            // ↓ 행간/간격 조정 (약 절반 느낌)
           "leading-[0.6] prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1",
@@ -180,7 +180,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* 본문: 남은 높이 + 내부 스크롤 */}
-      <div className="flex-1 min-h-0 overflow-y-auto pl-8 pr-4 py-3">
+      <div className="flex-1 min-h-0 overflow-y-auto pl-8 pr-4 py-6">
         <EditorContent editor={editor} className="min-h-full" />
       </div>
     </div>

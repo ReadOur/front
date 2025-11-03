@@ -150,7 +150,7 @@ export const BRD_06 = (): React.JSX.Element => {
               type="submit"
               className="
                 inline-flex items-center justify-center gap-2
-                h-32 px-20                 /* 크기 업 */
+                h-64 px-40 text-2xl        /* 크기 2배로 증가 */
                 rounded-[var(--radius-full,9999px)]
                 bg-[color:var(--btn-primary-bg,var(--color-accent))]
                 text-[color:var(--btn-primary-fg,var(--color-on-accent))]
