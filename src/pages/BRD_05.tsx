@@ -1,55 +1,113 @@
 import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  usePost,
+  useLikePost,
+  useComments,
+  useCreateComment,
+  useDeleteComment,
+} from "@/hooks/api";
+import { CreateCommentRequest } from "@/types";
 
 /**
- * 토큰 규칙:
- *  - 절대 하드코딩 금지(색/그림자/경계/텍스트 등)
- *  - 색상은 반드시 var(--color-*)로 참조
- *  - 다크테마는 data-theme="dark"에서 토큰 전환
+ * 게시글 상세 페이지 (API 연동 버전)
+ * - React Query로 게시글 및 댓글 데이터 fetching
+ * - 좋아요, 댓글 작성/삭제 기능
+ * - 토큰 규칙: 절대 하드코딩 금지, 색상은 var(--color-*)로 참조
  */
 
 export default function PostShow() {
+  const { postId } = useParams<{ postId: string }>();
+  const navigate = useNavigate();
+
   const [commentText, setCommentText] = useState("");
-  const [likes, setLikes] = useState(24);
-  const [isLiked, setIsLiked] = useState(false);
 
-  // 데모용 더미 데이터 (추후 API로 교체)
-  const postData = {
-    title: "게시글 1",
-    date: "2025.09.15 19:16",
-    views: 123,
-    author: "닉네임",
-    content: "(굉장히 의미 깊고 누구나 봐서 박수를 참지 못할 글)",
-    attachments: 3,
-  };
+  // ===== API 훅 =====
+  const {
+    data: post,
+    isLoading: isPostLoading,
+    error: postError,
+  } = usePost(postId || "");
 
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: "(정말 지적인 유저)",
-      content: "(정말 유익한 댓글)",
-      date: "2025.09.15 22:30",
-      avatar: "https://c.animaapp.com/eGtOkC23/img/------.png",
-    },
-  ]);
+  const {
+    data: commentsData,
+    isLoading: isCommentsLoading,
+    error: commentsError,
+  } = useComments({ postId: postId || "", page: 1, pageSize: 50 });
 
+  const likeMutation = useLikePost();
+  const createCommentMutation = useCreateComment({
+    onSuccess: () => setCommentText(""),
+  });
+  const deleteCommentMutation = useDeleteComment();
+
+  // ===== 이벤트 핸들러 =====
   function handleLike() {
-    setIsLiked((v) => !v);
-    setLikes((n) => (isLiked ? n - 1 : n + 1));
+    if (!postId || !post) return;
+    likeMutation.mutate({
+      postId,
+      isLiked: post.isLiked || false,
+    });
   }
 
   function handleCommentSubmit() {
-    const t = commentText.trim();
-    if (!t) return;
-    const newItem = {
-      id: Date.now(),
-      author: "나",
-      content: t,
-      date: new Date().toISOString().slice(0, 16).replace("T", " "),
-      avatar: "https://c.animaapp.com/eGtOkC23/img/------.png",
+    const trimmed = commentText.trim();
+    if (!trimmed || !postId) return;
+
+    const request: CreateCommentRequest = {
+      postId,
+      content: trimmed,
     };
-    setComments((arr) => [newItem, ...arr]);
-    setCommentText("");
+
+    createCommentMutation.mutate(request);
   }
+
+  function handleCommentDelete(commentId: string) {
+    if (!postId) return;
+    if (confirm("댓글을 삭제하시겠습니까?")) {
+      deleteCommentMutation.mutate({ commentId, postId });
+    }
+  }
+
+  // ===== 로딩 및 에러 처리 =====
+  if (!postId) {
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <p className="text-[color:var(--color-fg-muted)]">잘못된 게시글 ID입니다.</p>
+      </div>
+    );
+  }
+
+  if (isPostLoading) {
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-4 border-[color:var(--color-accent)] border-t-transparent rounded-full animate-spin mb-2"></div>
+          <p className="text-[color:var(--color-fg-muted)]">게시글을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (postError || !post) {
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[color:var(--color-error)] mb-4">
+            게시글을 불러오는 데 실패했습니다.
+          </p>
+          <button
+            onClick={() => navigate("/boards")}
+            className="px-4 py-2 bg-[color:var(--color-accent)] rounded-lg hover:opacity-90"
+          >
+            목록으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const comments = commentsData?.items || [];
 
   return (
     <main
@@ -61,9 +119,9 @@ export default function PostShow() {
         <div className="h-[68px] bg-[color:var(--color-accent)] flex items-center justify-between px-5">
           <h2 className="text-[color:var(--color-fg-secondary)] text-xl font-semibold">게시글</h2>
           <div className="flex items-center gap-4 text-[color:var(--color-fg-secondary)] text-sm">
-            <span>작성: {postData.date}</span>
-            <span>조회: {postData.views.toLocaleString()}</span>
-            <span>작성자: {postData.author}</span>
+            <span>작성: {new Date(post.createdAt).toLocaleString("ko-KR")}</span>
+            <span>조회: {post.viewCount.toLocaleString()}</span>
+            <span>작성자: {post.author.nickname}</span>
           </div>
         </div>
       </section>
@@ -75,85 +133,121 @@ export default function PostShow() {
       >
         <header className="flex items-center justify-between gap-4">
           <h1 id="title" className="text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
-            {postData.title}
+            {post.title}
           </h1>
 
           {/* 좋아요 버튼 */}
           <button
             onClick={handleLike}
-            aria-pressed={isLiked}
-            aria-label={`좋아요 ${likes}개`}
-            className="inline-flex items-center gap-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
-            data-active={isLiked}
+            disabled={likeMutation.isPending}
+            aria-pressed={post.isLiked}
+            aria-label={`좋아요 ${post.likeCount}개`}
+            className="inline-flex items-center gap-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed"
+            data-active={post.isLiked}
           >
-            <span>❤</span>
-            <strong className="text-[color:var(--color-fg-primary)]">{likes}</strong>
+            <span>{post.isLiked ? "❤️" : "🤍"}</span>
+            <strong className="text-[color:var(--color-fg-primary)]">{post.likeCount}</strong>
           </button>
         </header>
 
         {/* 첨부파일 영역 */}
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label={`첨부파일 ${postData.attachments}개`}
-          className="mt-3 bg-[color:var(--color-bg-elev-2)] border border-dashed border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 flex items-center justify-between"
-        >
-          <span className="text-[color:var(--color-fg-primary)] font-medium">
-            첨부파일 ({postData.attachments})
-          </span>
-          <span className="text-[color:var(--color-fg-secondary)]">▼</span>
-        </div>
+        {post.attachments && post.attachments.length > 0 && (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={`첨부파일 ${post.attachments.length}개`}
+            className="mt-3 bg-[color:var(--color-bg-elev-2)] border border-dashed border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 flex items-center justify-between"
+          >
+            <span className="text-[color:var(--color-fg-primary)] font-medium">
+              첨부파일 ({post.attachments.length})
+            </span>
+            <span className="text-[color:var(--color-fg-secondary)]">▼</span>
+          </div>
+        )}
 
         {/* 본문 내용 */}
-        <div className="mt-4 text-[color:var(--color-fg-primary)] leading-relaxed">
-          {postData.content}
+        <div className="mt-4 text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap">
+          {post.content}
         </div>
       </article>
 
       {/* 댓글 섹션 */}
       <section className="mt-5 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-xl p-4">
         <h2 className="text-lg font-semibold text-[color:var(--color-fg-primary)] flex items-baseline gap-2">
-          댓글 <span className="text-[color:#b45309]">[{comments.length}]</span>
+          댓글 <span className="text-[color:#b45309]">[{isCommentsLoading ? "..." : comments.length}]</span>
         </h2>
 
-        {/* 입력 */}
+        {/* 댓글 입력 */}
         <div className="grid grid-cols-[1fr_auto] gap-2 mt-3">
           <input
             type="text"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCommentSubmit();
+              }
+            }}
             placeholder="댓글을 입력하세요"
             aria-label="댓글 입력"
-            className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+            disabled={createCommentMutation.isPending}
+            className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
           />
           <button
             onClick={handleCommentSubmit}
-            className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] font-semibold hover:opacity-90"
+            disabled={createCommentMutation.isPending || !commentText.trim()}
+            className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            등록
+            {createCommentMutation.isPending ? "등록 중..." : "등록"}
           </button>
         </div>
 
-        {/* 목록 */}
+        {/* 댓글 목록 */}
         <div className="mt-3" aria-live="polite">
-          {comments.map((c) => (
-            <div
-              key={c.id}
-              className="grid grid-cols-[40px_1fr] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]"
-            >
-              <img
-                src={c.avatar}
-                alt=""
-                className="w-10 h-10 rounded-full object-cover border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]"
-              />
-              <div>
-                <div className="text-[color:var(--color-fg-primary)]">{c.content}</div>
-                <div className="text-xs text-[color:var(--color-fg-secondary)] mt-1">
-                  {c.author} · {c.date}
-                </div>
-              </div>
+          {isCommentsLoading ? (
+            <div className="text-center py-4">
+              <span className="text-[color:var(--color-fg-muted)]">댓글을 불러오는 중...</span>
             </div>
-          ))}
+          ) : commentsError ? (
+            <div className="text-center py-4">
+              <span className="text-[color:var(--color-error)]">댓글을 불러오는 데 실패했습니다.</span>
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-4">
+              <span className="text-[color:var(--color-fg-muted)]">첫 댓글을 작성해보세요!</span>
+            </div>
+          ) : (
+            comments.map((comment) => (
+              <div
+                key={comment.id}
+                className="grid grid-cols-[40px_1fr_auto] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]"
+              >
+                {/* 아바타 */}
+                <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] flex items-center justify-center text-[color:var(--color-fg-muted)] text-sm font-semibold">
+                  {comment.author.nickname[0]?.toUpperCase() || "?"}
+                </div>
+
+                {/* 댓글 내용 */}
+                <div>
+                  <div className="text-[color:var(--color-fg-primary)]">{comment.content}</div>
+                  <div className="text-xs text-[color:var(--color-fg-secondary)] mt-1">
+                    {comment.author.nickname} · {new Date(comment.createdAt).toLocaleString("ko-KR")}
+                  </div>
+                </div>
+
+                {/* 삭제 버튼 */}
+                <button
+                  onClick={() => handleCommentDelete(comment.id)}
+                  disabled={deleteCommentMutation.isPending}
+                  className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-error)] disabled:opacity-50"
+                  aria-label="댓글 삭제"
+                >
+                  삭제
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </section>
     </main>
