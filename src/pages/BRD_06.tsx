@@ -115,7 +115,7 @@ export const BRD_06 = (): React.JSX.Element => {
                 <RichTextEditor
                   valueHtml={contentHtml}
                   onChange={setContentHtml}
-                  placeholder="내용 입력"
+                  placeholder="내용을 입력해주세요."
                   className="h-full"   // ← 부모 높이를 가득 채우도록
                 />
               </div>

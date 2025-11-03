@@ -179,8 +179,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </div>
       </div>
 
-      {/* 본문: 남은 높이 + 내부 스크롤 */}
-      <div className="flex-1 min-h-0 overflow-y-auto pl-8 pr-4 py-6">
+      {/* 본문: 남은 높이 + 내부 스크롤 - 전체 영역 클릭 가능 */}
+      <div
+        className="flex-1 min-h-0 overflow-y-auto pl-8 pr-4 py-6 cursor-text"
+        onClick={() => editor?.chain().focus().run()}
+      >
         <EditorContent editor={editor} className="min-h-full" />
       </div>
     </div>
