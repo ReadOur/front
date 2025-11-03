@@ -11,6 +11,7 @@ interface HeaderAppProps {
   onClickNotifications: () => void;
   user: User;
   onLogin?: () => void;
+  onUserClick?: () => void;
   onLogoClick: () => void;
 }
 
@@ -20,6 +21,7 @@ export default function HeaderApp({
                                     onClickNotifications,
                                     user,
                                     onLogin,
+                                    onUserClick,
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
@@ -47,7 +49,7 @@ export default function HeaderApp({
           <nav className="flex justify-center">
             <ul className="flex items-stretch h-full text-sm md:text-base font-medium text-[color:var(--color-fg-muted)]">
               {navItems.map((item, idx) => (
-                <li key={item.key} className="relative flex items-center px-3 md:px-4">
+                <li key={item.key} className="relative flex items-center px-4 md:px-6">
                   <button
                     onClick={item.onClick}
                     className={[
@@ -86,13 +88,19 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <span className={"text-sm font-medium text-[color:var(--color-fg-primary)]"}>
-                {user.name}
-              </span>
+              <button
+                onClick={onUserClick}
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-[color:var(--color-fg-primary)] text-base font-medium transition-colors"
+              >
+                <span className="w-6 h-6 rounded-full bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] flex items-center justify-center text-sm font-semibold">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+                <span>{user.name}</span>
+              </button>
             ) : (
               <button
                 onClick={onLogin}
-                className="inline-flex items-center gap-2 h-9 px-3 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] text-sm font-medium"
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-base font-medium transition-opacity"
               >
                 로그인
               </button>
