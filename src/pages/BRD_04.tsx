@@ -70,7 +70,7 @@ export const BRD_List: React.FC = () => {
       data-model-id="7:81"
     >
       {/* 상단 바 */}
-      <div className="absolute top-[174px] left-[100px] w-[1250px] h-[67px]
+      <div className="absolute top-[170px] left-[100px] w-[1250px] h-[67px]
                       bg-[color:var(--color-bg-elev-2)] rounded-[var(--radius-md)]" />
 
       {/* 리스트 박스 */}
@@ -79,24 +79,24 @@ export const BRD_List: React.FC = () => {
                       rounded-[var(--radius-md)]" />
 
       {/* 헤더 라인 */}
-      <div className="absolute top-[237px] left-[100px] w-[1250px] h-[63px]
+      <div className="absolute top-[50px] left-[100px] w-[1100px] h-[63px]
                       bg-[color:var(--color-bg-elev-2)]
                       border-b border-[color:var(--color-border-default)]
                       rounded-t-[var(--radius-md)]" />
 
       {/* 컬럼 헤더 */}
-      <div className="absolute top-[266px] left-[111px] w-[115px] text-2xl text-center">번호</div>
-      <div className="absolute top-[266px] left-[219px] w-[115px] text-2xl text-center">카테고리</div>
-      <div className="absolute top-[269px] left-[250px] w-[850px] text-2xl text-center">제목</div>
-      <div className="absolute top-[271px] left-[895px] text-2xl text-center">좋아요</div>
-      <div className="absolute top-[271px] left-[1012px] text-2xl text-center">작성자</div>
-      <div className="absolute top-[271px] left-[1130px] w-[84px] text-2xl text-center whitespace-nowrap">작성일</div>
-      <div className="absolute top-[271px] left-[1276px] w-[68px] text-2xl text-center whitespace-nowrap">조회수</div>
+      <div className="absolute top-[80px] left-[100px] w-[115px] text-2xl text-center">번호</div>
+      <div className="absolute top-[80px] left-[235px] w-[115px] text-2xl text-center">카테고리</div>
+      <div className="absolute top-[80px] left-[200px] w-[850px] text-2xl text-center">제목</div>
+      <div className="absolute top-[80px] left-[940px] text-2xl text-center">좋아요</div>
+      <div className="absolute top-[80px] left-[1000px] text-2xl text-center">작성자</div>
+      <div className="absolute top-[80px] left-[1050px] w-[84px] text-2xl text-center whitespace-nowrap">작성일</div>
+      <div className="absolute top-[80px] left-[1125px] w-[68px] text-2xl text-center whitespace-nowrap">조회수</div>
 
       {/* 목록 영역 */}
-      <div className="absolute left-[100px] w-[1250px]" style={{ top: 300 }}>
-        {/* 로딩 */}
-        {isLoading && (
+      <div className="absolute left-[100px] w-[1100px]" style={{ top: 300 }}>
+        {/* 로딩/에러 */}
+        {loading && (
           <div className="w-full h-[68px] rounded-[var(--radius-md)]
                           bg-[color:var(--color-bg-elev-2)]
                           border border-[color:var(--color-border-default)]
@@ -191,79 +191,43 @@ export const BRD_List: React.FC = () => {
       </div>
 
       {/* 페이지네이션 */}
-      <div className="absolute top-[983px] left-[274px] flex items-center gap-2">
-        <button
-          onClick={() => goPage(1)}
-          disabled={page === 1}
-          className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                     bg-[color:var(--color-bg-elev-1)]
-                     border border-[color:var(--color-border-default)]
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="첫 페이지"
-        >
-          &laquo;
-        </button>
-
-        <button
-          onClick={() => goPage(page - 1)}
-          disabled={!data?.hasPrevious}
-          className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                     bg-[color:var(--color-bg-elev-1)]
-                     border border-[color:var(--color-border-default)]
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="이전 페이지"
-        >
-          &lsaquo;
-        </button>
+      <div className="absolute top-[983px] left-[485px] flex items-center gap-2">
+        <button onClick={() => goPage(1)} className="w-[30px] h-[30px] rounded-[var(--radius-md)]
+                           bg-[color:var(--color-bg-elev-1)]
+                           border border-[color:var(--color-border-default)]" aria-label="첫 페이지">&laquo;</button>
+        <button onClick={() => goPage(page - 1)} className="w-[30px] h-[30px] rounded-[var(--radius-md)]
+                           bg-[color:var(--color-bg-elev-1)]
+                           border border-[color:var(--color-border-default)]" aria-label="이전 페이지">&lsaquo;</button>
 
         {Array.from({ length: Math.min(10, totalPages) }, (_, i) => i + Math.max(1, Math.min(page - 4, totalPages - 9)))
           .map(n => (
-            <button
-              key={n}
-              onClick={() => goPage(n)}
-              className={"w-[50px] h-[53px] rounded-[var(--radius-md)] border " + (n === page
-                ? "bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] border-transparent font-medium"
-                : "bg-[color:var(--color-bg-elev-1)] border-[color:var(--color-border-default)]")}
-            >
+            <button key={n}
+                    onClick={() => goPage(n)}
+                    className={"w-[40px] h-[40px] rounded-[var(--radius-md)] border " + (n === page
+                      ? "bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] border-transparent font-medium"
+                      : "bg-[color:var(--color-bg-elev-1)] border-[color:var(--color-border-default)]")}>
               {n}
             </button>
           ))}
 
-        <button
-          onClick={() => goPage(page + 1)}
-          disabled={!data?.hasNext}
-          className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                     bg-[color:var(--color-bg-elev-1)]
-                     border border-[color:var(--color-border-default)]
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="다음 페이지"
-        >
-          &rsaquo;
-        </button>
-
-        <button
-          onClick={() => goPage(totalPages)}
-          disabled={page === totalPages}
-          className="w-[50px] h-[53px] rounded-[var(--radius-md)]
-                     bg-[color:var(--color-bg-elev-1)]
-                     border border-[color:var(--color-border-default)]
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label="마지막 페이지"
-        >
-          &raquo;
-        </button>
+        <button onClick={() => goPage(page + 1)} className="w-[30px] h-[30px] rounded-[var(--radius-md)]
+                           bg-[color:var(--color-bg-elev-1)]
+                           border border-[color:var(--color-border-default)]" aria-label="다음 페이지">&rsaquo;</button>
+        <button onClick={() => goPage(totalPages)} className="w-[30px] h-[30px] rounded-[var(--radius-md)]
+                           bg-[color:var(--color-bg-elev-1)]
+                           border border-[color:var(--color-border-default)]" aria-label="마지막 페이지">&raquo;</button>
       </div>
 
       {/* 글쓰기 버튼 */}
       <button
-        className="absolute top-[188px] left-[1211px] h-[45px] px-4
+        className="absolute top-[35px] left-[1120px] h-[35px] px-5
                    rounded-[var(--radius-md)]
                    bg-[color:var(--color-accent)]
                    text-[color:var(--color-on-accent)]
                    text-xl font-medium"
         onClick={() => navigate("/boards/write")}
       >
-        글 쓰기
+        ✏️ 글 쓰기
       </button>
     </div>
   );
