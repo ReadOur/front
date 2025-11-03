@@ -53,7 +53,7 @@ export default function App() {
           console.log("알림 버튼 클릭");
         }}
         user={{
-          name: "두구다",
+          name: "user",
         }}
         onLogin={() => {
           console.log("로그인");
