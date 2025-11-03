@@ -9,10 +9,6 @@ export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  // DEBUG: 최신 버전 확인용
-  console.log("🔥 App.tsx LOADED - Version: 2024-11-03-12:35");
-  console.log("📋 NavItems count:", 5); // 채팅방 탭 제거됨
-
   // 중앙 탭 라우팅 (SPA로 이동)
   const navItems = [
     {
@@ -49,7 +45,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)]">
-      {/* DEBUG: App.tsx loaded at ${new Date().toISOString()} */}
       <HeaderApp
         onLogoClick={() => navigate("/boards")}
         navItems={navItems}
