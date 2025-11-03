@@ -32,7 +32,7 @@ export default function HeaderApp({
           <button onClick={onLogoClick} className="shrink-0 flex items-center">
             <div
               className="flex items-center"
-              style={{ width: "var(--brand-logo-w)", height: "var(--brand-logo-h)", transform: "translateY(var(--brand-logo-offset-y)" }}
+              style={{ width: "var(--brand-logo-w)", height: "var(--brand-logo-h)", transform: "translateY(var(--brand-logo-offset-y))" }}
             >
               <img src={logo} alt="ReadOur" className="block"
                    style = {{
