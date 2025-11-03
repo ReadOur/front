@@ -6,7 +6,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 
 import App from "./App";
-// import HOM_01 from "@/pages/HOM_01";
 import { BRD_List } from "@/pages/BRD_04";
 import PostShow from "@/pages/BRD_05";
 // import ChatPage from "@/pages/MSG_07";
