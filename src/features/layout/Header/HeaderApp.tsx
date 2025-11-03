@@ -1,0 +1,107 @@
+// src/features/layout/header/HeaderApp.tsx
+import React from "react";
+import logo from "@/assets/logo.png";
+
+type NavItem = { key: string; label: string; active?: boolean; onClick: () => void };
+type User = { name: string; avatarUrl?: string } | null;
+
+interface HeaderAppProps {
+  navItems: NavItem[];
+  unreadCount: number;
+  onClickNotifications: () => void;
+  user: User;
+  onLogin?: () => void;
+  onLogoClick: () => void;
+}
+
+export default function HeaderApp({
+                                    navItems,
+                                    unreadCount,
+                                    onClickNotifications,
+                                    user,
+                                    onLogin,
+                                    onLogoClick,
+                                  }: HeaderAppProps) {
+  return (
+    <header className="h-16 border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)]">
+      {/* 가운데 정렬 컨테이너 */}
+      <div className="mx-auto px-4" style={{ maxWidth: "var(--layout-max)" }}>
+        {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
+        <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4 h-16">
+          {/* LEFT: 로고 */}
+          <button onClick={onLogoClick} className="shrink-0 flex items-center">
+            <div
+              className="flex items-center"
+              style={{ width: "var(--brand-logo-w)", height: "var(--brand-logo-h)", transform: "translateY(var(--brand-logo-offset-y)" }}
+            >
+              <img src={logo} alt="ReadOur" className="block"
+                   style = {{
+                     height : "100%",
+                     width : "auto",
+                   }}
+              />
+            </div>
+          </button>
+
+          {/* CENTER: 탭 (정확히 중앙) */}
+          <nav className="flex justify-center">
+            <ul className="flex items-stretch h-full text-sm md:text-base font-medium text-[color:var(--color-fg-muted)]">
+              {navItems.map((item, idx) => (
+                <li key={item.key} className="relative flex items-center px-3 md:px-4">
+                  <button
+                    onClick={item.onClick}
+                    className={[
+                      "relative h-full flex items-center pb-4",
+                      item.active
+                        ? "text-[color:var(--color-fg-primary)] font-semibold"
+                        : "hover:text-[color:var(--color-fg-primary)]",
+                    ].join(" ")}
+                  >
+                    {item.label}
+                    {item.active && (
+                      <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-[color:var(--color-fg-primary)]" />
+                    )}
+                  </button>
+                  {idx < navItems.length - 1 && (
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-[color:var(--color-border-subtle)]" />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* RIGHT: 알림 + 유저 */}
+          <div className="shrink-0 flex items-center gap-3 justify-end">
+            <button
+              onClick={onClickNotifications}
+              className="relative w-10 h-10 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)]"
+              aria-label="알림"
+            >
+              <span role="img" aria-hidden="true">🔔</span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 grid place-items-center rounded-full text-[10px] font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {user ? (
+              <img
+                src={user.avatarUrl || ""}
+                alt={user?.name || "user"}
+                className="w-9 h-9 rounded-full object-cover border border-[color:var(--color-border-subtle)]"
+              />
+            ) : (
+              <button
+                onClick={onLogin}
+                className="inline-flex items-center gap-2 h-9 px-3 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] text-sm font-medium"
+              >
+                로그인
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

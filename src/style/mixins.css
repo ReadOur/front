@@ -1,0 +1,51 @@
+/* src/styles/mixins.css */
+/* ===============================================
+⚙️ MIXINS — 공용 패턴 스타일 모음
+=============================================== */
+
+/* 버튼 */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+.btn-primary:hover {
+    background: color-mix(in srgb, var(--color-primary) 90%, black);
+}
+
+/* 카드 */
+.card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-lg);
+    transition: all 0.2s ease;
+}
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* 인풋 */
+.input {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+.input:focus {
+    border-color: var(--color-primary);
+    outline: none;
+}

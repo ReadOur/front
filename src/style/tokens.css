@@ -1,0 +1,189 @@
+/* -----------------------------------------------------------
+🎨 Design Tokens — Brand Palette & Global Style System
+(우당탕탕 capstone react)
+- 기반 팔레트: 제공하신 색을 보존하고, 상태/서피스/타이포 등 확장
+- 모든 컴포넌트에서는 var(--*) 토큰만 참조하도록 권장
+----------------------------------------------------------- */
+
+:root {
+    /* 헤더용 축약 로고 크기 */
+    --brand-logo-h: 36px;   /* h-7 정도 */
+    --brand-logo-w: 180px;  /* 가로 폭 박스 */
+    --brand-logo-offset-y: 25px;
+
+    --layout-max: 1280px;  /* 1200~1440 중 취향대로 */
+
+    /* 🌈 Brand / Semantic Colors (원본 팔레트 보존) */
+    --color-primary:   #f4a261; /* 메인 CTA (오렌지) */
+    --color-secondary: #90be6d; /* 보조 강조 (그린) */
+    --color-accent:    #ffd166; /* 포인트 (옐로) */
+    --color-error:     #e76f51; /* 에러/경고 */
+
+    /* 상태(hover/active) - color-mix로 자동 파생 (브라우저 최신권장) */
+    --color-primary-hover:  color-mix(in srgb, var(--color-primary), black 12%);
+    --color-primary-active: color-mix(in srgb, var(--color-primary), black 20%);
+    --color-secondary-hover:  color-mix(in srgb, var(--color-secondary), black 10%);
+    --color-secondary-active: color-mix(in srgb, var(--color-secondary), black 18%);
+    --color-accent-hover:   color-mix(in srgb, var(--color-accent), black 12%);
+    --color-accent-active:  color-mix(in srgb, var(--color-accent), black 20%);
+    --color-error-hover:    color-mix(in srgb, var(--color-error), black 12%);
+    --color-error-active:   color-mix(in srgb, var(--color-error), black 20%);
+
+    /* 대비용 텍스트(on-*) */
+    --on-primary:   #ffffff;
+    --on-secondary: #0f2315; /* 연두엔 어두운 텍스트가 더 선명 */
+    --on-accent:    #0f0f0f;
+    --on-error:     #ffffff;
+
+    /* 🎨 Neutral / Surfaces (기존 톤 존중) */
+    --color-bg:       #fff9f2; /* 전체 배경 */
+    --color-surface:  #e9e5dc; /* 카드/Input 배경 */
+    --color-surface-2:#f7f3ec; /* 보조 서피스(살짝 밝음) */
+    --color-text:     #6b4f3f; /* 본문 텍스트 */
+    --color-text-muted: color-mix(in srgb, var(--color-text), white 35%);
+    --color-border:   rgba(0,0,0,0.12);
+
+    /* Focus / Outline */
+    --color-focus:    color-mix(in srgb, var(--color-primary), #000 10%);
+    --ring-offset:    #ffffff;
+
+    /* Opacity helpers */
+    --op-0: 0;
+    --op-8: 0.08;
+    --op-12: 0.12;
+    --op-16: 0.16;
+    --op-24: 0.24;
+
+    /* ✍️ Typography */
+    --font-main: "Pretendard", "Noto Sans KR";
+    --font-generic-sans: system-ui, -apple-system, "Segoe UI", Roboto,
+    "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Helvetica, Arial, sans-serif;
+
+    --text-xs: 12px;
+    --text-sm: 14px;
+    --text-md: 16px;
+    --text-lg: 18px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+    --text-3xl: 28px;
+
+    --font-weight-regular: 500;
+    --font-weight-medium: 600;
+    --font-weight-bold: 700;
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+
+    /* 📐 Spacing */
+    --space-2xs: 2px;
+    --space-xs:  4px;
+    --space-sm:  8px;
+    --space-md:  16px;
+    --space-lg:  24px;
+    --space-xl:  40px;
+    --space-2xl: 56px;
+
+    /* 🟦 Radius */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+
+    /* 🕶 Shadow (기존 감성 유지하며 살짝 보정) */
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.10);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 6px 24px rgba(0, 0, 0, 0.20);
+
+    /* ⏱ Motion */
+    --ease-in-out: cubic-bezier(.4,0,.2,1);
+    --transition-fast:   150ms var(--ease-in-out);
+    --transition-normal: 300ms var(--ease-in-out);
+    --transition-slow:   500ms var(--ease-in-out);
+
+    /* 📏 Layout / Container */
+    --container-sm: 640px;
+    --container-md: 768px;
+    --container-lg: 1024px;
+    --container-xl: 1280px;
+
+    /* 🧱 Z-index scale */
+    --z-behind: -1;
+    --z-base: 1;
+    --z-dropdown: 1000;
+    --z-sticky: 1100;
+    --z-modal: 1200;
+    --z-popover: 1300;
+    --z-toast: 1400;
+    --z-tooltip: 1500;
+
+    /* 🧩 Component-level Semantic Tokens (컴포넌트가 참조) */
+    /* Button */
+    --btn-radius: var(--radius-md);
+    --btn-pad-y: 10px;
+    --btn-pad-x: 16px;
+
+    --btn-primary-bg: var(--color-primary);
+    --btn-primary-bg-hover: var(--color-primary-hover);
+    --btn-primary-bg-active: var(--color-primary-active);
+    --btn-primary-fg: var(--on-primary);
+
+    --btn-secondary-bg: var(--color-secondary);
+    --btn-secondary-bg-hover: var(--color-secondary-hover);
+    --btn-secondary-bg-active: var(--color-secondary-active);
+    --btn-secondary-fg: var(--on-secondary);
+
+    --btn-ghost-fg: var(--color-text);
+    --btn-ghost-fg-hover: color-mix(in srgb, var(--color-text), black 10%);
+    --btn-outline-fg: var(--color-primary);
+    --btn-outline-border: var(--color-primary);
+
+    --btn-danger-bg: var(--color-error);
+    --btn-danger-bg-hover: var(--color-error-hover);
+    --btn-danger-fg: var(--on-error);
+
+    /* Input */
+    --input-bg: var(--color-surface);
+    --input-fg: var(--color-text);
+    --input-border: var(--color-border);
+    --input-radius: var(--radius-md);
+    --input-focus-ring: var(--color-focus);
+
+    /* Card */
+    --card-bg: var(--color-bg);
+    --card-surface: var(--color-surface);
+    --card-border: var(--color-border);
+    --card-radius: var(--radius-lg);
+    --card-shadow: var(--shadow-sm);
+}
+
+/* 🌙 Dark Theme (선택)  — 기존 의도 보존 + 대비 개선 */
+[data-theme="dark"] {
+    --color-bg:       #1b1a17;
+    --color-surface:  #2c2b27;
+    --color-surface-2:#23221f;
+    --color-text:     #f3ede5;
+    --color-text-muted: color-mix(in srgb, var(--color-text), black 35%);
+    --color-border:   rgba(255,255,255,0.14);
+
+    /* 브랜드 색은 밝기 올려 대비 유지 */
+    --color-secondary: #a8dc87;
+    --color-accent:    #ffe086;
+    --color-primary:   #f4a261;
+    --color-error:     #ff8873;
+
+    --color-primary-hover:  color-mix(in srgb, var(--color-primary), white 8%);
+    --color-primary-active: color-mix(in srgb, var(--color-primary), white 16%);
+    --color-secondary-hover: color-mix(in srgb, var(--color-secondary), white 6%);
+    --color-secondary-active: color-mix(in srgb, var(--color-secondary), white 14%);
+    --color-accent-hover:   color-mix(in srgb, var(--color-accent), white 8%);
+    --color-accent-active:  color-mix(in srgb, var(--color-accent), white 16%);
+    --color-error-hover:    color-mix(in srgb, var(--color-error), white 8%);
+    --color-error-active:   color-mix(in srgb, var(--color-error), white 16%);
+
+    --ring-offset:    #1b1a17;
+
+    /* Card 등 서피스 대비 보정 */
+    --card-bg: var(--color-surface);
+    --card-surface: color-mix(in srgb, var(--color-surface), white 4%);
+    --card-border: rgba(255,255,255,0.10);
+}

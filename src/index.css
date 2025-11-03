@@ -1,0 +1,23 @@
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 최소 리셋만 유지 (레이아웃은 컴포넌트에서 제어) */
+html, body, #root {
+    height: 100%;
+}
+
+#root {
+    /* 루트엔 폭/패딩/정렬 제약 금지 */
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* 선택: 박스사이징 통일 */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* 전역 색/버튼 같은 건 여기 두지 말고, tokens.css / globals.css로 이동 */
