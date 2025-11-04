@@ -23,7 +23,7 @@ export default function HeaderApp({
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
-    <header className="sticky top-0 h-16 border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] z-50">
+    <header className="fixed top-0 left-0 right-0 h-16 border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] z-50">
       {/* 가운데 정렬 컨테이너 */}
       <div className="mx-auto px-4" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
