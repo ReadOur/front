@@ -8,7 +8,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { ApiResponse, ApiError } from "@/types";
 
 // ===== 환경변수 =====
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
 
 /**
@@ -69,7 +69,7 @@ axiosInstance.interceptors.response.use(
           { headers: { "Content-Type": "application/json" } }
         );
 
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
 
         // 새 토큰 저장
         localStorage.setItem("accessToken", newAccessToken);
@@ -125,8 +125,8 @@ export async function get<T = unknown>(
   url: string,
   config?: AxiosRequestConfig
 ): Promise<T> {
-  const response = await axiosInstance.get<ApiResponse<T>>(url, config);
-  return response.data.data;
+  const response = await axiosInstance.get<T>(url, config);
+  return response.data;
 }
 
 /**
@@ -137,8 +137,8 @@ export async function post<T = unknown, D = unknown>(
   data?: D,
   config?: AxiosRequestConfig
 ): Promise<T> {
-  const response = await axiosInstance.post<ApiResponse<T>>(url, data, config);
-  return response.data.data;
+  const response = await axiosInstance.post<T>(url, data, config);
+  return response.data;
 }
 
 /**
@@ -149,8 +149,8 @@ export async function put<T = unknown, D = unknown>(
   data?: D,
   config?: AxiosRequestConfig
 ): Promise<T> {
-  const response = await axiosInstance.put<ApiResponse<T>>(url, data, config);
-  return response.data.data;
+  const response = await axiosInstance.put<T>(url, data, config);
+  return response.data;
 }
 
 /**
@@ -161,8 +161,8 @@ export async function patch<T = unknown, D = unknown>(
   data?: D,
   config?: AxiosRequestConfig
 ): Promise<T> {
-  const response = await axiosInstance.patch<ApiResponse<T>>(url, data, config);
-  return response.data.data;
+  const response = await axiosInstance.patch<T>(url, data, config);
+  return response.data;
 }
 
 /**
@@ -172,8 +172,8 @@ export async function del<T = unknown>(
   url: string,
   config?: AxiosRequestConfig
 ): Promise<T> {
-  const response = await axiosInstance.delete<ApiResponse<T>>(url, config);
-  return response.data.data;
+  const response = await axiosInstance.delete<T>(url, config);
+  return response.data;
 }
 
 /**
@@ -184,13 +184,13 @@ export async function upload<T = unknown>(
   formData: FormData,
   onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void
 ): Promise<T> {
-  const response = await axiosInstance.post<ApiResponse<T>>(url, formData, {
+  const response = await axiosInstance.post<T>(url, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
     onUploadProgress,
   });
-  return response.data.data;
+  return response.data;
 }
 
 // ===== Export =====
