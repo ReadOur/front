@@ -14,6 +14,16 @@ function formatDate(dateString: string): string {
   return `${y}.${m}.${day}`;
 }
 
+// 카테고리 정의
+const CATEGORIES = [
+  { key: "", label: "전체" },
+  { key: "NOTICE", label: "공지" },
+  { key: "REVIEW", label: "리뷰" },
+  { key: "DISCUSSION", label: "토의" },
+  { key: "QUESTION", label: "질문" },
+  { key: "FREE", label: "자유" },
+] as const;
+
 // 카테고리 한글 변환 함수
 function getCategoryLabel(category: string): string {
   const categoryMap: Record<string, string> = {
@@ -22,6 +32,8 @@ function getCategoryLabel(category: string): string {
     QNA: "Q&A",
     REVIEW: "리뷰",
     GENERAL: "일반",
+    DISCUSSION: "토의",
+    QUESTION: "질문",
   };
   return categoryMap[category] || category;
 }
@@ -111,23 +123,37 @@ export const BRD_List: React.FC = () => {
       style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
     >
       <div className="mx-auto px-6 mt-[80px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
-        {/* 상단 검색/필터 및 액션바 */}
-        <div className="py-6 space-y-4">
-          {/* 검색/필터 섹션 */}
-          <div className="flex items-center gap-3">
-            {/* 카테고리 선택 */}
-            <select
-              value={category}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="h-[36px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
-            >
-              <option value="">전체 카테고리</option>
-              <option value="FREE">자유</option>
-              <option value="NOTICE">공지</option>
-              <option value="QNA">Q&A</option>
-              <option value="REVIEW">리뷰</option>
-            </select>
+        {/* 카테고리 탭 네비게이션 */}
+        <nav className="flex justify-center border-b border-[color:var(--color-border-subtle)] mb-6">
+          <ul className="flex items-stretch h-16 font-medium text-[color:var(--color-fg-muted)] text-lg">
+            {CATEGORIES.map((cat, idx) => (
+              <li key={cat.key} className="relative flex items-center px-6">
+                <button
+                  onClick={() => handleCategoryChange(cat.key)}
+                  className={[
+                    "relative h-full flex items-center pb-1 cursor-pointer transition-all duration-200",
+                    category === cat.key
+                      ? "text-[color:var(--color-fg-primary)] font-semibold"
+                      : "hover:text-[color:var(--color-fg-primary)] hover:scale-105",
+                  ].join(" ")}
+                >
+                  {cat.label}
+                  {category === cat.key && (
+                    <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-[color:var(--color-fg-primary)]" />
+                  )}
+                </button>
+                {idx < CATEGORIES.length - 1 && (
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-px bg-[color:var(--color-border-subtle)]" />
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
 
+        {/* 검색 및 액션바 */}
+        <div className="py-4 space-y-4">
+          {/* 검색/액션 섹션 */}
+          <div className="flex items-center gap-3">
             {/* 검색 입력 */}
             <div className="flex-1 flex gap-2">
               <input
@@ -150,13 +176,13 @@ export const BRD_List: React.FC = () => {
               </button>
             </div>
 
-            {/* 필터 초기화 */}
-            {(category || searchQuery) && (
+            {/* 검색 초기화 */}
+            {searchQuery && (
               <button
                 onClick={handleResetFilters}
                 className="h-[36px] px-4 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm hover:bg-[color:var(--color-bg-elev-1)]"
               >
-                초기화
+                검색 초기화
               </button>
             )}
 
@@ -169,20 +195,13 @@ export const BRD_List: React.FC = () => {
             </button>
           </div>
 
-          {/* 현재 필터 표시 */}
-          {(category || searchQuery) && (
+          {/* 현재 검색어 표시 */}
+          {searchQuery && (
             <div className="flex items-center gap-2 text-sm text-[color:var(--color-fg-muted)]">
-              <span>필터:</span>
-              {category && (
-                <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)]">
-                  카테고리: {category}
-                </span>
-              )}
-              {searchQuery && (
-                <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)]">
-                  검색: "{searchQuery}"
-                </span>
-              )}
+              <span>검색:</span>
+              <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)]">
+                "{searchQuery}"
+              </span>
             </div>
           )}
         </div>
