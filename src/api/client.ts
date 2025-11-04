@@ -68,6 +68,16 @@ axiosInstance.interceptors.response.use(
       url: response.config.url,
       data: response.data,
     });
+
+    // 백엔드가 { status, body, message } 형태로 래핑하는 경우 body 추출
+    if (response.data && typeof response.data === 'object' && 'body' in response.data) {
+      console.log('🔄 Unwrapping response body:', response.data.body);
+      return {
+        ...response,
+        data: response.data.body, // body를 실제 data로 사용
+      };
+    }
+
     return response;
   },
   async (error) => {
