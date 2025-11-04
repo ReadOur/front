@@ -116,6 +116,23 @@
     --z-toast: 1400;
     --z-tooltip: 1500;
 
+    /* 🎨 Elevation & Layer Colors */
+    --color-bg-canvas: var(--color-bg);
+    --color-bg-elev-1: #f7f3ec;  /* 불투명한 배경 레벨 1 */
+    --color-bg-elev-2: #ffffff;  /* 불투명한 배경 레벨 2 (더 밝음) */
+    --color-bg-hover: rgba(0, 0, 0, 0.04);
+
+    /* 🎨 Foreground & Text Colors */
+    --color-fg-primary: var(--color-text);
+    --color-fg-muted: var(--color-text-muted);
+
+    /* 🎨 Border Colors */
+    --color-border-subtle: rgba(0, 0, 0, 0.08);
+    --color-border-strong: rgba(0, 0, 0, 0.16);
+
+    /* 🎨 On-color (contrast text) */
+    --color-on-accent: var(--on-accent);
+
     /* 🧩 Component-level Semantic Tokens (컴포넌트가 참조) */
     /* Button */
     --btn-radius: var(--radius-md);
@@ -126,6 +143,7 @@
     --btn-primary-bg-hover: var(--color-primary-hover);
     --btn-primary-bg-active: var(--color-primary-active);
     --btn-primary-fg: var(--on-primary);
+    --btn-primary-border: var(--color-primary);
 
     --btn-secondary-bg: var(--color-secondary);
     --btn-secondary-bg-hover: var(--color-secondary-hover);
@@ -181,6 +199,20 @@
     --color-error-active:   color-mix(in srgb, var(--color-error), white 16%);
 
     --ring-offset:    #1b1a17;
+
+    /* 🎨 Elevation & Layer Colors (Dark) */
+    --color-bg-canvas: var(--color-bg);
+    --color-bg-elev-1: #2c2b27;  /* 불투명한 배경 레벨 1 */
+    --color-bg-elev-2: #3a3935;  /* 불투명한 배경 레벨 2 (더 밝음) */
+    --color-bg-hover: rgba(255, 255, 255, 0.06);
+
+    /* 🎨 Foreground & Text Colors (Dark) */
+    --color-fg-primary: var(--color-text);
+    --color-fg-muted: var(--color-text-muted);
+
+    /* 🎨 Border Colors (Dark) */
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
+    --color-border-strong: rgba(255, 255, 255, 0.16);
 
     /* Card 등 서피스 대비 보정 */
     --card-bg: var(--color-surface);
