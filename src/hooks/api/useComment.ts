@@ -67,11 +67,13 @@ export function useReplies(commentId: string, options?: { enabled?: boolean }) {
  * 댓글 생성
  */
 export function useCreateComment(
-  options?: UseMutationOptions<Comment, Error, CreateCommentRequest>
+  options?: UseMutationOptions<Comment, Error, CreateCommentRequest, unknown>
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<Comment, Error, CreateCommentRequest>({
+  return useMutation<Comment, Error, CreateCommentRequest, unknown>({
+    ...options,
     mutationFn: commentService.createComment,
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
@@ -115,14 +117,15 @@ export function useCreateComment(
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
         queryClient.invalidateQueries({
-          queryKey: COMMENT_QUERY_KEYS.replies(variables.parentId),
+          queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
         });
       }
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -130,11 +133,13 @@ export function useCreateComment(
  * 댓글 수정
  */
 export function useUpdateComment(
-  options?: UseMutationOptions<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>
+  options?: UseMutationOptions<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }, unknown>
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>({
+  return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }, unknown>({
+    ...options,
     mutationFn: ({ commentId, data }) => commentService.updateComment(commentId, data),
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
@@ -179,9 +184,10 @@ export function useUpdateComment(
       });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -189,11 +195,13 @@ export function useUpdateComment(
  * 댓글 삭제
  */
 export function useDeleteComment(
-  options?: UseMutationOptions<void, Error, { commentId: string; postId: string }>
+  options?: UseMutationOptions<void, Error, { commentId: string; postId: string }, unknown>
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<void, Error, { commentId: string; postId: string }>({
+  return useMutation<void, Error, { commentId: string; postId: string }, unknown>({
+    ...options,
     mutationFn: ({ commentId }) => commentService.deleteComment(commentId),
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
@@ -230,9 +238,10 @@ export function useDeleteComment(
       });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -243,12 +252,20 @@ export function useLikeComment(
   options?: UseMutationOptions<
     CommentLikeResponse,
     Error,
-    { commentId: string; isLiked: boolean }
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
   >
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<CommentLikeResponse, Error, { commentId: string; isLiked: boolean }>({
+  return useMutation<
+    CommentLikeResponse,
+    Error,
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
+  >({
+    ...options,
     mutationFn: ({ commentId, isLiked }) =>
       isLiked ? commentService.unlikeComment(commentId) : commentService.likeComment(commentId),
     onMutate: async ({ commentId, isLiked }) => {
@@ -271,10 +288,13 @@ export function useLikeComment(
 
       return { previousComment };
     },
-    onError: (err, { commentId }, context) => {
+    onError: (err, variables, context) => {
       // 에러 시 롤백
       if (context?.previousComment) {
-        queryClient.setQueryData(COMMENT_QUERY_KEYS.detail(commentId), context.previousComment);
+        queryClient.setQueryData(COMMENT_QUERY_KEYS.detail(variables.commentId), context.previousComment);
+      }
+      if (options?.onError) {
+        (options.onError as any)(err, variables, context);
       }
     },
     onSuccess: (data, variables, context) => {
@@ -282,8 +302,9 @@ export function useLikeComment(
       queryClient.invalidateQueries({ queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId) });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }

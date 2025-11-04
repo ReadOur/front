@@ -53,20 +53,23 @@ export function usePost(postId: string, options?: { enabled?: boolean }) {
  * 게시글 생성
  */
 export function useCreatePost(
-  options?: UseMutationOptions<Post, Error, CreatePostRequest>
+  options?: UseMutationOptions<Post, Error, CreatePostRequest, unknown>
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<Post, Error, CreatePostRequest>({
+  return useMutation<Post, Error, CreatePostRequest, unknown>({
+    ...options,
     mutationFn: postService.createPost,
     onSuccess: (data, variables, context) => {
       // 게시글 관련 목록/상세 캐시 무효화 (새 게시글이 추가되었으므로 리패치)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -74,11 +77,13 @@ export function useCreatePost(
  * 게시글 수정
  */
 export function useUpdatePost(
-  options?: UseMutationOptions<Post, Error, { postId: string; data: UpdatePostRequest }>
+  options?: UseMutationOptions<Post, Error, { postId: string; data: UpdatePostRequest }, unknown>
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<Post, Error, { postId: string; data: UpdatePostRequest }>({
+  return useMutation<Post, Error, { postId: string; data: UpdatePostRequest }, unknown>({
+    ...options,
     mutationFn: ({ postId, data }) => postService.updatePost(postId, data),
     onSuccess: (data, variables, context) => {
       // 게시글 상세 및 목록 캐시 무효화 (제목 등이 변경될 수 있음)
@@ -86,19 +91,22 @@ export function useUpdatePost(
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
 /**
  * 게시글 삭제
  */
-export function useDeletePost(options?: UseMutationOptions<void, Error, string>) {
+export function useDeletePost(options?: UseMutationOptions<void, Error, string, unknown>) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<void, Error, string>({
+  return useMutation<void, Error, string, unknown>({
+    ...options,
     mutationFn: postService.deletePost,
     onSuccess: (data, postId, context) => {
       // 해당 게시글 상세 제거
@@ -108,9 +116,10 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, postId, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, postId, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -118,11 +127,23 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
  * 게시글 좋아요/좋아요 취소
  */
 export function useLikePost(
-  options?: UseMutationOptions<LikeResponse, Error, { postId: string; isLiked: boolean }>
+  options?: UseMutationOptions<
+    LikeResponse,
+    Error,
+    { postId: string; isLiked: boolean },
+    { previousPost?: Post }
+  >
 ) {
   const queryClient = useQueryClient();
+  
 
-  return useMutation<LikeResponse, Error, { postId: string; isLiked: boolean }>({
+  return useMutation<
+    LikeResponse,
+    Error,
+    { postId: string; isLiked: boolean },
+    { previousPost?: Post }
+  >({
+    ...options,
     mutationFn: ({ postId, isLiked }) =>
       isLiked ? postService.unlikePost(postId) : postService.likePost(postId),
     onMutate: async ({ postId, isLiked }) => {
@@ -141,10 +162,13 @@ export function useLikePost(
 
       return { previousPost };
     },
-    onError: (err, { postId }, context) => {
+    onError: (err, variables, context) => {
       // 에러 시 롤백
       if (context?.previousPost) {
-        queryClient.setQueryData(POST_QUERY_KEYS.detail(postId), context.previousPost);
+        queryClient.setQueryData(POST_QUERY_KEYS.detail(variables.postId), context.previousPost);
+      }
+      if (options?.onError) {
+        (options.onError as any)(err, variables, context);
       }
     },
     onSuccess: (data, variables, context) => {
@@ -152,9 +176,10 @@ export function useLikePost(
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
