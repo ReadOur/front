@@ -107,8 +107,9 @@ export function useCreateComment(
       });
 
       // 댓글 목록 무효화
-      queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.lists(),
+      await queryClient.invalidateQueries({
+        queryKey: COMMENT_QUERY_KEYS.all,
+        refetchType: "all",
       });
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
@@ -127,7 +128,7 @@ export function useCreateComment(
       }
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -176,8 +177,9 @@ export function useUpdateComment(
       });
 
       // 댓글 목록도 무효화
-      queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.lists(),
+      await queryClient.invalidateQueries({
+        queryKey: COMMENT_QUERY_KEYS.all,
+        refetchType: "all",
       });
 
       // 게시글 상세도 무효화 (댓글 내용 업데이트)
@@ -189,7 +191,7 @@ export function useUpdateComment(
       forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -230,8 +232,9 @@ export function useDeleteComment(
       });
 
       // 댓글 목록 무효화
-      queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.lists(),
+      await queryClient.invalidateQueries({
+        queryKey: COMMENT_QUERY_KEYS.all,
+        refetchType: "all",
       });
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
@@ -243,7 +246,7 @@ export function useDeleteComment(
       forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
