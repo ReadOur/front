@@ -441,133 +441,131 @@ export default function PostShow() {
               const isEditing = editingCommentId === comment.commentId;
 
               return (
-                <div
-                  key={comment.commentId}
-                  className="grid grid-cols-[40px_1fr_auto] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]"
-                >
-                  {/* 작성자 아바타 (닉네임의 첫 글자로 표시) */}
-                  <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] flex items-center justify-center text-[color:var(--color-fg-muted)] text-sm font-semibold">
-                    {comment.authorNickname[0]?.toUpperCase() || "?"}
+                <React.Fragment key={comment.commentId}>
+                  <div className="grid grid-cols-[40px_1fr_auto] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]">
+                    {/* 작성자 아바타 (닉네임의 첫 글자로 표시) */}
+                    <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] flex items-center justify-center text-[color:var(--color-fg-muted)] text-sm font-semibold">
+                      {comment.authorNickname[0]?.toUpperCase() || "?"}
+                    </div>
+
+                    {/* 댓글 내용 및 메타 정보 */}
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        // 편집 모드
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={editingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleCommentUpdate();
+                              } else if (e.key === "Escape") {
+                                handleCommentEditCancel();
+                              }
+                            }}
+                            disabled={updateCommentMutation.isPending}
+                            className="flex-1 px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
+                            autoFocus
+                          />
+                          <button
+                            onClick={handleCommentUpdate}
+                            disabled={updateCommentMutation.isPending || !editingCommentText.trim()}
+                            className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {updateCommentMutation.isPending ? "저장 중..." : "저장"}
+                          </button>
+                          <button
+                            onClick={handleCommentEditCancel}
+                            disabled={updateCommentMutation.isPending}
+                            className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-2)] text-sm hover:opacity-90 disabled:opacity-50"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      ) : (
+                        // 일반 모드
+                        <>
+                          {/* 댓글 본문 (comment.content) */}
+                          <div className="text-[color:var(--color-fg-primary)]">{comment.content}</div>
+                          {/* 작성자 닉네임 및 작성 시간 */}
+                          <div className="text-xs text-[color:var(--color-fg-secondary)] mt-1">
+                            {comment.authorNickname} · {new Date(comment.createdAt).toLocaleString("ko-KR")}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 댓글 수정/삭제/답글 버튼 */}
+                    {!isEditing && (
+                      <div className="flex gap-2">
+                        {/* TODO: 로그인 후 작성자 확인 - comment.authorId === currentUser.id 일 때만 표시 */}
+                        <button
+                          onClick={() => handleCommentEdit(comment.commentId, comment.content)}
+                          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
+                          aria-label="댓글 수정"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleCommentDelete(String(comment.commentId))}
+                          disabled={deleteCommentMutation.isPending}
+                          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-error)] disabled:opacity-50"
+                          aria-label="댓글 삭제"
+                        >
+                          삭제
+                        </button>
+                        <button
+                          onClick={() => handleReplyClick(comment.commentId)}
+                          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
+                          aria-label="답글 달기"
+                        >
+                          답글
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* 댓글 내용 및 메타 정보 */}
-                  <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                      // 편집 모드
+                  {/* 답글 입력 폼 */}
+                  {replyingToCommentId === comment.commentId && (
+                    <div className="ml-[52px] mb-3">
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          value={editingCommentText}
-                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
-                              handleCommentUpdate();
+                              handleReplySubmit(comment.commentId);
                             } else if (e.key === "Escape") {
-                              handleCommentEditCancel();
+                              handleReplyCancel();
                             }
                           }}
-                          disabled={updateCommentMutation.isPending}
+                          placeholder="답글을 입력하세요"
+                          disabled={createCommentMutation.isPending}
                           className="flex-1 px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
                           autoFocus
                         />
                         <button
-                          onClick={handleCommentUpdate}
-                          disabled={updateCommentMutation.isPending || !editingCommentText.trim()}
-                          className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handleReplySubmit(comment.commentId)}
+                          disabled={createCommentMutation.isPending || !replyText.trim()}
+                          className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {updateCommentMutation.isPending ? "저장 중..." : "저장"}
+                          {createCommentMutation.isPending ? "등록 중..." : "등록"}
                         </button>
                         <button
-                          onClick={handleCommentEditCancel}
-                          disabled={updateCommentMutation.isPending}
+                          onClick={handleReplyCancel}
+                          disabled={createCommentMutation.isPending}
                           className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-2)] text-sm hover:opacity-90 disabled:opacity-50"
                         >
                           취소
                         </button>
                       </div>
-                    ) : (
-                      // 일반 모드
-                      <>
-                        {/* 댓글 본문 (comment.content) */}
-                        <div className="text-[color:var(--color-fg-primary)]">{comment.content}</div>
-                        {/* 작성자 닉네임 및 작성 시간 */}
-                        <div className="text-xs text-[color:var(--color-fg-secondary)] mt-1">
-                          {comment.authorNickname} · {new Date(comment.createdAt).toLocaleString("ko-KR")}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* 댓글 수정/삭제/답글 버튼 */}
-                  {!isEditing && (
-                    <div className="flex gap-2">
-                      {/* TODO: 로그인 후 작성자 확인 - comment.authorId === currentUser.id 일 때만 표시 */}
-                      <button
-                        onClick={() => handleCommentEdit(comment.commentId, comment.content)}
-                        className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
-                        aria-label="댓글 수정"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleCommentDelete(String(comment.commentId))}
-                        disabled={deleteCommentMutation.isPending}
-                        className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-error)] disabled:opacity-50"
-                        aria-label="댓글 삭제"
-                      >
-                        삭제
-                      </button>
-                      <button
-                        onClick={() => handleReplyClick(comment.commentId)}
-                        className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
-                        aria-label="답글 달기"
-                      >
-                        답글
-                      </button>
                     </div>
                   )}
-                </div>
-
-                {/* 답글 입력 폼 */}
-                {replyingToCommentId === comment.commentId && (
-                  <div className="col-span-3 mt-2 ml-[52px]">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleReplySubmit(comment.commentId);
-                          } else if (e.key === "Escape") {
-                            handleReplyCancel();
-                          }
-                        }}
-                        placeholder="답글을 입력하세요"
-                        disabled={createCommentMutation.isPending}
-                        className="flex-1 px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleReplySubmit(comment.commentId)}
-                        disabled={createCommentMutation.isPending || !replyText.trim()}
-                        className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {createCommentMutation.isPending ? "등록 중..." : "등록"}
-                      </button>
-                      <button
-                        onClick={handleReplyCancel}
-                        disabled={createCommentMutation.isPending}
-                        className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-2)] text-sm hover:opacity-90 disabled:opacity-50"
-                      >
-                        취소
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </React.Fragment>
               );
             })
           )}
