@@ -8,9 +8,6 @@ import { createQuery } from './queryBuilder';
 import { SpringPage, convertSpringPage } from '@/types/spring';
 import { POST_ENDPOINTS } from './endpoints';
 
-
-type ApiEnvelope<T> = { status: number; body: T; message: string };
-
 /**
  * 게시글 타입 (API 응답용 - 간단한 버전)
  * 전체 타입은 @/types/post.ts의 Post를 참조
