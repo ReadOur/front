@@ -11,8 +11,14 @@ import {
   GetCommentsParams,
   PaginatedResponse,
   CommentLikeResponse,
+  Post,
+  PostComment,
 } from "@/types";
-import { POST_QUERY_KEYS } from "./usePost";
+import {
+  POST_QUERY_KEYS,
+  forceRefetchAllPostQueries,
+  updateCachedPostListEntry,
+} from "./usePost";
 
 // ===== Query Keys =====
 export const COMMENT_QUERY_KEYS = {
@@ -72,6 +78,46 @@ export function useCreateComment(
   return useMutation<Comment, Error, CreateCommentRequest>({
     mutationFn: commentService.createComment,
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+
+      let nextCommentCount: number | undefined;
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const newComment: PostComment = {
+          commentId: data.commentId,
+          content: data.content,
+          authorNickname: data.authorNickname,
+          authorId: data.authorId,
+          createdAt: data.createdAt,
+        };
+
+        const hasComment = previous.comments?.some(
+          (comment) => comment.commentId === newComment.commentId
+        );
+
+        const commentCount = previous.commentCount + (hasComment ? 0 : 1);
+        nextCommentCount = commentCount;
+
+        return {
+          ...previous,
+          commentCount,
+          comments: hasComment
+            ? previous.comments
+            : [newComment, ...(previous.comments ?? [])],
+        };
+      });
+
+      if (typeof nextCommentCount === "number") {
+        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
+          ...item,
+          commentCount: nextCommentCount ?? item.commentCount,
+        }));
+      }
+
       // 댓글 목록 무효화
       queryClient.invalidateQueries({
         queryKey: COMMENT_QUERY_KEYS.lists(),
@@ -79,13 +125,16 @@ export function useCreateComment(
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
+
+      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
+      forceRefetchAllPostQueries(queryClient);
 
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
         queryClient.invalidateQueries({
-          queryKey: COMMENT_QUERY_KEYS.replies(variables.parentId),
+          queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
         });
       }
 
@@ -107,9 +156,35 @@ export function useUpdateComment(
   return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>({
     mutationFn: ({ commentId, data }) => commentService.updateComment(commentId, data),
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+      const commentDetailKey = COMMENT_QUERY_KEYS.detail(variables.commentId);
+
+      queryClient.setQueryData<Comment>(commentDetailKey, data);
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous || !previous.comments) {
+          return previous;
+        }
+
+        const updatedComments = previous.comments.map((comment) =>
+          comment.commentId === Number(variables.commentId)
+            ? {
+                ...comment,
+                content: data.content,
+                createdAt: data.createdAt,
+              }
+            : comment
+        );
+
+        return {
+          ...previous,
+          comments: updatedComments,
+        };
+      });
+
       // 해당 댓글 상세 무효화
       queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
+        queryKey: commentDetailKey,
       });
 
       // 댓글 목록도 무효화
@@ -119,8 +194,11 @@ export function useUpdateComment(
 
       // 게시글 상세도 무효화 (댓글 내용 업데이트)
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: detailKey,
       });
+
+      // 게시글 목록도 무효화하여 댓글 수/미리보기 반영
+      forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -140,6 +218,36 @@ export function useDeleteComment(
   return useMutation<void, Error, { commentId: string; postId: string }>({
     mutationFn: ({ commentId }) => commentService.deleteComment(commentId),
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+
+      let nextCommentCount: number | undefined;
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const filteredComments = previous.comments?.filter(
+          (comment) => comment.commentId !== Number(variables.commentId)
+        );
+
+        const commentCount = Math.max(0, previous.commentCount - 1);
+        nextCommentCount = commentCount;
+
+        return {
+          ...previous,
+          commentCount,
+          comments: filteredComments,
+        };
+      });
+
+      if (typeof nextCommentCount === "number") {
+        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
+          ...item,
+          commentCount: nextCommentCount ?? item.commentCount,
+        }));
+      }
+
       // 해당 댓글 제거
       queryClient.removeQueries({
         queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
@@ -152,8 +260,11 @@ export function useDeleteComment(
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: detailKey,
       });
+
+      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
+      forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -169,12 +280,18 @@ export function useLikeComment(
   options?: UseMutationOptions<
     CommentLikeResponse,
     Error,
-    { commentId: string; isLiked: boolean }
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
   >
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<CommentLikeResponse, Error, { commentId: string; isLiked: boolean }>({
+  return useMutation<
+    CommentLikeResponse,
+    Error,
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
+  >({
     mutationFn: ({ commentId, isLiked }) =>
       isLiked ? commentService.unlikeComment(commentId) : commentService.likeComment(commentId),
     onMutate: async ({ commentId, isLiked }) => {
