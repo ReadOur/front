@@ -59,8 +59,8 @@ export function useCreatePost(
   return useMutation<Post, Error, CreatePostRequest>({
     mutationFn: postService.createPost,
     onSuccess: (data, variables, context) => {
-      // 게시글 목록 무효화 (새 게시글이 추가되었으므로 리패치)
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      // 게시글 관련 목록/상세 캐시 무효화 (새 게시글이 추가되었으므로 리패치)
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -80,11 +80,9 @@ export function useUpdatePost(
   return useMutation<Post, Error, { postId: string; data: UpdatePostRequest }>({
     mutationFn: ({ postId, data }) => postService.updatePost(postId, data),
     onSuccess: (data, variables, context) => {
-      // 해당 게시글 상세 무효화
+      // 게시글 상세 및 목록 캐시 무효화 (제목 등이 변경될 수 있음)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
-
-      // 게시글 목록도 무효화 (제목 등이 변경될 수 있음)
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -106,7 +104,7 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
       queryClient.removeQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
 
       // 게시글 목록 무효화
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, postId, context);
