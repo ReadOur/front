@@ -11,8 +11,10 @@ import {
   GetCommentsParams,
   PaginatedResponse,
   CommentLikeResponse,
+  Post,
+  PostComment,
 } from "@/types";
-import { POST_QUERY_KEYS } from "./usePost";
+import { POST_QUERY_KEYS, invalidatePostLists, updateCachedPostListEntry } from "./usePost";
 
 // ===== Query Keys =====
 export const COMMENT_QUERY_KEYS = {
@@ -72,22 +74,60 @@ export function useCreateComment(
   return useMutation<Comment, Error, CreateCommentRequest>({
     mutationFn: commentService.createComment,
     onSuccess: (data, variables, context) => {
-      // 댓글 목록 무효화
-      queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.lists(),
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+
+      let nextCommentCount: number | undefined;
+
+      // 게시글 상세 캐시에 새 댓글을 반영
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const newComment: PostComment = {
+          commentId: data.commentId,
+          content: data.content,
+          authorNickname: data.authorNickname,
+          authorId: data.authorId,
+          createdAt: data.createdAt,
+        };
+
+        const hasComment = previous.comments?.some(
+          (comment) => comment.commentId === newComment.commentId
+        );
+
+        const commentCount = previous.commentCount + (hasComment ? 0 : 1);
+        nextCommentCount = commentCount;
+
+        return {
+          ...previous,
+          commentCount,
+          comments: hasComment
+            ? previous.comments
+            : [newComment, ...(previous.comments ?? [])],
+        };
       });
 
-      // 게시글 상세도 무효화 (댓글 수 업데이트)
+      if (typeof nextCommentCount === "number") {
+        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
+          ...item,
+          commentCount: nextCommentCount ?? item.commentCount,
+        }));
+      }
+
+      // 댓글 목록 무효화
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: COMMENT_QUERY_KEYS.all,
       });
 
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
         queryClient.invalidateQueries({
-          queryKey: COMMENT_QUERY_KEYS.replies(variables.parentId),
+          queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
         });
       }
+
+      invalidatePostLists(queryClient);
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -107,20 +147,37 @@ export function useUpdateComment(
   return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>({
     mutationFn: ({ commentId, data }) => commentService.updateComment(commentId, data),
     onSuccess: (data, variables, context) => {
-      // 해당 댓글 상세 무효화
-      queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+      const commentDetailKey = COMMENT_QUERY_KEYS.detail(variables.commentId);
+
+      queryClient.setQueryData<Comment>(commentDetailKey, data);
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous || !previous.comments) {
+          return previous;
+        }
+
+        const updatedComments = previous.comments.map((comment) =>
+          comment.commentId === Number(variables.commentId)
+            ? {
+                ...comment,
+                content: data.content,
+                createdAt: data.createdAt,
+              }
+            : comment
+        );
+
+        return {
+          ...previous,
+          comments: updatedComments,
+        };
       });
 
-      // 댓글 목록도 무효화
       queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.lists(),
+        queryKey: COMMENT_QUERY_KEYS.all,
       });
 
-      // 게시글 상세도 무효화 (댓글 내용 업데이트)
-      queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
-      });
+      invalidatePostLists(queryClient);
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -140,20 +197,46 @@ export function useDeleteComment(
   return useMutation<void, Error, { commentId: string; postId: string }>({
     mutationFn: ({ commentId }) => commentService.deleteComment(commentId),
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+
+      let nextCommentCount: number | undefined;
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const filteredComments = previous.comments?.filter(
+          (comment) => comment.commentId !== Number(variables.commentId)
+        );
+
+        const commentCount = Math.max(0, previous.commentCount - 1);
+        nextCommentCount = commentCount;
+
+        return {
+          ...previous,
+          commentCount,
+          comments: filteredComments,
+        };
+      });
+
+      if (typeof nextCommentCount === "number") {
+        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
+          ...item,
+          commentCount: nextCommentCount ?? item.commentCount,
+        }));
+      }
+
       // 해당 댓글 제거
       queryClient.removeQueries({
         queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
       });
 
-      // 댓글 목록 무효화
       queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.lists(),
+        queryKey: COMMENT_QUERY_KEYS.all,
       });
 
-      // 게시글 상세도 무효화 (댓글 수 업데이트)
-      queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
-      });
+      invalidatePostLists(queryClient);
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
