@@ -23,7 +23,7 @@ export default function HeaderApp({
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#ffffff', opacity: 1 }}>
+    <header className="fixed top-[0px] left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#ffffff', opacity: 1 }}>
       {/* 가운데 정렬 컨테이너 */}
       <div className="mx-auto px-4 h-28 md:h-32" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
@@ -47,7 +47,7 @@ export default function HeaderApp({
           <nav className="flex justify-center">
             <ul className="flex items-stretch h-full font-medium text-[color:var(--color-fg-muted)]" style={{ fontSize: '4rem' }}>
               {navItems.map((item, idx) => (
-                <li key={item.key} className="relative flex items-center px-8 md:px-12">
+                <li key={item.key} className="relative flex items-center px-8 md:px-16">
                   <button
                     onClick={item.onClick}
                     className={[
@@ -71,7 +71,7 @@ export default function HeaderApp({
           </nav>
 
           {/* RIGHT: 알림 + 유저 */}
-          <div className="shrink-0 flex items-center gap-[15px] justify-end">
+          <div className="shrink-0 flex items-center gap-[25px] justify-end">
             <button
               onClick={onClickNotifications}
               className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer"
