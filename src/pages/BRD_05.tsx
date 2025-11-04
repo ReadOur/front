@@ -52,6 +52,9 @@ export default function PostShow() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
 
+  // 스포일러 가림막 상태 (true가 되면 가림막 해제)
+  const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
+
   // ===== API 데이터 페칭 =====
 
   // 1. 게시글 상세 정보 가져오기 (GET /community/posts/{postId})
@@ -103,6 +106,11 @@ export default function PostShow() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, post?.postId]); // post?.postId로 게시글이 로드되었을 때만 실행
+
+  // 스포일러 게시글이 로드될 때마다 가림막 초기화
+  useEffect(() => {
+    setIsSpoilerRevealed(false);
+  }, [post?.postId]);
 
   // ===== 이벤트 핸들러 =====
 
@@ -279,9 +287,27 @@ export default function PostShow() {
       {/* 제목, 내용, 좋아요 버튼, 첨부파일을 표시하는 메인 영역 */}
       <article
         aria-labelledby="title"
-        className="bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-xl p-5 shadow-sm"
+        className="relative bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-xl p-5 shadow-sm"
       >
-        <header className="flex items-center justify-between gap-4">
+        {post.isSpoiler && !isSpoilerRevealed && (
+          <button
+            type="button"
+            onClick={() => setIsSpoilerRevealed(true)}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-[color:var(--color-bg-elev-2)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)] backdrop-blur"
+            aria-label="스포일러 가림막 해제"
+          >
+            <span className="text-lg">스포일러 방지</span>
+            <span className="text-sm text-[color:var(--color-fg-secondary)]">클릭하면 게시글이 표시됩니다.</span>
+          </button>
+        )}
+
+        <div
+          className={`transition-opacity ${
+            post.isSpoiler && !isSpoilerRevealed ? "pointer-events-none select-none opacity-0" : "opacity-100"
+          }`}
+          aria-hidden={post.isSpoiler && !isSpoilerRevealed}
+        >
+          <header className="flex items-center justify-between gap-4">
           {/* 게시글 제목 (API의 title 필드) */}
           <h1 id="title" className="text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
             {post.title}
@@ -343,11 +369,14 @@ export default function PostShow() {
           </div>
         )}
 
-        {/* 본문 내용 */}
-        {/* API의 content 필드를 표시 */}
-        {/* whitespace-pre-wrap으로 줄바꿈 유지 */}
-        <div className="mt-4 text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap">
-          {post.content}
+          {/* 본문 내용 */}
+          {/* API의 content 필드를 표시 */}
+          {/* whitespace-pre-wrap으로 줄바꿈 유지 */}
+          <div className="relative mt-4">
+            <div className="text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap">
+              {post.content}
+            </div>
+          </div>
         </div>
       </article>
 
