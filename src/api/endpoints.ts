@@ -36,7 +36,7 @@ export const POST_ENDPOINTS = {
   DELETE: (postId: string) => `/community/posts/${postId}`,
   LIKE: (postId: string) => `/community/posts/${postId}/like`,
   UNLIKE: (postId: string) => `/community/posts/${postId}/unlike`,
-  VIEW: (postId: string) => `/community/posts/${postId}/view`,
+  VIEW: (postId: string) => `/community/posts/${postId}`,
 } as const;
 
 export const GET_ALL = {

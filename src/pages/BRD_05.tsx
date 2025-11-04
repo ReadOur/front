@@ -12,6 +12,9 @@ import {
 import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
 
+import { useQueryClient } from "@tanstack/react-query";
+import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 위치는 프로젝트에 맞게
+
 /**
  * 게시글 상세 페이지 (BRD_05)
  *
@@ -60,33 +63,54 @@ export default function PostShow() {
   // 1. 게시글 상세 정보 가져오기 (GET /community/posts/{postId})
   // 게시글 데이터와 함께 댓글(comments) 배열도 포함되어 반환됨
   const {
-    data: post,           // 게시글 데이터 (title, content, authorNickname, hit, likeCount, isLiked, comments 등)
-    isLoading: isPostLoading,  // 로딩 중 여부
-    error: postError,     // 에러 발생 시 에러 객체
+    data: post,
+    isLoading: isPostLoading,
+    error: postError,
+    refetch, // ✅ 추가: 저장/등록/삭제 후 강제 재요청에 사용
   } = usePost(postId || "");
+
 
   // 2. 좋아요 토글 mutation (POST/DELETE /community/posts/{postId}/like)
   const likeMutation = useLikePost();
 
   // 3. 댓글 작성 mutation (POST /community/posts/{postId}/comments)
   const createCommentMutation = useCreateComment({
-    onSuccess: () => setCommentText(""),  // 댓글 작성 성공 시 입력 필드 초기화
-  });
-
-  // 4. 댓글 수정 mutation (PUT /community/comments/{commentId})
-  const updateCommentMutation = useUpdateComment({
-    onSuccess: () => {
-      setEditingCommentId(null);
-      setEditingCommentText("");
+    onSuccess: async () => {
+      setCommentText("");   // 기존 동작 유지
+      await refetch();      // ✅ 등록 직후 게시글(댓글 포함) 다시 GET
     },
   });
 
+
+  // 4. 댓글 수정 mutation (PUT /community/comments/{commentId})
+  const updateCommentMutation = useUpdateComment({
+    onSuccess: async () => {
+      setEditingCommentId(null);
+      setEditingCommentText("");
+      await refetch();      // ✅ 수정 직후 다시 GET
+    },
+  });
+
+
   // 5. 댓글 삭제 mutation (DELETE /community/posts/{postId}/comments/{commentId})
-  const deleteCommentMutation = useDeleteComment();
+  const deleteCommentMutation = useDeleteComment({
+    onSuccess: async () => {
+      await refetch();      // ✅ 삭제 직후 다시 GET
+    },
+  });
+
+  const queryClient = useQueryClient();
 
   // 6. 게시글 삭제 mutation (DELETE /community/posts/{postId})
   const deletePostMutation = useDeletePost({
-    onSuccess: () => {
+    onSuccess: async () => {
+      // ✅ 상세/목록 캐시 정리 → 목록 페이지가 최신으로 뜸
+      if (postId) {
+        queryClient.removeQueries({ queryKey: POST_QUERY_KEYS.detail(String(postId)) });
+      }
+      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      // 필요 시 카테고리·검색 조건별 리스트 키도 함께 invalidate
+
       alert("게시글이 삭제되었습니다.");
       navigate("/boards");
     },
@@ -94,6 +118,7 @@ export default function PostShow() {
       alert(`게시글 삭제 실패: ${error.message}`);
     },
   });
+
 
   // 7. 게시글 조회수 증가 mutation (POST /community/posts/{postId}/view)
   const viewPostMutation = useViewPost();
@@ -169,6 +194,7 @@ export default function PostShow() {
       data: { content: editingCommentText.trim() },
     });
   }
+
 
   /**
    * 댓글 수정 취소 핸들러

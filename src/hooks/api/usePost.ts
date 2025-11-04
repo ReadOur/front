@@ -14,6 +14,7 @@ import {
   LikeResponse,
 } from "@/types";
 
+
 // ===== Query Keys =====
 export const POST_QUERY_KEYS = {
   all: ["posts"] as const,

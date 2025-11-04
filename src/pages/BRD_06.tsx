@@ -5,6 +5,8 @@ import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
 import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
 import { CreatePostRequest, UpdatePostRequest } from "@/types";
 import { Loading } from "@/components/Loading";
+import { useQueryClient } from "@tanstack/react-query";
+import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 경로는 프로젝트 구조에 맞게 조정
 
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -36,8 +38,13 @@ export const BRD_06 = (): React.JSX.Element => {
     }
   }, [isEditMode, existingPost]);
 
+  const queryClient = useQueryClient();
+
   const createPostMutation = useCreatePost({
-    onSuccess: () => {
+    onSuccess: async () => {
+      // ✅ 리스트 무효화 → /boards 진입 시 최신 데이터 보장
+      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+
       alert("게시글이 작성되었습니다.");
       navigate("/boards");
     },
@@ -46,15 +53,22 @@ export const BRD_06 = (): React.JSX.Element => {
     },
   });
 
+
   const updatePostMutation = useUpdatePost({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // ✅ 상세/리스트 캐시 최신화
+      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(String(data.postId)) });
+      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+
       alert("게시글이 수정되었습니다.");
-      navigate(`/boards/${data.postId}`);
+      // 선택: state로 '갱신됨' 신호를 보낼 수도 있음
+      navigate(`/boards/${data.postId}`, { state: { refreshed: true } });
     },
     onError: (error) => {
       alert(`게시글 수정 실패: ${error.message}`);
     },
   });
+
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
