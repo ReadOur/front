@@ -4,6 +4,7 @@
 
 import { apiClient } from "@/api/client";
 import { POST_ENDPOINTS } from "@/api/endpoints";
+import { PostListResponse } from "@/api/posts";
 import {
   Post,
   PostListItem,
@@ -89,10 +90,10 @@ export interface SearchPostsParams {
 /**
  * 게시글 검색
  */
-export async function searchPosts(params: SearchPostsParams): Promise<PaginatedResponse<PostListItem>> {
+export async function searchPosts(params: SearchPostsParams): Promise<PostListResponse> {
   const { type, keyword, page = 0, size = 20, sort = "createdAt,desc" } = params;
 
-  return apiClient.get<PaginatedResponse<PostListItem>>(POST_ENDPOINTS.SEARCH, {
+  const response = await apiClient.get<PaginatedResponse<PostListItem>>(POST_ENDPOINTS.SEARCH, {
     params: {
       type,
       keyword,
@@ -101,6 +102,17 @@ export async function searchPosts(params: SearchPostsParams): Promise<PaginatedR
       sort,
     },
   });
+
+  // PaginatedResponse 형식을 PostListResponse 형식으로 변환
+  return {
+    items: response.items || [],
+    page: response.meta?.page ?? page + 1, // 0-based를 1-based로 변환
+    pageSize: response.meta?.pageSize ?? size,
+    total: response.meta?.totalItems ?? 0,
+    totalPages: response.meta?.totalPages ?? 0,
+    hasNext: response.meta?.hasNext ?? false,
+    hasPrevious: response.meta?.hasPrevious ?? false,
+  };
 }
 
 /**
