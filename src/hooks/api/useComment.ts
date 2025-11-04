@@ -112,11 +112,6 @@ export function useCreateComment(
         queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
 
-      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
-      queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.all,
-      });
-
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
         queryClient.invalidateQueries({
@@ -183,11 +178,6 @@ export function useUpdateComment(
         queryKey: detailKey,
       });
 
-      // 게시글 목록도 무효화하여 댓글 수/미리보기 반영
-      queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.all,
-      });
-
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
     },
@@ -237,11 +227,6 @@ export function useDeleteComment(
       // 게시글 상세도 무효화 (댓글 수 업데이트)
       queryClient.invalidateQueries({
         queryKey: detailKey,
-      });
-
-      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
-      queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.all,
       });
 
       // 사용자 정의 onSuccess 실행

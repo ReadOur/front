@@ -59,10 +59,6 @@ export function useCreatePost(
   return useMutation<Post, Error, CreatePostRequest>({
     mutationFn: postService.createPost,
     onSuccess: (data, variables, context) => {
-      const detailKey = POST_QUERY_KEYS.detail(String(data.postId));
-
-      queryClient.setQueryData<Post>(detailKey, data);
-
       // 게시글 관련 목록/상세 캐시 무효화 (새 게시글이 추가되었으므로 리패치)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
@@ -84,10 +80,6 @@ export function useUpdatePost(
   return useMutation<Post, Error, { postId: string; data: UpdatePostRequest }>({
     mutationFn: ({ postId, data }) => postService.updatePost(postId, data),
     onSuccess: (data, variables, context) => {
-      const detailKey = POST_QUERY_KEYS.detail(String(data.postId));
-
-      queryClient.setQueryData<Post>(detailKey, data);
-
       // 게시글 상세 및 목록 캐시 무효화 (제목 등이 변경될 수 있음)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
