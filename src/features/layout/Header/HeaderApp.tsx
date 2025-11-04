@@ -71,7 +71,7 @@ export default function HeaderApp({
           </nav>
 
           {/* RIGHT: 알림 + 유저 */}
-          <div className="shrink-0 flex items-center gap-[20px] justify-end" style={{ transform: 'translateY(-25px)' }}>
+          <div className="shrink-0 flex items-center gap-[20px] justify-end -pb-[20px]" style={{ position: 'relative', top: '-25px' }}>
             <button
               onClick={onClickNotifications}
               className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer"
