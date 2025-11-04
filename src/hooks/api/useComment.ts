@@ -11,6 +11,8 @@ import {
   GetCommentsParams,
   PaginatedResponse,
   CommentLikeResponse,
+  Post,
+  PostComment,
 } from "@/types";
 import { POST_QUERY_KEYS } from "./usePost";
 
@@ -72,6 +74,34 @@ export function useCreateComment(
   return useMutation<Comment, Error, CreateCommentRequest>({
     mutationFn: commentService.createComment,
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const newComment: PostComment = {
+          commentId: data.commentId,
+          content: data.content,
+          authorNickname: data.authorNickname,
+          authorId: data.authorId,
+          createdAt: data.createdAt,
+        };
+
+        const hasComment = previous.comments?.some(
+          (comment) => comment.commentId === newComment.commentId
+        );
+
+        return {
+          ...previous,
+          commentCount: previous.commentCount + (hasComment ? 0 : 1),
+          comments: hasComment
+            ? previous.comments
+            : [newComment, ...(previous.comments ?? [])],
+        };
+      });
+
       // 댓글 목록 무효화
       queryClient.invalidateQueries({
         queryKey: COMMENT_QUERY_KEYS.lists(),
@@ -79,7 +109,7 @@ export function useCreateComment(
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
 
       // 대댓글인 경우 부모 댓글의 replies도 무효화
@@ -107,9 +137,35 @@ export function useUpdateComment(
   return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>({
     mutationFn: ({ commentId, data }) => commentService.updateComment(commentId, data),
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+      const commentDetailKey = COMMENT_QUERY_KEYS.detail(variables.commentId);
+
+      queryClient.setQueryData<Comment>(commentDetailKey, data);
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous || !previous.comments) {
+          return previous;
+        }
+
+        const updatedComments = previous.comments.map((comment) =>
+          comment.commentId === Number(variables.commentId)
+            ? {
+                ...comment,
+                content: data.content,
+                createdAt: data.createdAt,
+              }
+            : comment
+        );
+
+        return {
+          ...previous,
+          comments: updatedComments,
+        };
+      });
+
       // 해당 댓글 상세 무효화
       queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
+        queryKey: commentDetailKey,
       });
 
       // 댓글 목록도 무효화
@@ -119,7 +175,7 @@ export function useUpdateComment(
 
       // 게시글 상세도 무효화 (댓글 내용 업데이트)
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: detailKey,
       });
 
       // 사용자 정의 onSuccess 실행
@@ -140,6 +196,24 @@ export function useDeleteComment(
   return useMutation<void, Error, { commentId: string; postId: string }>({
     mutationFn: ({ commentId }) => commentService.deleteComment(commentId),
     onSuccess: (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
+
+      queryClient.setQueryData<Post>(detailKey, (previous) => {
+        if (!previous) {
+          return previous;
+        }
+
+        const filteredComments = previous.comments?.filter(
+          (comment) => comment.commentId !== Number(variables.commentId)
+        );
+
+        return {
+          ...previous,
+          commentCount: Math.max(0, previous.commentCount - 1),
+          comments: filteredComments,
+        };
+      });
+
       // 해당 댓글 제거
       queryClient.removeQueries({
         queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
@@ -152,7 +226,7 @@ export function useDeleteComment(
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
       queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(variables.postId),
+        queryKey: detailKey,
       });
 
       // 사용자 정의 onSuccess 실행
