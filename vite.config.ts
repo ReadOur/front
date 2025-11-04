@@ -11,6 +11,15 @@ export default defineConfig({
     },
   },
   server: {
+    // 프록시 설정: CORS 문제 해결
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+    },
     // 강제 캐시 비활성화 (더 강력하게)
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

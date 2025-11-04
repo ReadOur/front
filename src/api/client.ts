@@ -8,7 +8,9 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { ApiResponse, ApiError } from "@/types";
 
 // ===== 환경변수 =====
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+// 개발 환경에서는 Vite 프록시를 사용하므로 "/api"만 사용
+// 프로덕션 환경에서는 전체 URL 사용
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
 
 // 디버깅: 현재 API 설정 출력
@@ -16,6 +18,7 @@ console.log('🔧 API Client Configuration:', {
   baseURL: API_BASE_URL,
   timeout: API_TIMEOUT,
   env: import.meta.env.MODE,
+  note: 'Using Vite proxy in development to avoid CORS issues',
 });
 
 /**
