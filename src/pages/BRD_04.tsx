@@ -92,8 +92,7 @@ export const BRD_List: React.FC = () => {
         ...(category && { category }),
       });
     },
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: 1000 * 60 * 5,
   });
 
   const totalPages = useMemo(() => Math.max(1, data?.totalPages ?? 1), [data]);

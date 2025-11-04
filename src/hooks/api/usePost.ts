@@ -39,8 +39,6 @@ export function usePosts(params?: GetPostsParams) {
   return useQuery<PaginatedResponse<PostListItem>>({
     queryKey: POST_QUERY_KEYS.list(params),
     queryFn: () => postService.getPosts(params),
-    staleTime: 0,
-    refetchOnMount: "always",
   });
 }
 
@@ -52,8 +50,6 @@ export function usePost(postId: string, options?: { enabled?: boolean }) {
     queryKey: POST_QUERY_KEYS.detail(postId),
     queryFn: () => postService.getPost(postId),
     enabled: options?.enabled !== false && !!postId,
-    staleTime: 0,
-    refetchOnMount: "always",
   });
 }
 
@@ -74,7 +70,7 @@ export function useCreatePost(
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
-      await options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -96,7 +92,7 @@ export function useUpdatePost(
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
-      await options?.onSuccess?.(data, variables, context);
+      options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -110,7 +106,7 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
 
   return useMutation<void, Error, string>({
     mutationFn: postService.deletePost,
-    onSuccess: async (data, postId, context) => {
+    onSuccess: (data, postId, context) => {
       // 해당 게시글 상세 제거
       queryClient.removeQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
 
@@ -118,7 +114,7 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
-      await options?.onSuccess?.(data, postId, context);
+      options?.onSuccess?.(data, postId, context);
     },
     ...options,
   });
