@@ -25,7 +25,7 @@ export default function HeaderApp({
   return (
     <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#ffffff', opacity: 1 }}>
       {/* 가운데 정렬 컨테이너 */}
-      <div className="mx-auto px-4 h-20 md:h-24" style={{ maxWidth: "var(--layout-max)" }}>
+      <div className="mx-auto px-4 h-28 md:h-32" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
         <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4 h-full">
           {/* LEFT: 로고 */}
@@ -45,9 +45,9 @@ export default function HeaderApp({
 
           {/* CENTER: 탭 (정확히 중앙) */}
           <nav className="flex justify-center">
-            <ul className="flex items-stretch h-full font-medium text-[color:var(--color-fg-muted)]" style={{ fontSize: '2rem' }}>
+            <ul className="flex items-stretch h-full font-medium text-[color:var(--color-fg-muted)]" style={{ fontSize: '4rem' }}>
               {navItems.map((item, idx) => (
-                <li key={item.key} className="relative flex items-center px-4 md:px-6">
+                <li key={item.key} className="relative flex items-center px-8 md:px-12">
                   <button
                     onClick={item.onClick}
                     className={[
@@ -77,7 +77,7 @@ export default function HeaderApp({
               className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer"
               aria-label="알림"
             >
-              <span role="img" aria-hidden="true" style={{ fontSize: '2rem' }}>🔔</span>
+              <span role="img" aria-hidden="true" style={{ fontSize: '1.5rem' }}>🔔</span>
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1.5 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
                   {unreadCount > 99 ? "99+" : unreadCount}
@@ -86,7 +86,7 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <span className="font-medium text-[color:var(--color-fg-primary)]" style={{ fontSize: '1.75rem' }}>
+              <span className="font-medium text-[color:var(--color-fg-primary)]" style={{ fontSize: '1.25rem' }}>
                 {user.name}
               </span>
             ) : (
