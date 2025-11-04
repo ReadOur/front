@@ -1,22 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
+import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
+import { CreatePostRequest, UpdatePostRequest } from "@/types";
+import { Loading } from "@/components/Loading";
 
 export const BRD_06 = (): React.JSX.Element => {
+  const navigate = useNavigate();
+  const { postId } = useParams<{ postId: string }>();
+  const isEditMode = !!postId;
+
   const [title, setTitle] = useState<string>("");
   const [contentHtml, setContentHtml] = useState<string>("<p></p>");
-  const [tags, setTags] = useState<string>("#태그1 #태그2");
-  const [category, setCategory] = useState<string>("free");
-  const [isNotice, setIsNotice] = useState<boolean>(false);
+  const [tags, setTags] = useState<string>("");
+  const [category, setCategory] = useState<string>("FREE");
+  const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
+
+  // 수정 모드: 기존 게시글 로드
+  const { data: existingPost, isLoading: isLoadingPost } = usePost(postId || "", {
+    enabled: isEditMode,
+  });
+
+  // 수정 모드: 기존 데이터를 폼에 채우기
+  useEffect(() => {
+    if (isEditMode && existingPost) {
+      setTitle(existingPost.title);
+      setContentHtml(existingPost.content);
+
+      // 태그 배열을 문자열로 변환 (현재 백엔드에서 tags를 반환하지 않을 수 있음)
+      // setTags(existingPost.tags ? existingPost.tags.map(t => `#${t}`).join(" ") : "");
+
+      setCategory(existingPost.category);
+      setIsSpoiler(existingPost.isSpoiler || false);
+    }
+  }, [isEditMode, existingPost]);
+
+  const createPostMutation = useCreatePost({
+    onSuccess: () => {
+      alert("게시글이 작성되었습니다.");
+      navigate("/boards");
+    },
+    onError: (error) => {
+      alert(`게시글 작성 실패: ${error.message}`);
+    },
+  });
+
+  const updatePostMutation = useUpdatePost({
+    onSuccess: (data) => {
+      alert("게시글이 수정되었습니다.");
+      navigate(`/boards/${data.postId}`);
+    },
+    onError: (error) => {
+      alert(`게시글 수정 실패: ${error.message}`);
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
+
+    // 제목 검증
+    if (!title.trim()) {
+      alert("제목을 입력해주세요.");
+      return;
+    }
+
+    // HTML 콘텐츠 sanitize
     const safeHtml = DOMPurify.sanitize(contentHtml, { USE_PROFILES: { html: true } });
-    const postData = { title, contentHtml: safeHtml, tags, category, isNotice };
-    console.log("POST /api/posts payload", postData);
-    // await fetch(...);
-    // navigate("/boards");
+
+    // 태그 파싱: "#태그1 #태그2" → ["태그1", "태그2"]
+    const parsedTags = tags
+      .split(/\s+/)
+      .filter((tag) => tag.startsWith("#"))
+      .map((tag) => tag.substring(1))
+      .filter((tag) => tag.length > 0);
+
+    if (isEditMode && postId) {
+      // 수정 모드
+      const updateData: UpdatePostRequest = {
+        title: title.trim(),
+        content: safeHtml,
+        category: category,
+        isSpoiler: isSpoiler,
+        tags: parsedTags.length > 0 ? parsedTags : undefined,
+      };
+      updatePostMutation.mutate({ postId, data: updateData });
+    } else {
+      // 작성 모드
+      const createData: CreatePostRequest = {
+        title: title.trim(),
+        content: safeHtml,
+        category: category,
+        isSpoiler: isSpoiler,
+        tags: parsedTags.length > 0 ? parsedTags : undefined,
+      };
+      createPostMutation.mutate(createData);
+    }
   };
+
+  // 수정 모드에서 로딩 중일 때
+  if (isEditMode && isLoadingPost) {
+    return <Loading message="게시글을 불러오는 중..." />;
+  }
+
+  // 수정 모드에서 게시글을 찾을 수 없을 때
+  if (isEditMode && !existingPost) {
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-[color:var(--color-error)] mb-4">게시글을 찾을 수 없습니다.</p>
+          <button
+            onClick={() => navigate("/boards")}
+            className="px-4 py-2 bg-[color:var(--color-accent)] rounded-lg hover:opacity-90"
+          >
+            목록으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isPending = createPostMutation.isPending || updatePostMutation.isPending;
 
   return (
     <div
@@ -50,21 +154,22 @@ export const BRD_06 = (): React.JSX.Element => {
                   px-3
                 "
               >
-                <option value="free">자유</option>
-                <option value="notice">공지</option>
-                <option value="qna">Q&amp;A</option>
+                <option value="FREE">자유</option>
+                <option value="NOTICE">공지</option>
+                <option value="QNA">Q&amp;A</option>
+                <option value="REVIEW">리뷰</option>
               </select>
             </div>
 
-            {/* 공지 체크 (절반 크기 느낌) */}
+            {/* 스포일러 체크 */}
             <label className="inline-flex items-center gap-2 select-none">
               <input
                 type="checkbox"
-                checked={isNotice}
-                onChange={(e) => setIsNotice(e.target.checked)}
+                checked={isSpoiler}
+                onChange={(e) => setIsSpoiler(e.target.checked)}
                 className="h-4 w-4 rounded border-[color:var(--color-border-subtle)] accent-[color:var(--color-accent)]"
               />
-              <span className="text-xs">공지로 등록</span>
+              <span className="text-xs">스포일러로 등록</span>
             </label>
 
             {/* 태그 프리뷰 (가운데 정렬, hairline만) */}
@@ -144,10 +249,11 @@ export const BRD_06 = (): React.JSX.Element => {
             />
           </div>
 
-          {/* 등록 버튼: 더 키움 */}
+          {/* 등록/수정 버튼: 더 키움 */}
           <div className="flex justify-end">
             <button
               type="submit"
+              disabled={isPending}
               className="
                 inline-flex items-center justify-center gap-2
                 h-64 px-40 text-2xl        /* 크기 2배로 증가 */
@@ -161,10 +267,17 @@ export const BRD_06 = (): React.JSX.Element => {
                 focus:outline-none
                 focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)]
                 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-bg-canvas)]
+                disabled:opacity-50 disabled:cursor-not-allowed
               "
-              aria-label="게시글 등록"
+              aria-label={isEditMode ? "게시글 수정" : "게시글 등록"}
             >
-              등록
+              {isPending
+                ? isEditMode
+                  ? "수정 중..."
+                  : "등록 중..."
+                : isEditMode
+                ? "수정"
+                : "등록"}
             </button>
           </div>
         </form>

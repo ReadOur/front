@@ -40,6 +40,7 @@ export interface Post {
   title: string;
   content: string;
   category: PostCategory;
+  isSpoiler?: boolean;
   authorNickname: string;
   authorId: number;
   hit: number;
@@ -91,6 +92,7 @@ export interface CreatePostRequest {
   title: string;
   content: string;
   category?: string;
+  isSpoiler?: boolean;
   tags?: string[];
   attachmentIds?: string[];
 }
@@ -102,6 +104,7 @@ export interface UpdatePostRequest {
   title?: string;
   content?: string;
   category?: string;
+  isSpoiler?: boolean;
   tags?: string[];
   attachmentIds?: string[];
 }
