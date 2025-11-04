@@ -61,7 +61,10 @@ export const BRD_List: React.FC = () => {
     params.set("page", String(np));
     setParams(params, { replace: true });
   };
-
+  console.log("🔥 Current page param:", params.get("page"), "→ parsed:", page);
+  console.log("🔥 useQuery data type:", typeof data);
+  console.log("🔥 useQuery data instance:", data instanceof Document ? "Document" : "Not Document");
+  console.log("🔥 useQuery data value:", data);
   // 로딩 중일 때 전체 화면 로딩 표시
   if (isLoading) {
     return <Loading message="게시글을 불러오는 중..." />;

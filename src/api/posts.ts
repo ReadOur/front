@@ -8,6 +8,9 @@ import { createQuery } from './queryBuilder';
 import { SpringPage, convertSpringPage } from '@/types/spring';
 import { POST_ENDPOINTS } from './endpoints';
 
+
+type ApiEnvelope<T> = { status: number; body: T; message: string };
+
 /**
  * 게시글 타입 (API 응답용 - 간단한 버전)
  * 전체 타입은 @/types/post.ts의 Post를 참조
@@ -72,6 +75,7 @@ export async function getPosts(params: GetPostsParams = {}): Promise<PostListRes
   if (search) query.search(search);
 
   const queryParams = query.build();
+
 
   // Spring Page 응답 받기 (endpoints.ts의 상수 사용)
   const springPage = await apiClient.get<SpringPage<Post>>(POST_ENDPOINTS.LIST, {

@@ -18,13 +18,21 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true,
+        configure(proxy) {
+          proxy.on('proxyReq', (_req, req) => {
+            console.log('➡️ [ProxyReq]', req.method, req.url);
+          });
+          proxy.on('proxyRes', (res, req) => {
+            console.log('✅ [ProxyRes]', req.method, req.url, res.statusCode);
+          });
+        },
       },
     },
     // 강제 캐시 비활성화 (더 강력하게)
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
+      Pragma: 'no-cache',
+      Expires: '0',
     },
     // HMR 활성화
     hmr: {
