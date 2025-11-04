@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   usePost,
   useLikePost,
-  useComments,
   useCreateComment,
   useDeleteComment,
 } from "@/hooks/api";
@@ -23,6 +22,19 @@ import { Loading } from "@/components/Loading";
  * 2. 좋아요 버튼 (isLiked 상태에 따라 ❤️/🤍 표시)
  * 3. 첨부파일 목록 표시
  * 4. 댓글 목록 조회 및 작성/삭제
+ *
+ * API 응답 형식:
+ * GET /api/community/posts/{postId} 요청 시 다음 형식으로 데이터를 받음:
+ * {
+ *   status: 200,
+ *   body: {
+ *     postId, title, content, category, authorNickname, authorId,
+ *     hit, likeCount, commentCount, isLiked, warnings, createdAt, updatedAt,
+ *     comments: [{ commentId, content, authorNickname, authorId, createdAt }]
+ *   },
+ *   message: "게시글 상세 조회 성공"
+ * }
+ * 게시글 정보와 댓글이 함께 반환되므로 별도의 댓글 조회 API 호출이 불필요함
  */
 
 export default function PostShow() {
@@ -36,28 +48,22 @@ export default function PostShow() {
   // ===== API 데이터 페칭 =====
 
   // 1. 게시글 상세 정보 가져오기 (GET /community/posts/{postId})
+  // 게시글 데이터와 함께 댓글(comments) 배열도 포함되어 반환됨
   const {
-    data: post,           // 게시글 데이터 (title, content, authorNickname, hit, likeCount, isLiked 등)
+    data: post,           // 게시글 데이터 (title, content, authorNickname, hit, likeCount, isLiked, comments 등)
     isLoading: isPostLoading,  // 로딩 중 여부
     error: postError,     // 에러 발생 시 에러 객체
   } = usePost(postId || "");
 
-  // 2. 댓글 목록 가져오기 (GET /community/posts/{postId}/comments)
-  const {
-    data: commentsData,   // 댓글 목록 데이터
-    isLoading: isCommentsLoading,
-    error: commentsError,
-  } = useComments({ postId: postId || "", page: 1, pageSize: 50 });
-
-  // 3. 좋아요 토글 mutation (POST/DELETE /community/posts/{postId}/like)
+  // 2. 좋아요 토글 mutation (POST/DELETE /community/posts/{postId}/like)
   const likeMutation = useLikePost();
 
-  // 4. 댓글 작성 mutation (POST /community/posts/{postId}/comments)
+  // 3. 댓글 작성 mutation (POST /community/posts/{postId}/comments)
   const createCommentMutation = useCreateComment({
     onSuccess: () => setCommentText(""),  // 댓글 작성 성공 시 입력 필드 초기화
   });
 
-  // 5. 댓글 삭제 mutation (DELETE /community/posts/{postId}/comments/{commentId})
+  // 4. 댓글 삭제 mutation (DELETE /community/posts/{postId}/comments/{commentId})
   const deleteCommentMutation = useDeleteComment();
 
   // ===== 이벤트 핸들러 =====
@@ -139,8 +145,8 @@ export default function PostShow() {
     );
   }
 
-  // 댓글 목록 추출 (없으면 빈 배열)
-  const comments = commentsData?.items || [];
+  // 댓글 목록 추출 (게시글 데이터에 포함된 comments 배열 사용, 없으면 빈 배열)
+  const comments = post?.comments || [];
 
   // ===== UI 렌더링 =====
   return (
@@ -221,8 +227,8 @@ export default function PostShow() {
       {/* 댓글 목록 조회, 작성, 삭제 기능을 제공하는 영역 */}
       <section className="mt-5 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-xl p-4">
         <h2 className="text-lg font-semibold text-[color:var(--color-fg-primary)] flex items-baseline gap-2">
-          {/* 댓글 개수 표시 (로딩 중이면 "..." 표시) */}
-          댓글 <span className="text-[color:#b45309]">[{isCommentsLoading ? "..." : comments.length}]</span>
+          {/* 댓글 개수 표시 (API의 commentCount 필드 사용) */}
+          댓글 <span className="text-[color:#b45309]">[{post.commentCount}]</span>
         </h2>
 
         {/* 댓글 입력 폼 */}
@@ -255,26 +261,16 @@ export default function PostShow() {
         </div>
 
         {/* 댓글 목록 렌더링 */}
-        {/* 상태에 따라 다른 내용을 표시: 로딩 중 / 에러 / 댓글 없음 / 댓글 목록 */}
+        {/* 게시글 데이터에 포함된 comments 배열을 표시 */}
         <div className="mt-3" aria-live="polite">
-          {isCommentsLoading ? (
-            // 1. 댓글 로딩 중
-            <div className="text-center py-4">
-              <span className="text-[color:var(--color-fg-muted)]">댓글을 불러오는 중...</span>
-            </div>
-          ) : commentsError ? (
-            // 2. 댓글 로딩 실패
-            <div className="text-center py-4">
-              <span className="text-[color:var(--color-error)]">댓글을 불러오는 데 실패했습니다.</span>
-            </div>
-          ) : comments.length === 0 ? (
-            // 3. 댓글이 없는 경우
+          {comments.length === 0 ? (
+            // 댓글이 없는 경우
             <div className="text-center py-4">
               <span className="text-[color:var(--color-fg-muted)]">첫 댓글을 작성해보세요!</span>
             </div>
           ) : (
-            // 4. 댓글 목록 표시
-            // API에서 받아온 comments 배열을 순회하며 각 댓글 렌더링
+            // 댓글 목록 표시
+            // API 응답의 comments 배열을 순회하며 각 댓글 렌더링
             comments.map((comment) => (
               <div
                 key={comment.commentId}
