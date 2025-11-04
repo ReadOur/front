@@ -517,13 +517,6 @@ export default function PostShow() {
                         >
                           삭제
                         </button>
-                        <button
-                          onClick={() => handleReplyClick(comment.commentId)}
-                          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
-                          aria-label="답글 달기"
-                        >
-                          답글
-                        </button>
                       </div>
                     )}
                   </div>

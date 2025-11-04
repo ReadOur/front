@@ -87,33 +87,112 @@ export interface SearchPostsParams {
   sort?: string;
 }
 
+export type PostList = {
+  items: Post[];
+  totalPages: number;
+  page: number;
+  pageSize: number;
+};
+
 /**
  * 게시글 검색
  */
+// postService.ts
+
+// postService.ts
+
+// 1) 서버가 줄 수 있는 두 가지 페이징 모양을 명시
+type SpringPage<T> = {
+  content: T[];
+  totalPages: number;
+  totalElements?: number;
+  number: number; // 0-based
+  size: number;
+};
+
+type CommonPage<T> = {
+  items: T[];
+  meta: {
+    page: number;       // 1-based
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    hasNext?: boolean;
+    hasPrevious?: boolean;
+  };
+};
+
+// 2) 안전한 타입가드
+function isObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x !== null;
+}
+
+function isSpringPage<T>(x: unknown): x is SpringPage<T> {
+  if (!isObject(x)) return false;
+  return "content" in x && Array.isArray((x as { content: unknown }).content);
+}
+
+function isCommonPage<T>(x: unknown): x is CommonPage<T> {
+  if (!isObject(x)) return false;
+  const hasItems = "items" in x && Array.isArray((x as { items: unknown }).items);
+  const hasMeta = "meta" in x && isObject((x as { meta: unknown }).meta);
+  return hasItems && hasMeta;
+}
+
+// 3) any 없이 제너릭 지정 + 유니온으로 수신 후 분기
 export async function searchPosts(params: SearchPostsParams): Promise<PostListResponse> {
   const { type, keyword, page = 0, size = 20, sort = "createdAt,desc" } = params;
 
-  const response = await apiClient.get<PaginatedResponse<PostListItem>>(POST_ENDPOINTS.SEARCH, {
-    params: {
-      type,
-      keyword,
-      page,
-      size,
-      sort,
-    },
-  });
+  // apiClient는 데이터 언래핑을 해 준다는 전제(getPosts와 동일하게 사용)
+  const res = await apiClient.get<SpringPage<PostListItem> | CommonPage<PostListItem>>(
+    POST_ENDPOINTS.SEARCH,
+    { params: { type, keyword, page, size, sort } }
+  );
 
-  // PaginatedResponse 형식을 PostListResponse 형식으로 변환
+  // Spring Data 스타일
+  if (isSpringPage<PostListItem>(res)) {
+    const n = typeof res.number === "number" ? res.number : page;
+    const s = typeof res.size === "number" ? res.size : size;
+    const total = typeof res.totalElements === "number" ? res.totalElements : 0;
+    const tPages = typeof res.totalPages === "number" ? res.totalPages : 1;
+    return {
+      items: res.content,
+      page: n + 1,               // 0-based → 1-based
+      pageSize: s,
+      total: total,
+      totalPages: tPages,
+      hasNext: n + 1 < tPages,
+      hasPrevious: n > 0,
+    };
+  }
+
+  // 공통 페이징 스타일
+  if (isCommonPage<PostListItem>(res)) {
+    const m = res.meta;
+    return {
+      items: res.items,
+      page: m.page,
+      pageSize: m.pageSize,
+      total: m.totalItems,
+      totalPages: m.totalPages,
+      hasNext: Boolean(m.hasNext ?? (m.page < m.totalPages)),
+      hasPrevious: Boolean(m.hasPrevious ?? (m.page > 1)),
+    };
+  }
+
+  // 예외: 모양이 다를 때(빈 값 반환)
   return {
-    items: response.items || [],
-    page: response.meta?.page ?? page + 1, // 0-based를 1-based로 변환
-    pageSize: response.meta?.pageSize ?? size,
-    total: response.meta?.totalItems ?? 0,
-    totalPages: response.meta?.totalPages ?? 0,
-    hasNext: response.meta?.hasNext ?? false,
-    hasPrevious: response.meta?.hasPrevious ?? false,
+    items: [],
+    page: page + 1,
+    pageSize: size,
+    total: 0,
+    totalPages: 1,
+    hasNext: false,
+    hasPrevious: false,
   };
 }
+
+
 
 /**
  * 게시글 서비스 객체

@@ -61,13 +61,14 @@ export interface PostListResponse {
 export async function getPosts(params: GetPostsParams = {}): Promise<PostListResponse> {
   const { page = 1, size = 20, sort, category, search } = params;
 
+  const sortParam = typeof sort === "string" && sort.trim() !== "" ? sort.trim() : "createdAt,desc";
   // Spring은 0부터 시작하므로 -1
   const query = createQuery()
     .page(page - 1)
-    .pageSize(size);
+    .pageSize(size)
+    .sort(sortParam);
 
-  // Spring Boot 형식의 정렬 적용 (예: "createdAt,desc")
-  if (sort) query.sort(sort);
+
   if (category) query.filter('category', category);
   if (search) query.search(search);
 

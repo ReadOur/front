@@ -18,11 +18,11 @@ function formatDate(dateString: string): string {
 // 카테고리 정의
 const CATEGORIES = [
   { key: "", label: "전체" },
-  { key: "NOTICE", label: "공지" },
   { key: "REVIEW", label: "리뷰" },
   { key: "DISCUSSION", label: "토의" },
   { key: "QUESTION", label: "질문" },
   { key: "FREE", label: "자유" },
+  { key: "NOTI", label: "모임" }, //현재 안만들어짐. NOTI로 일단 대체
 ] as const;
 
 // 검색 타입 정의
@@ -82,6 +82,7 @@ export const BRD_List: React.FC = () => {
           page: page - 1, // searchPosts는 0부터 시작
           size: pageSize,
           sort: "createdAt,desc",
+          ...(category ? {category} : {}),
         });
       }
       // 검색어가 없으면 일반 목록 조회

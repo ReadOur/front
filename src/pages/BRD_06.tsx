@@ -242,7 +242,7 @@ export const BRD_06 = (): React.JSX.Element => {
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="#태그1 #태그2"
+              placeholder="#주의사항 입력"
               className="
                 w-full sm:w-[420px] h-10
                 rounded-[var(--radius-md)]
@@ -252,7 +252,7 @@ export const BRD_06 = (): React.JSX.Element => {
                 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
                 px-3
               "
-              aria-label="태그 입력"
+              aria-label="주의사항 입력"
             />
           </div>
 
