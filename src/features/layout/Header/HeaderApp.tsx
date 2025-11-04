@@ -23,7 +23,7 @@ export default function HeaderApp({
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] backdrop-blur-sm bg-opacity-100 text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: 'var(--color-bg-elev-1)' }}>
+    <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#ffffff', opacity: 1 }}>
       {/* 가운데 정렬 컨테이너 */}
       <div className="mx-auto px-4 h-20 md:h-24" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
@@ -32,7 +32,7 @@ export default function HeaderApp({
           <button onClick={onLogoClick} className="shrink-0 flex items-center">
             <div
               className="flex items-center"
-              style={{ width: "calc(var(--brand-logo-w) * 2)", height: "calc(var(--brand-logo-h) * 2)", transform: "translateY(var(--brand-logo-offset-y)) scale(2)", transformOrigin: "left center" }}
+              style={{ width: "calc(var(--brand-logo-w) * 1.32)", height: "calc(var(--brand-logo-h) * 1.32)", transform: "translateY(var(--brand-logo-offset-y)) scale(1.32)", transformOrigin: "left center" }}
             >
               <img src={logo} alt="ReadOur" className="block"
                    style = {{
@@ -45,7 +45,7 @@ export default function HeaderApp({
 
           {/* CENTER: 탭 (정확히 중앙) */}
           <nav className="flex justify-center">
-            <ul className="flex items-stretch h-full text-2xl md:text-3xl font-medium text-[color:var(--color-fg-muted)]">
+            <ul className="flex items-stretch h-full font-medium text-[color:var(--color-fg-muted)]" style={{ fontSize: '2rem' }}>
               {navItems.map((item, idx) => (
                 <li key={item.key} className="relative flex items-center px-4 md:px-6">
                   <button
@@ -77,7 +77,7 @@ export default function HeaderApp({
               className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer"
               aria-label="알림"
             >
-              <span role="img" aria-hidden="true">🔔</span>
+              <span role="img" aria-hidden="true" style={{ fontSize: '2rem' }}>🔔</span>
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1.5 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
                   {unreadCount > 99 ? "99+" : unreadCount}
@@ -86,7 +86,7 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <span className="text-xl md:text-2xl font-medium text-[color:var(--color-fg-primary)]">
+              <span className="font-medium text-[color:var(--color-fg-primary)]" style={{ fontSize: '1.75rem' }}>
                 {user.name}
               </span>
             ) : (
