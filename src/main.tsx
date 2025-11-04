@@ -20,8 +20,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <BRD_List /> },
       { path: "boards", element: <BRD_List /> },
-      { path: "boards/:postId", element: <PostShow /> },
       { path: "boards/write", element: <BRD_06 />},
+      { path: "boards/:postId/edit", element: <BRD_06 />},
+      { path: "boards/:postId", element: <PostShow /> },
       { path: "calendar", element: <CAL_11 /> },
       // 아직 없는 라우트들도 차후에 추가할 수 있음:
       // { path: "mypage", element: <MyPage /> },

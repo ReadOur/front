@@ -1,5 +1,5 @@
 // src/pages/BRD_04.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
@@ -27,11 +27,22 @@ export const BRD_List: React.FC = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const page = Number(params.get("page") || 1);
+  const category = params.get("category") || "";
+  const searchQuery = params.get("search") || "";
   const pageSize = 20;
 
+  // 검색어 입력 상태 (실시간 입력용)
+  const [searchInput, setSearchInput] = useState(searchQuery);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["posts", page, pageSize],
-    queryFn: () => getPosts({ page, size: pageSize }),
+    queryKey: ["posts", page, pageSize, category, searchQuery],
+    queryFn: () =>
+      getPosts({
+        page,
+        size: pageSize,
+        ...(category && { category }),
+        ...(searchQuery && { search: searchQuery }),
+      }),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -40,6 +51,37 @@ export const BRD_List: React.FC = () => {
   const goPage = (p: number) => {
     const np = Math.min(Math.max(1, p), totalPages);
     params.set("page", String(np));
+    setParams(params, { replace: true });
+  };
+
+  // 카테고리 변경
+  const handleCategoryChange = (newCategory: string) => {
+    if (newCategory) {
+      params.set("category", newCategory);
+    } else {
+      params.delete("category");
+    }
+    params.set("page", "1");
+    setParams(params, { replace: true });
+  };
+
+  // 검색 실행
+  const handleSearch = () => {
+    if (searchInput.trim()) {
+      params.set("search", searchInput.trim());
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1");
+    setParams(params, { replace: true });
+  };
+
+  // 필터 초기화
+  const handleResetFilters = () => {
+    setSearchInput("");
+    params.delete("category");
+    params.delete("search");
+    params.set("page", "1");
     setParams(params, { replace: true });
   };
 
@@ -57,16 +99,80 @@ export const BRD_List: React.FC = () => {
       style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
     >
       <div className="mx-auto px-6 mt-[80px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
-        {/* 상단 액션바 */}
-        <div className="flex items-center justify-end py-6">
-          <button
-            className="h-[36px] px-5 rounded-[var(--radius-md)]
-                       bg-[color:var(--color-accent)]
-                       text-[color:var(--color-on-accent)] text-sm font-medium"
-            onClick={() => navigate("/boards/write")}
-          >
-            ✏️ 글 쓰기
-          </button>
+        {/* 상단 검색/필터 및 액션바 */}
+        <div className="py-6 space-y-4">
+          {/* 검색/필터 섹션 */}
+          <div className="flex items-center gap-3">
+            {/* 카테고리 선택 */}
+            <select
+              value={category}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="h-[36px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+            >
+              <option value="">전체 카테고리</option>
+              <option value="FREE">자유</option>
+              <option value="NOTICE">공지</option>
+              <option value="QNA">Q&A</option>
+              <option value="REVIEW">리뷰</option>
+            </select>
+
+            {/* 검색 입력 */}
+            <div className="flex-1 flex gap-2">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                  }
+                }}
+                placeholder="게시글 검색..."
+                className="flex-1 h-[36px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+              />
+              <button
+                onClick={handleSearch}
+                className="h-[36px] px-4 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90"
+              >
+                🔍 검색
+              </button>
+            </div>
+
+            {/* 필터 초기화 */}
+            {(category || searchQuery) && (
+              <button
+                onClick={handleResetFilters}
+                className="h-[36px] px-4 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm hover:bg-[color:var(--color-bg-elev-1)]"
+              >
+                초기화
+              </button>
+            )}
+
+            {/* 글 쓰기 버튼 */}
+            <button
+              className="h-[36px] px-5 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90"
+              onClick={() => navigate("/boards/write")}
+            >
+              ✏️ 글 쓰기
+            </button>
+          </div>
+
+          {/* 현재 필터 표시 */}
+          {(category || searchQuery) && (
+            <div className="flex items-center gap-2 text-sm text-[color:var(--color-fg-muted)]">
+              <span>필터:</span>
+              {category && (
+                <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)]">
+                  카테고리: {category}
+                </span>
+              )}
+              {searchQuery && (
+                <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)]">
+                  검색: "{searchQuery}"
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 컬럼 헤더 */}
