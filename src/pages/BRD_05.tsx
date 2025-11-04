@@ -369,14 +369,29 @@ export default function PostShow() {
           </div>
         )}
 
-          {/* 본문 내용 */}
-          {/* API의 content 필드를 표시 */}
-          {/* whitespace-pre-wrap으로 줄바꿈 유지 */}
-          <div className="relative mt-4">
-            <div className="text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap">
-              {post.content}
-            </div>
+        {/* 본문 내용 */}
+        {/* API의 content 필드를 표시 */}
+        {/* whitespace-pre-wrap으로 줄바꿈 유지 */}
+        <div className="relative mt-4">
+          <div
+            className={`text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap ${
+              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
+            }`}
+            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
+          >
+            {post.content}
           </div>
+
+          {post.isSpoiler && !isSpoilerRevealed && (
+            <button
+              type="button"
+              onClick={() => setIsSpoilerRevealed(true)}
+              className="absolute inset-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)]"
+              aria-label="스포일러 가림막 해제"
+            >
+              스포일러 방지. 클릭하면 해제합니다.
+            </button>
+          )}
         </div>
       </article>
 
