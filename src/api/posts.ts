@@ -8,18 +8,20 @@ import { createQuery } from './queryBuilder';
 import { SpringPage, convertSpringPage } from '@/types/spring';
 
 /**
- * 게시글 타입
+ * 게시글 타입 (API 응답용 - 간단한 버전)
+ * 전체 타입은 @/types/post.ts의 Post를 참조
  */
 export interface Post {
-  id: number | string;
+  postId: number;
   title: string;
   content?: string;
-  author: string;
+  authorNickname: string;
+  authorId: number;
   category: string;
   createdAt: string;
   updatedAt?: string;
-  likes: number;
-  views: number;
+  likeCount: number;
+  hit: number;
   commentCount?: number;
 }
 

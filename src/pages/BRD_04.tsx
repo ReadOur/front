@@ -23,7 +23,7 @@ function calculateBadges(post: Post): { type: "hot" | "new" | "count"; value?: s
   }
 
   // HOT (좋아요 10개 이상)
-  if (post.likes >= 10) {
+  if (post.likeCount >= 10) {
     badges.push({ type: "hot" });
   }
 
@@ -120,7 +120,7 @@ export const BRD_List: React.FC = () => {
 
           return (
             <div
-              key={post.id}
+              key={post.postId}
               className="relative w-full h-[68px] mb-2
                          bg-[color:var(--color-bg-elev-2)]
                          border border-[color:var(--color-border-default)]
@@ -128,7 +128,7 @@ export const BRD_List: React.FC = () => {
                          hover:bg-[color:var(--color-bg-elev-2-hover, var(--color-bg-elev-2)))]
                          cursor-pointer transition"
               style={{ top }}
-              onClick={() => navigate(`/boards/${post.id}`)}
+              onClick={() => navigate(`/boards/${post.postId}`)}
               role="button"
               aria-label={`${post.title} 상세로 이동`}
             >
@@ -149,7 +149,7 @@ export const BRD_List: React.FC = () => {
 
               {/* 작성자 */}
               <div className="absolute top-[21px] left-[1012px] w-[200px] h-[31px] flex items-center">
-                <div className="text-2xl">{post.author}</div>
+                <div className="text-2xl">{post.authorNickname}</div>
               </div>
 
               {/* 보조 정보 (뱃지, 좋아요, 날짜, 조회수) */}
@@ -173,7 +173,7 @@ export const BRD_List: React.FC = () => {
                 </div>
 
                 {/* 좋아요 */}
-                <div className="absolute left-[469px] top-0 w-14 text-2xl text-center">{post.likes}</div>
+                <div className="absolute left-[469px] top-0 w-14 text-2xl text-center">{post.likeCount}</div>
 
                 {/* 작성일 */}
                 <div className="absolute left-[678px] top-0 w-[145px] text-2xl text-center">
@@ -181,7 +181,7 @@ export const BRD_List: React.FC = () => {
                 </div>
 
                 {/* 조회수 */}
-                <div className="absolute left-[844px] top-0 w-14 text-2xl text-center">{post.views}</div>
+                <div className="absolute left-[844px] top-0 w-14 text-2xl text-center">{post.hit}</div>
               </div>
             </div>
           );
