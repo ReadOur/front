@@ -6,6 +6,7 @@
 import { apiClient } from './client';
 import { createQuery } from './queryBuilder';
 import { SpringPage, convertSpringPage } from '@/types/spring';
+import { POST_ENDPOINTS } from './endpoints';
 
 /**
  * 게시글 타입 (API 응답용 - 간단한 버전)
@@ -23,6 +24,8 @@ export interface Post {
   likeCount: number;
   hit: number;
   commentCount?: number;
+  isLiked?: boolean;
+  attachments?: Array<{ id: string; name: string; url: string }>;
 }
 
 /**
@@ -63,14 +66,15 @@ export async function getPosts(params: GetPostsParams = {}): Promise<PostListRes
     .page(page - 1)
     .pageSize(size);
 
+  // Spring Boot 형식의 정렬 적용 (예: "createdAt,desc")
   if (sort) query.sort(sort);
   if (category) query.filter('category', category);
   if (search) query.search(search);
 
   const queryParams = query.build();
 
-  // Spring Page 응답 받기
-  const springPage = await apiClient.get<SpringPage<Post>>('/community/posts', {
+  // Spring Page 응답 받기 (endpoints.ts의 상수 사용)
+  const springPage = await apiClient.get<SpringPage<Post>>(POST_ENDPOINTS.LIST, {
     params: queryParams,
   });
 
@@ -95,7 +99,7 @@ export async function getPosts(params: GetPostsParams = {}): Promise<PostListRes
  * const post = await getPost('123');
  */
 export async function getPost(postId: string | number): Promise<Post> {
-  return apiClient.get<Post>(`/community/posts/${postId}`);
+  return apiClient.get<Post>(POST_ENDPOINTS.DETAIL(String(postId)));
 }
 
 /**
@@ -113,7 +117,7 @@ export async function createPost(data: {
   content: string;
   category: string;
 }): Promise<Post> {
-  return apiClient.post<Post>('/community/posts', data);
+  return apiClient.post<Post>(POST_ENDPOINTS.CREATE, data);
 }
 
 /**
@@ -128,7 +132,7 @@ export async function updatePost(
   postId: string | number,
   data: Partial<Post>
 ): Promise<Post> {
-  return apiClient.put<Post>(`/community/posts/${postId}`, data);
+  return apiClient.put<Post>(POST_ENDPOINTS.UPDATE(String(postId)), data);
 }
 
 /**
@@ -138,7 +142,7 @@ export async function updatePost(
  * await deletePost('123');
  */
 export async function deletePost(postId: string | number): Promise<void> {
-  return apiClient.delete(`/community/posts/${postId}`);
+  return apiClient.delete(POST_ENDPOINTS.DELETE(String(postId)));
 }
 
 /**
@@ -148,5 +152,5 @@ export async function deletePost(postId: string | number): Promise<void> {
  * await likePost('123');
  */
 export async function likePost(postId: string | number): Promise<void> {
-  return apiClient.post(`/community/posts/${postId}/like`);
+  return apiClient.post(POST_ENDPOINTS.LIKE(String(postId)));
 }

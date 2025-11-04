@@ -39,7 +39,7 @@ export function cleanParams<T extends Record<string, unknown>>(
  *   .sort("createdAt", "desc")
  *   .build();
  *
- * // { page: 1, pageSize: 20, category: "tech", status: "published", sort: "createdAt", order: "desc" }
+ * // { page: 1, size: 20, category: "tech", status: "published", sort: "createdAt,desc" }
  */
 export class QueryBuilder<T extends Record<string, unknown> = Record<string, unknown>> {
   private params: Record<string, unknown> = {};
@@ -54,18 +54,35 @@ export class QueryBuilder<T extends Record<string, unknown> = Record<string, unk
 
   /**
    * 페이지 크기 설정
+   * Spring Boot는 'size' 파라미터를 사용
    */
   pageSize(size: number): this {
-    this.params.pageSize = size;
+    this.params.size = size;
     return this;
   }
 
   /**
    * 정렬 설정
+   *
+   * @param field - 정렬 필드명 또는 전체 정렬 문자열
+   * @param order - 정렬 방향 (생략 시 field를 전체 문자열로 간주)
+   *
+   * @example
+   * // 일반 사용: sort=field&order=desc
+   * .sort("createdAt", "desc")
+   *
+   * // Spring Boot 형식: sort=field,desc
+   * .sort("createdAt,desc")
    */
-  sort(field: string, order: "asc" | "desc" = "desc"): this {
-    this.params.sort = field;
-    this.params.order = order;
+  sort(field: string, order?: "asc" | "desc"): this {
+    if (order) {
+      // 필드와 방향이 따로 주어진 경우 (일반 형식)
+      this.params.sort = field;
+      this.params.order = order;
+    } else {
+      // 전체 문자열로 주어진 경우 (Spring Boot 등)
+      this.params.sort = field;
+    }
     return this;
   }
 
