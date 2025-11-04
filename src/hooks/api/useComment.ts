@@ -14,7 +14,11 @@ import {
   Post,
   PostComment,
 } from "@/types";
-import { POST_QUERY_KEYS } from "./usePost";
+import {
+  POST_QUERY_KEYS,
+  forceRefetchAllPostQueries,
+  updateCachedPostListEntry,
+} from "./usePost";
 
 // ===== Query Keys =====
 export const COMMENT_QUERY_KEYS = {
@@ -112,10 +116,13 @@ export function useCreateComment(
         queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
 
+      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
+      forceRefetchAllPostQueries(queryClient);
+
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
         queryClient.invalidateQueries({
-          queryKey: COMMENT_QUERY_KEYS.replies(variables.parentId),
+          queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
         });
       }
 
@@ -178,6 +185,9 @@ export function useUpdateComment(
         queryKey: detailKey,
       });
 
+      // 게시글 목록도 무효화하여 댓글 수/미리보기 반영
+      forceRefetchAllPostQueries(queryClient);
+
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
     },
@@ -229,6 +239,9 @@ export function useDeleteComment(
         queryKey: detailKey,
       });
 
+      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
+      forceRefetchAllPostQueries(queryClient);
+
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
     },
@@ -243,12 +256,18 @@ export function useLikeComment(
   options?: UseMutationOptions<
     CommentLikeResponse,
     Error,
-    { commentId: string; isLiked: boolean }
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
   >
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<CommentLikeResponse, Error, { commentId: string; isLiked: boolean }>({
+  return useMutation<
+    CommentLikeResponse,
+    Error,
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
+  >({
     mutationFn: ({ commentId, isLiked }) =>
       isLiked ? commentService.unlikeComment(commentId) : commentService.likeComment(commentId),
     onMutate: async ({ commentId, isLiked }) => {
