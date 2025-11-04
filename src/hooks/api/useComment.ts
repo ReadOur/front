@@ -77,10 +77,8 @@ export function useCreateComment(
 
   return useMutation<Comment, Error, CreateCommentRequest>({
     mutationFn: commentService.createComment,
-    onSuccess: async (data, variables, context) => {
+    onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
-
-      let nextCommentCount: number | undefined;
 
       queryClient.setQueryData<Post>(detailKey, (previous) => {
         if (!previous) {
@@ -99,24 +97,14 @@ export function useCreateComment(
           (comment) => comment.commentId === newComment.commentId
         );
 
-        const commentCount = previous.commentCount + (hasComment ? 0 : 1);
-        nextCommentCount = commentCount;
-
         return {
           ...previous,
-          commentCount,
+          commentCount: previous.commentCount + (hasComment ? 0 : 1),
           comments: hasComment
             ? previous.comments
             : [newComment, ...(previous.comments ?? [])],
         };
       });
-
-      if (typeof nextCommentCount === "number") {
-        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
-          ...item,
-          commentCount: nextCommentCount ?? item.commentCount,
-        }));
-      }
 
       // 댓글 목록 무효화
       await queryClient.invalidateQueries({
@@ -125,19 +113,17 @@ export function useCreateComment(
       });
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
-      await queryClient.invalidateQueries({
-        queryKey: detailKey,
-        refetchType: "all",
+      queryClient.invalidateQueries({
+        queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
 
       // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
-      await forceRefetchAllPostQueries(queryClient);
+      forceRefetchAllPostQueries(queryClient);
 
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
-        await queryClient.invalidateQueries({
+        queryClient.invalidateQueries({
           queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
-          refetchType: "all",
         });
       }
 
@@ -158,7 +144,7 @@ export function useUpdateComment(
 
   return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>({
     mutationFn: ({ commentId, data }) => commentService.updateComment(commentId, data),
-    onSuccess: async (data, variables, context) => {
+    onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
       const commentDetailKey = COMMENT_QUERY_KEYS.detail(variables.commentId);
 
@@ -186,9 +172,8 @@ export function useUpdateComment(
       });
 
       // 해당 댓글 상세 무효화
-      await queryClient.invalidateQueries({
+      queryClient.invalidateQueries({
         queryKey: commentDetailKey,
-        refetchType: "all",
       });
 
       // 댓글 목록도 무효화
@@ -198,13 +183,12 @@ export function useUpdateComment(
       });
 
       // 게시글 상세도 무효화 (댓글 내용 업데이트)
-      await queryClient.invalidateQueries({
+      queryClient.invalidateQueries({
         queryKey: detailKey,
-        refetchType: "all",
       });
 
       // 게시글 목록도 무효화하여 댓글 수/미리보기 반영
-      await forceRefetchAllPostQueries(queryClient);
+      forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
       await options?.onSuccess?.(data, variables, context);
@@ -223,10 +207,8 @@ export function useDeleteComment(
 
   return useMutation<void, Error, { commentId: string; postId: string }>({
     mutationFn: ({ commentId }) => commentService.deleteComment(commentId),
-    onSuccess: async (data, variables, context) => {
+    onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
-
-      let nextCommentCount: number | undefined;
 
       queryClient.setQueryData<Post>(detailKey, (previous) => {
         if (!previous) {
@@ -237,22 +219,12 @@ export function useDeleteComment(
           (comment) => comment.commentId !== Number(variables.commentId)
         );
 
-        const commentCount = Math.max(0, previous.commentCount - 1);
-        nextCommentCount = commentCount;
-
         return {
           ...previous,
-          commentCount,
+          commentCount: Math.max(0, previous.commentCount - 1),
           comments: filteredComments,
         };
       });
-
-      if (typeof nextCommentCount === "number") {
-        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
-          ...item,
-          commentCount: nextCommentCount ?? item.commentCount,
-        }));
-      }
 
       // 해당 댓글 제거
       queryClient.removeQueries({
@@ -266,13 +238,12 @@ export function useDeleteComment(
       });
 
       // 게시글 상세도 무효화 (댓글 수 업데이트)
-      await queryClient.invalidateQueries({
+      queryClient.invalidateQueries({
         queryKey: detailKey,
-        refetchType: "all",
       });
 
       // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
-      await forceRefetchAllPostQueries(queryClient);
+      forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
       await options?.onSuccess?.(data, variables, context);
