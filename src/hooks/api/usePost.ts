@@ -2,10 +2,16 @@
  * 게시글 관련 React Query 훅
  */
 
-import { useQuery, useMutation, useQueryClient, UseMutationOptions } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  UseMutationOptions,
+} from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { postService } from "@/services/postService";
 import {
-  Post,
+  Post as PostDetail,
   PostListItem,
   CreatePostRequest,
   UpdatePostRequest,
@@ -13,6 +19,7 @@ import {
   PaginatedResponse,
   LikeResponse,
 } from "@/types";
+import type { Post as LegacyPostSummary, PostListResponse as LegacyPostListResponse } from "@/api/posts";
 
 // ===== Query Keys =====
 export const POST_QUERY_KEYS = {
@@ -32,6 +39,8 @@ export function usePosts(params?: GetPostsParams) {
   return useQuery<PaginatedResponse<PostListItem>>({
     queryKey: POST_QUERY_KEYS.list(params),
     queryFn: () => postService.getPosts(params),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }
 
@@ -39,10 +48,12 @@ export function usePosts(params?: GetPostsParams) {
  * 게시글 상세 조회
  */
 export function usePost(postId: string, options?: { enabled?: boolean }) {
-  return useQuery<Post>({
+  return useQuery<PostDetail>({
     queryKey: POST_QUERY_KEYS.detail(postId),
     queryFn: () => postService.getPost(postId),
     enabled: options?.enabled !== false && !!postId,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }
 
@@ -52,18 +63,26 @@ export function usePost(postId: string, options?: { enabled?: boolean }) {
  * 게시글 생성
  */
 export function useCreatePost(
-  options?: UseMutationOptions<Post, Error, CreatePostRequest>
+  options?: UseMutationOptions<PostDetail, Error, CreatePostRequest>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<Post, Error, CreatePostRequest>({
+  return useMutation<PostDetail, Error, CreatePostRequest>({
     mutationFn: postService.createPost,
-    onSuccess: (data, variables, context) => {
-      // 게시글 목록 무효화 (새 게시글이 추가되었으므로 리패치)
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+    onSuccess: async (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(data.postId));
+
+      queryClient.setQueryData<PostDetail>(detailKey, data);
+
+      await queryClient.invalidateQueries({
+        queryKey: detailKey,
+        refetchType: "all",
+      });
+
+      await forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -73,21 +92,35 @@ export function useCreatePost(
  * 게시글 수정
  */
 export function useUpdatePost(
-  options?: UseMutationOptions<Post, Error, { postId: string; data: UpdatePostRequest }>
+  options?: UseMutationOptions<PostDetail, Error, { postId: string; data: UpdatePostRequest }>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<Post, Error, { postId: string; data: UpdatePostRequest }>({
+  return useMutation<PostDetail, Error, { postId: string; data: UpdatePostRequest }>({
     mutationFn: ({ postId, data }) => postService.updatePost(postId, data),
-    onSuccess: (data, variables, context) => {
-      // 해당 게시글 상세 무효화
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
+    onSuccess: async (data, variables, context) => {
+      const detailKey = POST_QUERY_KEYS.detail(String(data.postId));
 
-      // 게시글 목록도 무효화 (제목 등이 변경될 수 있음)
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      queryClient.setQueryData<PostDetail>(detailKey, data);
+
+      updateCachedPostListEntry(queryClient, data.postId, (item) => ({
+        ...item,
+        title: data.title,
+        category: data.category,
+        commentCount: data.commentCount,
+        likeCount: data.likeCount,
+        updatedAt: data.updatedAt,
+      }));
+
+      await queryClient.invalidateQueries({
+        queryKey: detailKey,
+        refetchType: "all",
+      });
+
+      await forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -101,15 +134,15 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
 
   return useMutation<void, Error, string>({
     mutationFn: postService.deletePost,
-    onSuccess: (data, postId, context) => {
+    onSuccess: async (data, postId, context) => {
       // 해당 게시글 상세 제거
       queryClient.removeQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
 
       // 게시글 목록 무효화
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      await forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, postId, context);
+      await options?.onSuccess?.(data, postId, context);
     },
     ...options,
   });
@@ -119,7 +152,12 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
  * 게시글 좋아요/좋아요 취소
  */
 export function useLikePost(
-  options?: UseMutationOptions<LikeResponse, Error, { postId: string; isLiked: boolean }>
+  options?: UseMutationOptions<
+    LikeResponse,
+    Error,
+    { postId: string; isLiked: boolean },
+    { previousPost?: PostDetail }
+  >
 ) {
   const queryClient = useQueryClient();
 
@@ -130,10 +168,10 @@ export function useLikePost(
       // 낙관적 업데이트: 즉시 UI 반영
       await queryClient.cancelQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
 
-      const previousPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(postId));
+      const previousPost = queryClient.getQueryData<PostDetail>(POST_QUERY_KEYS.detail(postId));
 
       if (previousPost) {
-        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
+        queryClient.setQueryData<PostDetail>(POST_QUERY_KEYS.detail(postId), {
           ...previousPost,
           isLiked: !isLiked,
           likeCount: isLiked ? previousPost.likeCount - 1 : previousPost.likeCount + 1,
@@ -152,6 +190,11 @@ export function useLikePost(
       // 서버 응답으로 최종 업데이트
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
 
+      updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
+        ...item,
+        likeCount: data.likeCount,
+      }));
+
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
     },
@@ -166,5 +209,52 @@ export function useViewPost() {
   return useMutation<void, Error, string>({
     mutationFn: postService.viewPost,
     // 조회수는 별도로 캐시 무효화 하지 않음 (서버에서만 관리)
+  });
+}
+
+type PostListCacheItem = PostListItem | LegacyPostSummary;
+type PostListCache = PaginatedResponse<PostListItem> | LegacyPostListResponse;
+
+export function updateCachedPostListEntry(
+  queryClient: QueryClient,
+  postId: string | number,
+  updater: (item: PostListCacheItem) => PostListCacheItem
+) {
+  void queryClient.setQueriesData<PostListCache | undefined>(
+    { queryKey: POST_QUERY_KEYS.all, exact: false },
+    (cache) => {
+      if (!cache || !Array.isArray(cache.items)) {
+        return cache;
+      }
+
+      const items = cache.items as PostListCacheItem[];
+      let changed = false;
+      const nextItems = items.map((item) => {
+        if (String(item.postId) !== String(postId)) {
+          return item;
+        }
+
+        changed = true;
+        return updater(item);
+      }) as PostListCacheItem[];
+
+      if (!changed) {
+        return cache;
+      }
+
+      return { ...cache, items: nextItems } as PostListCache;
+    }
+  );
+}
+
+export async function forceRefetchAllPostQueries(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({
+    queryKey: POST_QUERY_KEYS.all,
+    refetchType: "all",
+  });
+
+  await queryClient.refetchQueries({
+    queryKey: POST_QUERY_KEYS.all,
+    type: "all",
   });
 }
