@@ -66,11 +66,8 @@ export function useCreatePost(
   return useMutation<PostDetail, Error, CreatePostRequest>({
     mutationFn: postService.createPost,
     onSuccess: (data, variables, context) => {
-      const detailKey = POST_QUERY_KEYS.detail(String(data.postId));
-
-      queryClient.setQueryData<PostDetail>(detailKey, data);
-
-      forceRefetchAllPostQueries(queryClient);
+      // 게시글 관련 목록/상세 캐시 무효화 (새 게시글이 추가되었으므로 리패치)
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -90,20 +87,9 @@ export function useUpdatePost(
   return useMutation<PostDetail, Error, { postId: string; data: UpdatePostRequest }>({
     mutationFn: ({ postId, data }) => postService.updatePost(postId, data),
     onSuccess: (data, variables, context) => {
-      const detailKey = POST_QUERY_KEYS.detail(String(data.postId));
-
-      queryClient.setQueryData<PostDetail>(detailKey, data);
-
-      updateCachedPostListEntry(queryClient, data.postId, (item) => ({
-        ...item,
-        title: data.title,
-        category: data.category,
-        commentCount: data.commentCount,
-        likeCount: data.likeCount,
-        updatedAt: data.updatedAt,
-      }));
-
-      forceRefetchAllPostQueries(queryClient);
+      // 게시글 상세 및 목록 캐시 무효화 (제목 등이 변경될 수 있음)
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, variables, context);
@@ -125,7 +111,7 @@ export function useDeletePost(options?: UseMutationOptions<void, Error, string>)
       queryClient.removeQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
 
       // 게시글 목록 무효화
-      forceRefetchAllPostQueries(queryClient);
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       options?.onSuccess?.(data, postId, context);

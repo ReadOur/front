@@ -80,8 +80,6 @@ export function useCreateComment(
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
 
-      let nextCommentCount: number | undefined;
-
       queryClient.setQueryData<Post>(detailKey, (previous) => {
         if (!previous) {
           return previous;
@@ -99,24 +97,14 @@ export function useCreateComment(
           (comment) => comment.commentId === newComment.commentId
         );
 
-        const commentCount = previous.commentCount + (hasComment ? 0 : 1);
-        nextCommentCount = commentCount;
-
         return {
           ...previous,
-          commentCount,
+          commentCount: previous.commentCount + (hasComment ? 0 : 1),
           comments: hasComment
             ? previous.comments
             : [newComment, ...(previous.comments ?? [])],
         };
       });
-
-      if (typeof nextCommentCount === "number") {
-        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
-          ...item,
-          commentCount: nextCommentCount ?? item.commentCount,
-        }));
-      }
 
       // 댓글 목록 무효화
       queryClient.invalidateQueries({
@@ -220,8 +208,6 @@ export function useDeleteComment(
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
 
-      let nextCommentCount: number | undefined;
-
       queryClient.setQueryData<Post>(detailKey, (previous) => {
         if (!previous) {
           return previous;
@@ -231,22 +217,12 @@ export function useDeleteComment(
           (comment) => comment.commentId !== Number(variables.commentId)
         );
 
-        const commentCount = Math.max(0, previous.commentCount - 1);
-        nextCommentCount = commentCount;
-
         return {
           ...previous,
-          commentCount,
+          commentCount: Math.max(0, previous.commentCount - 1),
           comments: filteredComments,
         };
       });
-
-      if (typeof nextCommentCount === "number") {
-        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
-          ...item,
-          commentCount: nextCommentCount ?? item.commentCount,
-        }));
-      }
 
       // 해당 댓글 제거
       queryClient.removeQueries({
