@@ -23,7 +23,7 @@ export default function HeaderApp({
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
-    <header className="fixed top-[0px] left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#ffffff', opacity: 1 }}>
+    <header className="fixed top-[0px] left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#F5EFE9', opacity: 1 }}>
       {/* 가운데 정렬 컨테이너 */}
       <div className="mx-auto px-4 h-28 md:h-32" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
@@ -79,7 +79,7 @@ export default function HeaderApp({
             >
               <span role="img" aria-hidden="true" style={{ fontSize: '1.5rem' }}>🔔</span>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1.5 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+                <span className="absolute -top-4 -right-1 min-w-6 h-6 px-1.5 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
