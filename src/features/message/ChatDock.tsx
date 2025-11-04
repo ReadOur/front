@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
 import { X, Minus, Send, Circle, Loader2, MessageCircle } from "lucide-react";
+import "./ChatDock.css";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -103,14 +104,14 @@ function Avatar({ user, size = 24 }: { user: ChatUser; size?: number }) {
         src={user.avatarUrl}
         alt={user.name}
         style={{ width: size, height: size }}
-        className="rounded-full object-cover border border-[color:var(--color-border-subtle)]"
+        className="rounded-full object-cover border border-[color:var(--chatdock-border-subtle)]"
       />
     );
   }
   return (
     <div
       style={{ width: size, height: size }}
-      className="rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] grid place-items-center text-[10px] text-[color:var(--color-fg-muted)]"
+      className="rounded-full bg-[color:var(--chatdock-bg-elev-2)] border border-[color:var(--chatdock-border-subtle)] grid place-items-center text-[10px] text-[color:var(--chatdock-fg-muted)]"
       aria-label={user.name}
     >
       {user.name?.[0] ?? "U"}
@@ -124,7 +125,7 @@ function ThreadChip({ thread, onOpen }: { thread: ChatThread; onOpen: (t: ChatTh
   return (
     <button
       onClick={() => onOpen(thread)}
-      className="relative w-full flex items-center gap-2 p-2 rounded-[var(--radius-md)] hover:bg-[color:var(--color-bg-hover)] text-left"
+      className="relative w-full flex items-center gap-2 p-2 rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-left"
       title={title}
     >
       <div className="relative">
@@ -134,9 +135,9 @@ function ThreadChip({ thread, onOpen }: { thread: ChatThread; onOpen: (t: ChatTh
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium truncate text-[color:var(--color-fg-primary)]">{title}</div>
+        <div className="text-sm font-medium truncate text-[color:var(--chatdock-fg-primary)]">{title}</div>
         {thread.lastMessage && (
-          <div className="text-xs text-[color:var(--color-fg-muted)] truncate">
+          <div className="text-xs text-[color:var(--chatdock-fg-muted)] truncate">
             {thread.lastMessage.text}
           </div>
         )}
@@ -181,24 +182,24 @@ function ChatWindow({
   return (
     <div className="w-[320px] h-[420px] flex flex-col overflow-hidden
              rounded-[var(--radius-lg)]
-             bg-[color:var(--color-bg-elev-2)]
-             border border-[color:var(--color-border-strong)]
+             bg-[color:var(--chatdock-bg-elev-2)]
+             border border-[color:var(--chatdock-border-strong)]
              shadow-xl">
       {/* header */}
-      <div className="h-11 flex items-center gap-2 px-2 border-b border-[color:var(--color-border-subtle)] cursor-move select-none"
+      <div className="h-11 flex items-center gap-2 px-2 border-b border-[color:var(--chatdock-border-subtle)] cursor-move select-none"
         onPointerDown={__onDragStart}
       >
         <Avatar user={thread.users[0]} />
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold truncate">{title}</div>
-          <div className="text-[10px] text-[color:var(--color-fg-muted)] truncate">
+          <div className="text-[10px] text-[color:var(--chatdock-fg-muted)] truncate">
             {typingUserIds.length > 0 ? "입력 중…" : "대화 중"}
           </div>
         </div>
-        <button onClick={onMinimize} className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--color-bg-hover)]" title="최소화">
+        <button onClick={onMinimize} className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)]" title="최소화">
           <Minus className="w-4 h-4" />
         </button>
-        <button onClick={onClose} className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--color-bg-hover)]" title="닫기">
+        <button onClick={onClose} className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)]" title="닫기">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -208,14 +209,14 @@ function ChatWindow({
         {messages.map((m) => {
           const mine = m.fromId === me.id;
           return (
-            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]" : "bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-primary)]") }>
+            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]") }>
               <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>
-              <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--color-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
+              <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
             </div>
           );
         })}
         {typingUserIds.length > 0 && (
-          <div className="inline-flex items-center gap-2 text-[color:var(--color-fg-muted)] text-xs">
+          <div className="inline-flex items-center gap-2 text-[color:var(--chatdock-fg-muted)] text-xs">
             <Loader2 className="w-3 h-3 animate-spin" /> 입력 중…
           </div>
         )}
@@ -230,16 +231,16 @@ function ChatWindow({
           onSend(v);
           setText("");
         }}
-        className="p-2 border-t border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]"
+        className="p-2 border-t border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)]"
       >
         <div className="flex items-center gap-2">
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="메시지를 입력하세요"
-            className="flex-1 h-9 px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40"
+            className="flex-1 h-9 px-3 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-2)] border border-[color:var(--chatdock-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40"
           />
-          <button type="submit" className="h-9 px-3 rounded-[var(--radius-md)] border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] inline-flex items-center gap-1">
+          <button type="submit" className="h-9 px-3 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] inline-flex items-center gap-1">
             <Send className="w-4 h-4" />
             보내기
           </button>
@@ -407,12 +408,12 @@ export default function ChatDock() {
         {/* Floating Chat Button */}
         <button
           onClick={() => (panelOpen ? setPanelOpen(false) : openPanel())}
-          className="relative w-12 h-12 rounded-full border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] shadow-md grid place-items-center"
+          className="relative w-12 h-12 rounded-full border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-md grid place-items-center"
           aria-label="채팅 열기"
         >
-          <MessageCircle className="w-6 h-6 text-[color:var(--color-fg-primary)]" />
+          <MessageCircle className="w-6 h-6 text-[color:var(--chatdock-fg-primary)]" />
           {unreadTotal > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 grid place-items-center rounded-full text-[10px] font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 grid place-items-center rounded-full text-[10px] font-bold bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]">
             {unreadTotal}
           </span>
           )}
@@ -428,10 +429,10 @@ export default function ChatDock() {
           )}
           style={{ right: "calc(100% + 8px)", bottom: "calc(100% + 8px)" }}
         >
-          <div className="rounded-[var(--radius-lg)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] shadow-xl overflow-hidden">
-            <div className="h-10 flex items-center justify-between px-2 border-b border-[color:var(--color-border-subtle)]">
+          <div className="rounded-[var(--radius-lg)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-xl overflow-hidden">
+            <div className="h-10 flex items-center justify-between px-2 border-b border-[color:var(--chatdock-border-subtle)]">
               <div className="text-sm font-semibold">채팅</div>
-              <button onClick={() => setPanelOpen(false)} className="text-xs text-[color:var(--color-fg-muted)] hover:underline">
+              <button onClick={() => setPanelOpen(false)} className="text-xs text-[color:var(--chatdock-fg-muted)] hover:underline">
                 닫기
               </button>
             </div>
