@@ -393,6 +393,7 @@ export default function PostShow() {
             </button>
           )}
         </div>
+        </div>
       </article>
 
       {/* ========== 댓글 섹션 ========== */}
