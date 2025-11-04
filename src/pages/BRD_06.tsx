@@ -156,8 +156,9 @@ export const BRD_06 = (): React.JSX.Element => {
               >
                 <option value="FREE">자유</option>
                 <option value="NOTICE">공지</option>
-                <option value="QNA">Q&amp;A</option>
                 <option value="REVIEW">리뷰</option>
+                <option value="DISCUSSION">토의</option>
+                <option value="QUESTION">질문</option>
               </select>
             </div>
 
