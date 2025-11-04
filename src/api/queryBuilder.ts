@@ -39,7 +39,7 @@ export function cleanParams<T extends Record<string, unknown>>(
  *   .sort("createdAt", "desc")
  *   .build();
  *
- * // { page: 1, pageSize: 20, category: "tech", status: "published", sort: "createdAt", order: "desc" }
+ * // { page: 1, size: 20, category: "tech", status: "published", sort: "createdAt,desc" }
  */
 export class QueryBuilder<T extends Record<string, unknown> = Record<string, unknown>> {
   private params: Record<string, unknown> = {};
@@ -54,18 +54,19 @@ export class QueryBuilder<T extends Record<string, unknown> = Record<string, unk
 
   /**
    * 페이지 크기 설정
+   * Spring Boot는 'size' 파라미터를 사용
    */
   pageSize(size: number): this {
-    this.params.pageSize = size;
+    this.params.size = size;
     return this;
   }
 
   /**
    * 정렬 설정
+   * Spring Boot는 'sort=field,direction' 형식을 사용 (예: sort=createdAt,desc)
    */
   sort(field: string, order: "asc" | "desc" = "desc"): this {
-    this.params.sort = field;
-    this.params.order = order;
+    this.params.sort = `${field},${order}`;
     return this;
   }
 
