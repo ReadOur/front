@@ -112,14 +112,7 @@ export function useCreateComment(
         refetchType: "all",
       });
 
-      if (typeof nextCommentCount === "number") {
-        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
-          ...item,
-          commentCount: nextCommentCount ?? item.commentCount,
-        }));
-      }
-
-      // 댓글 목록 무효화
+      // 게시글 상세도 무효화 (댓글 수 업데이트)
       queryClient.invalidateQueries({
         queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
@@ -133,8 +126,6 @@ export function useCreateComment(
           queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
         });
       }
-
-      invalidatePostLists(queryClient);
 
       // 사용자 정의 onSuccess 실행
       await options?.onSuccess?.(data, variables, context);
@@ -191,6 +182,7 @@ export function useUpdateComment(
         refetchType: "all",
       });
 
+      // 게시글 상세도 무효화 (댓글 내용 업데이트)
       queryClient.invalidateQueries({
         queryKey: detailKey,
       });
