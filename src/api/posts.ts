@@ -65,6 +65,7 @@ export async function getPosts(params: GetPostsParams = {}): Promise<PostListRes
     .page(page - 1)
     .pageSize(size);
 
+  // Spring Boot 형식의 정렬 적용 (예: "createdAt,desc")
   if (sort) query.sort(sort);
   if (category) query.filter('category', category);
   if (search) query.search(search);

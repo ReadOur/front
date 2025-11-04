@@ -63,10 +63,26 @@ export class QueryBuilder<T extends Record<string, unknown> = Record<string, unk
 
   /**
    * 정렬 설정
-   * Spring Boot는 'sort=field,direction' 형식을 사용 (예: sort=createdAt,desc)
+   *
+   * @param field - 정렬 필드명 또는 전체 정렬 문자열
+   * @param order - 정렬 방향 (생략 시 field를 전체 문자열로 간주)
+   *
+   * @example
+   * // 일반 사용: sort=field&order=desc
+   * .sort("createdAt", "desc")
+   *
+   * // Spring Boot 형식: sort=field,desc
+   * .sort("createdAt,desc")
    */
-  sort(field: string, order: "asc" | "desc" = "desc"): this {
-    this.params.sort = `${field},${order}`;
+  sort(field: string, order?: "asc" | "desc"): this {
+    if (order) {
+      // 필드와 방향이 따로 주어진 경우 (일반 형식)
+      this.params.sort = field;
+      this.params.order = order;
+    } else {
+      // 전체 문자열로 주어진 경우 (Spring Boot 등)
+      this.params.sort = field;
+    }
     return this;
   }
 
