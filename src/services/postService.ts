@@ -71,6 +71,39 @@ export async function viewPost(postId: string): Promise<void> {
 }
 
 /**
+ * 검색 타입
+ */
+export type SearchType = "TITLE" | "TITLE-CONTENT" | "USERNAME" | "BOOK_TITLE";
+
+/**
+ * 게시글 검색 파라미터
+ */
+export interface SearchPostsParams {
+  type: SearchType;
+  keyword: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+/**
+ * 게시글 검색
+ */
+export async function searchPosts(params: SearchPostsParams): Promise<PaginatedResponse<PostListItem>> {
+  const { type, keyword, page = 0, size = 20, sort = "createdAt,desc" } = params;
+
+  return apiClient.get<PaginatedResponse<PostListItem>>(POST_ENDPOINTS.SEARCH, {
+    params: {
+      type,
+      keyword,
+      page,
+      size,
+      sort,
+    },
+  });
+}
+
+/**
  * 게시글 서비스 객체
  */
 export const postService = {
@@ -82,6 +115,7 @@ export const postService = {
   likePost,
   unlikePost,
   viewPost,
+  searchPosts,
 };
 
 export default postService;

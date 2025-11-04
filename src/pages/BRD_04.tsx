@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
+import { searchPosts, SearchType } from "@/services/postService";
 import { Loading } from "@/components/Loading";
 
 // 날짜 포맷 함수 (ISO -> yyyy.MM.dd)
@@ -22,6 +23,14 @@ const CATEGORIES = [
   { key: "DISCUSSION", label: "토의" },
   { key: "QUESTION", label: "질문" },
   { key: "FREE", label: "자유" },
+] as const;
+
+// 검색 타입 정의
+const SEARCH_TYPES: Array<{ key: SearchType; label: string }> = [
+  { key: "TITLE", label: "제목" },
+  { key: "TITLE-CONTENT", label: "제목+내용" },
+  { key: "USERNAME", label: "작성자" },
+  { key: "BOOK_TITLE", label: "책제목" },
 ] as const;
 
 // 카테고리 한글 변환 함수
@@ -53,20 +62,35 @@ export const BRD_List: React.FC = () => {
   const page = Number(params.get("page") || 1);
   const category = params.get("category") || "";
   const searchQuery = params.get("search") || "";
+  const searchTypeParam = (params.get("searchType") as SearchType) || "TITLE";
   const pageSize = 20;
 
   // 검색어 입력 상태 (실시간 입력용)
   const [searchInput, setSearchInput] = useState(searchQuery);
 
+  // 검색 타입 상태
+  const [searchType, setSearchType] = useState<SearchType>(searchTypeParam);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["posts", page, pageSize, category, searchQuery],
-    queryFn: () =>
-      getPosts({
+    queryKey: ["posts", page, pageSize, category, searchQuery, searchType],
+    queryFn: async () => {
+      // 검색어가 있으면 검색 API 사용
+      if (searchQuery) {
+        return searchPosts({
+          type: searchType,
+          keyword: searchQuery,
+          page: page - 1, // searchPosts는 0부터 시작
+          size: pageSize,
+          sort: "createdAt,desc",
+        });
+      }
+      // 검색어가 없으면 일반 목록 조회
+      return getPosts({
         page,
         size: pageSize,
         ...(category && { category }),
-        ...(searchQuery && { search: searchQuery }),
-      }),
+      });
+    },
     staleTime: 1000 * 60 * 5,
   });
 
@@ -93,8 +117,10 @@ export const BRD_List: React.FC = () => {
   const handleSearch = () => {
     if (searchInput.trim()) {
       params.set("search", searchInput.trim());
+      params.set("searchType", searchType);
     } else {
       params.delete("search");
+      params.delete("searchType");
     }
     params.set("page", "1");
     setParams(params, { replace: true });
@@ -103,8 +129,10 @@ export const BRD_List: React.FC = () => {
   // 필터 초기화
   const handleResetFilters = () => {
     setSearchInput("");
+    setSearchType("TITLE");
     params.delete("category");
     params.delete("search");
+    params.delete("searchType");
     params.set("page", "1");
     setParams(params, { replace: true });
   };
@@ -156,6 +184,20 @@ export const BRD_List: React.FC = () => {
           <div className="flex items-center gap-3">
             {/* 검색 입력 */}
             <div className="flex-1 flex gap-2">
+              {/* 검색 타입 선택 */}
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value as SearchType)}
+                className="w-[150px] h-[36px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+              >
+                {SEARCH_TYPES.map((type) => (
+                  <option key={type.key} value={type.key}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* 검색어 입력 */}
               <input
                 type="text"
                 value={searchInput}
@@ -200,7 +242,7 @@ export const BRD_List: React.FC = () => {
             <div className="flex items-center gap-2 text-sm text-[color:var(--color-fg-muted)]">
               <span>검색:</span>
               <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)]">
-                "{searchQuery}"
+                [{SEARCH_TYPES.find((t) => t.key === searchType)?.label}] "{searchQuery}"
               </span>
             </div>
           )}

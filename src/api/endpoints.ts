@@ -29,6 +29,7 @@ export const USER_ENDPOINTS = {
  */
 export const POST_ENDPOINTS = {
   LIST: "/community/posts",
+  SEARCH: "/community/posts/search",
   CREATE: "/community/posts",
   DETAIL: (postId: string) => `/community/posts/${postId}`,
   UPDATE: (postId: string) => `/community/posts/${postId}`,
