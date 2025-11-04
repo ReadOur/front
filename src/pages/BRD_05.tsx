@@ -52,6 +52,9 @@ export default function PostShow() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
 
+  // 스포일러 가림막 상태 (true가 되면 가림막 해제)
+  const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
+
   // ===== API 데이터 페칭 =====
 
   // 1. 게시글 상세 정보 가져오기 (GET /community/posts/{postId})
@@ -103,6 +106,11 @@ export default function PostShow() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, post?.postId]); // post?.postId로 게시글이 로드되었을 때만 실행
+
+  // 스포일러 게시글이 로드될 때마다 가림막 초기화
+  useEffect(() => {
+    setIsSpoilerRevealed(false);
+  }, [post?.postId]);
 
   // ===== 이벤트 핸들러 =====
 
@@ -346,8 +354,26 @@ export default function PostShow() {
         {/* 본문 내용 */}
         {/* API의 content 필드를 표시 */}
         {/* whitespace-pre-wrap으로 줄바꿈 유지 */}
-        <div className="mt-4 text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap">
-          {post.content}
+        <div className="relative mt-4">
+          <div
+            className={`text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap ${
+              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
+            }`}
+            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
+          >
+            {post.content}
+          </div>
+
+          {post.isSpoiler && !isSpoilerRevealed && (
+            <button
+              type="button"
+              onClick={() => setIsSpoilerRevealed(true)}
+              className="absolute inset-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)]"
+              aria-label="스포일러 가림막 해제"
+            >
+              스포일러 방지. 클릭하면 해제합니다.
+            </button>
+          )}
         </div>
       </article>
 
