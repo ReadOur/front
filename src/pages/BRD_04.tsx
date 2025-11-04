@@ -52,7 +52,8 @@ export const BRD_List: React.FC = () => {
 
   return (
     <div
-      className="w-full bg-[color:var(--color-bg-canvas)] text-[color:var(--color-fg-primary)]"
+      className="w-full min-h-screen pb-[40px]
+      bg-[color:var(--color-bg-canvas)] text-[color:var(--color-fg-primary)]"
       style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
     >
       <div className="mx-auto px-6 mt-[80px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
@@ -173,7 +174,7 @@ export const BRD_List: React.FC = () => {
           </div>
 
           {/* 페이지네이션: 목록 아래, 항상 중앙 */}
-          <div className="mt-6 flex justify-center items-center gap-2">
+          <div className="mt-[20px] mb-[30px] flex justify-center items-center gap-2">
             <button
               onClick={() => goPage(1)}
               className="w-[30px] h-[30px] rounded-[var(--radius-md)]
