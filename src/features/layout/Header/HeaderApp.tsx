@@ -25,7 +25,7 @@ export default function HeaderApp({
   return (
     <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#ffffff', opacity: 1 }}>
       {/* 가운데 정렬 컨테이너 */}
-      <div className="mx-auto px-4 h-28 md:h-32" style={{ maxWidth: "var(--layout-max)" }}>
+      <div className="mx-auto px-4 h-36 md:h-40" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: [로고][탭 중앙][우측 유틸] */}
         <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4 h-full">
           {/* LEFT: 로고 */}
