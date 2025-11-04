@@ -42,12 +42,11 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const createPostMutation = useCreatePost({
     onSuccess: async () => {
-      // 리스트 전부 무효화 + 즉시 재요청
-      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists(), refetchType: "all" });
-      await queryClient.refetchQueries({ queryKey: POST_QUERY_KEYS.lists() }); // ← 확실히 재요청
+      // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
+      await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
       alert("게시글이 작성되었습니다.");
-      navigate("/boards", { state: { refreshed: true } }); // 리스트 페이지에 '새로고침 요청' 신호 전달
+      navigate("/boards"); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error) => {
       alert(`게시글 작성 실패: ${error.message}`);
@@ -57,11 +56,11 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const updatePostMutation = useUpdatePost({
     onSuccess: async (data) => {
-      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(String(data.postId)) });
-      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists(), refetchType: "all" });
+      // 모든 posts 관련 쿼리 무효화 (상세 페이지 및 리스트 모두)
+      await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
       alert("게시글이 수정되었습니다.");
-      navigate(`/boards/${data.postId}`, { state: { refreshed: true } });
+      navigate(`/boards/${data.postId}`);
     },
     onError: (error) => {
       alert(`게시글 수정 실패: ${error.message}`);

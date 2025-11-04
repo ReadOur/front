@@ -104,15 +104,11 @@ export default function PostShow() {
   // 6. 게시글 삭제 mutation (DELETE /community/posts/{postId})
   const deletePostMutation = useDeletePost({
     onSuccess: async () => {
-      // ✅ 상세/목록 캐시 정리 → 목록 페이지가 최신으로 뜸
-      if (postId) {
-        queryClient.removeQueries({ queryKey: POST_QUERY_KEYS.detail(String(postId)) });
-      }
-      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
-      // 필요 시 카테고리·검색 조건별 리스트 키도 함께 invalidate
+      // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
+      await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
       alert("게시글이 삭제되었습니다.");
-      navigate("/boards");
+      navigate("/boards"); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error) => {
       alert(`게시글 삭제 실패: ${error.message}`);

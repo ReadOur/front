@@ -92,7 +92,8 @@ export const BRD_List: React.FC = () => {
         ...(category && { category }),
       });
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0, // 항상 최신 데이터 반영
+    refetchOnMount: 'always', // 마운트 시 항상 재조회
   });
 
   const totalPages = useMemo(() => Math.max(1, data?.totalPages ?? 1), [data]);
