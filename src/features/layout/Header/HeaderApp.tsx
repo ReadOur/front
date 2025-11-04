@@ -71,10 +71,10 @@ export default function HeaderApp({
           </nav>
 
           {/* RIGHT: 알림 + 유저 */}
-          <div className="shrink-0 flex items-center gap-[20px] justify-end -pb-[20px]" style={{ position: 'relative', top: '-25px' }}>
+          <div className="shrink-0 flex items-center gap-[15px] justify-end pb-4 pointer-events-none" style={{ position: 'relative', top: '-25px' }}>
             <button
               onClick={onClickNotifications}
-              className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer"
+              className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer pointer-events-auto"
               aria-label="알림"
             >
               <span role="img" aria-hidden="true" style={{ fontSize: '1.5rem' }}>🔔</span>
@@ -86,13 +86,13 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <span className="font-medium text-[color:var(--color-fg-primary)]" style={{ fontSize: '1.25rem' }}>
+              <span className="font-medium text-[color:var(--color-fg-primary)] pointer-events-auto" style={{ fontSize: '1.25rem' }}>
                 {user.name}
               </span>
             ) : (
               <button
                 onClick={onLogin}
-                className="inline-flex items-center gap-2 h-12 px-5 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-xl font-medium transition-opacity cursor-pointer"
+                className="inline-flex items-center gap-2 h-12 px-5 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-xl font-medium transition-opacity cursor-pointer pointer-events-auto"
               >
                 로그인
               </button>
