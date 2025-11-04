@@ -15,7 +15,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [contentHtml, setContentHtml] = useState<string>("<p></p>");
   const [tags, setTags] = useState<string>("");
   const [category, setCategory] = useState<string>("FREE");
-  const [isNotice, setIsNotice] = useState<boolean>(false);
+  const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
 
   // 수정 모드: 기존 게시글 로드
   const { data: existingPost, isLoading: isLoadingPost } = usePost(postId || "", {
@@ -31,8 +31,8 @@ export const BRD_06 = (): React.JSX.Element => {
       // 태그 배열을 문자열로 변환 (현재 백엔드에서 tags를 반환하지 않을 수 있음)
       // setTags(existingPost.tags ? existingPost.tags.map(t => `#${t}`).join(" ") : "");
 
-      setCategory(existingPost.category === "NOTICE" ? "FREE" : existingPost.category);
-      setIsNotice(existingPost.category === "NOTICE");
+      setCategory(existingPost.category);
+      setIsSpoiler(existingPost.isSpoiler || false);
     }
   }, [isEditMode, existingPost]);
 
@@ -75,15 +75,13 @@ export const BRD_06 = (): React.JSX.Element => {
       .map((tag) => tag.substring(1))
       .filter((tag) => tag.length > 0);
 
-    // isNotice가 true면 category를 "NOTICE"로 설정
-    const finalCategory = isNotice ? "NOTICE" : category;
-
     if (isEditMode && postId) {
       // 수정 모드
       const updateData: UpdatePostRequest = {
         title: title.trim(),
         content: safeHtml,
-        category: finalCategory,
+        category: category,
+        isSpoiler: isSpoiler,
         tags: parsedTags.length > 0 ? parsedTags : undefined,
       };
       updatePostMutation.mutate({ postId, data: updateData });
@@ -92,7 +90,8 @@ export const BRD_06 = (): React.JSX.Element => {
       const createData: CreatePostRequest = {
         title: title.trim(),
         content: safeHtml,
-        category: finalCategory,
+        category: category,
+        isSpoiler: isSpoiler,
         tags: parsedTags.length > 0 ? parsedTags : undefined,
       };
       createPostMutation.mutate(createData);
@@ -146,7 +145,6 @@ export const BRD_06 = (): React.JSX.Element => {
                 id="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                disabled={isNotice}
                 className="
                   w-full h-10 rounded-[var(--radius-md)]
                   bg-[color:var(--color-bg-elev-1)]
@@ -154,24 +152,24 @@ export const BRD_06 = (): React.JSX.Element => {
                   border border-transparent
                   focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
                   px-3
-                  disabled:opacity-50 disabled:cursor-not-allowed
                 "
               >
                 <option value="FREE">자유</option>
+                <option value="NOTICE">공지</option>
                 <option value="QNA">Q&amp;A</option>
                 <option value="REVIEW">리뷰</option>
               </select>
             </div>
 
-            {/* 공지 체크 (절반 크기 느낌) */}
+            {/* 스포일러 체크 */}
             <label className="inline-flex items-center gap-2 select-none">
               <input
                 type="checkbox"
-                checked={isNotice}
-                onChange={(e) => setIsNotice(e.target.checked)}
+                checked={isSpoiler}
+                onChange={(e) => setIsSpoiler(e.target.checked)}
                 className="h-4 w-4 rounded border-[color:var(--color-border-subtle)] accent-[color:var(--color-accent)]"
               />
-              <span className="text-xs">공지로 등록</span>
+              <span className="text-xs">스포일러로 등록</span>
             </label>
 
             {/* 태그 프리뷰 (가운데 정렬, hairline만) */}

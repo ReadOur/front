@@ -14,6 +14,18 @@ function formatDate(dateString: string): string {
   return `${y}.${m}.${day}`;
 }
 
+// 카테고리 한글 변환 함수
+function getCategoryLabel(category: string): string {
+  const categoryMap: Record<string, string> = {
+    FREE: "자유",
+    NOTICE: "공지",
+    QNA: "Q&A",
+    REVIEW: "리뷰",
+    GENERAL: "일반",
+  };
+  return categoryMap[category] || category;
+}
+
 function calculateBadges(post: Post): { type: "hot" | "new" | "count"; value?: string | number }[] {
   const badges: { type: "hot" | "new" | "count"; value?: string | number }[] = [];
   if (post.commentCount && post.commentCount > 0) badges.push({ type: "count", value: post.commentCount });
@@ -242,7 +254,7 @@ export const BRD_List: React.FC = () => {
                   <div className="text-center">{no}</div>
 
                   {/* 카테고리 */}
-                  <div className="text-center truncate">{post.category}</div>
+                  <div className="text-center truncate">{getCategoryLabel(post.category)}</div>
 
                   {/* 제목 (+ 뱃지) */}
                   <div className="flex items-center gap-2 min-w-0">
