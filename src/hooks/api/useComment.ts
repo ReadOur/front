@@ -14,7 +14,11 @@ import {
   Post,
   PostComment,
 } from "@/types";
-import { POST_QUERY_KEYS, invalidatePostLists, updateCachedPostListEntry } from "./usePost";
+import {
+  POST_QUERY_KEYS,
+  forceRefetchAllPostQueries,
+  updateCachedPostListEntry,
+} from "./usePost";
 
 // ===== Query Keys =====
 export const COMMENT_QUERY_KEYS = {
@@ -76,9 +80,6 @@ export function useCreateComment(
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
 
-      let nextCommentCount: number | undefined;
-
-      // 게시글 상세 캐시에 새 댓글을 반영
       queryClient.setQueryData<Post>(detailKey, (previous) => {
         if (!previous) {
           return previous;
@@ -96,16 +97,19 @@ export function useCreateComment(
           (comment) => comment.commentId === newComment.commentId
         );
 
-        const commentCount = previous.commentCount + (hasComment ? 0 : 1);
-        nextCommentCount = commentCount;
-
         return {
           ...previous,
-          commentCount,
+          commentCount: previous.commentCount + (hasComment ? 0 : 1),
           comments: hasComment
             ? previous.comments
             : [newComment, ...(previous.comments ?? [])],
         };
+      });
+
+      // 댓글 목록 무효화
+      await queryClient.invalidateQueries({
+        queryKey: COMMENT_QUERY_KEYS.all,
+        refetchType: "all",
       });
 
       if (typeof nextCommentCount === "number") {
@@ -117,8 +121,11 @@ export function useCreateComment(
 
       // 댓글 목록 무효화
       queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.all,
+        queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
       });
+
+      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
+      forceRefetchAllPostQueries(queryClient);
 
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
@@ -130,7 +137,7 @@ export function useCreateComment(
       invalidatePostLists(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -173,14 +180,26 @@ export function useUpdateComment(
         };
       });
 
+      // 해당 댓글 상세 무효화
       queryClient.invalidateQueries({
-        queryKey: COMMENT_QUERY_KEYS.all,
+        queryKey: commentDetailKey,
       });
 
-      invalidatePostLists(queryClient);
+      // 댓글 목록도 무효화
+      await queryClient.invalidateQueries({
+        queryKey: COMMENT_QUERY_KEYS.all,
+        refetchType: "all",
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: detailKey,
+      });
+
+      // 게시글 목록도 무효화하여 댓글 수/미리보기 반영
+      forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -199,8 +218,6 @@ export function useDeleteComment(
     onSuccess: (data, variables, context) => {
       const detailKey = POST_QUERY_KEYS.detail(String(variables.postId));
 
-      let nextCommentCount: number | undefined;
-
       queryClient.setQueryData<Post>(detailKey, (previous) => {
         if (!previous) {
           return previous;
@@ -210,36 +227,34 @@ export function useDeleteComment(
           (comment) => comment.commentId !== Number(variables.commentId)
         );
 
-        const commentCount = Math.max(0, previous.commentCount - 1);
-        nextCommentCount = commentCount;
-
         return {
           ...previous,
-          commentCount,
+          commentCount: Math.max(0, previous.commentCount - 1),
           comments: filteredComments,
         };
       });
-
-      if (typeof nextCommentCount === "number") {
-        updateCachedPostListEntry(queryClient, variables.postId, (item) => ({
-          ...item,
-          commentCount: nextCommentCount ?? item.commentCount,
-        }));
-      }
 
       // 해당 댓글 제거
       queryClient.removeQueries({
         queryKey: COMMENT_QUERY_KEYS.detail(variables.commentId),
       });
 
-      queryClient.invalidateQueries({
+      // 댓글 목록 무효화
+      await queryClient.invalidateQueries({
         queryKey: COMMENT_QUERY_KEYS.all,
+        refetchType: "all",
       });
 
-      invalidatePostLists(queryClient);
+      // 게시글 상세도 무효화 (댓글 수 업데이트)
+      queryClient.invalidateQueries({
+        queryKey: detailKey,
+      });
+
+      // 게시글 목록도 무효화하여 댓글 수가 즉시 반영되도록 함
+      forceRefetchAllPostQueries(queryClient);
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      await options?.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -252,12 +267,18 @@ export function useLikeComment(
   options?: UseMutationOptions<
     CommentLikeResponse,
     Error,
-    { commentId: string; isLiked: boolean }
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
   >
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<CommentLikeResponse, Error, { commentId: string; isLiked: boolean }>({
+  return useMutation<
+    CommentLikeResponse,
+    Error,
+    { commentId: string; isLiked: boolean },
+    { previousComment?: Comment }
+  >({
     mutationFn: ({ commentId, isLiked }) =>
       isLiked ? commentService.unlikeComment(commentId) : commentService.likeComment(commentId),
     onMutate: async ({ commentId, isLiked }) => {
