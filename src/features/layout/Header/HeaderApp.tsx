@@ -71,7 +71,7 @@ export default function HeaderApp({
           </nav>
 
           {/* RIGHT: 알림 + 유저 */}
-          <div className="shrink-0 flex items-center gap-[15px] justify-end">
+          <div className="shrink-0 flex items-center gap-[15px] justify-end pb-4">
             <button
               onClick={onClickNotifications}
               className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer"
