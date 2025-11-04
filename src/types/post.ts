@@ -47,6 +47,7 @@ export interface Post {
   commentCount: number;
   isLiked: boolean;
   warnings?: PostWarning[];
+  attachments?: Attachment[];
   createdAt: string;
   updatedAt: string;
   comments?: PostComment[];
