@@ -42,11 +42,12 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const createPostMutation = useCreatePost({
     onSuccess: async () => {
-      // ✅ 리스트 무효화 → /boards 진입 시 최신 데이터 보장
-      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      // 리스트 전부 무효화 + 즉시 재요청
+      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists(), refetchType: "all" });
+      await queryClient.refetchQueries({ queryKey: POST_QUERY_KEYS.lists() }); // ← 확실히 재요청
 
       alert("게시글이 작성되었습니다.");
-      navigate("/boards");
+      navigate("/boards", { state: { refreshed: true } }); // 리스트 페이지에 '새로고침 요청' 신호 전달
     },
     onError: (error) => {
       alert(`게시글 작성 실패: ${error.message}`);
@@ -56,12 +57,10 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const updatePostMutation = useUpdatePost({
     onSuccess: async (data) => {
-      // ✅ 상세/리스트 캐시 최신화
       await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(String(data.postId)) });
-      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() });
+      await queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists(), refetchType: "all" });
 
       alert("게시글이 수정되었습니다.");
-      // 선택: state로 '갱신됨' 신호를 보낼 수도 있음
       navigate(`/boards/${data.postId}`, { state: { refreshed: true } });
     },
     onError: (error) => {
@@ -196,7 +195,7 @@ export const BRD_06 = (): React.JSX.Element => {
             {/* 태그 프리뷰 (가운데 정렬, hairline만) */}
             <div className="flex-1">
               <div className="w-full text-center text-sm shadow-[inset_0_-1px_0_0_var(--color-border-subtle)] pb-1">
-                {tags || <span className="text-[color:var(--color-fg-muted)]">#태그를 입력하세요</span>}
+                {tags || <span className="text-[color:var(--color-fg-muted)]">#주의사항 입력</span>}
               </div>
             </div>
           </div>
