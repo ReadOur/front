@@ -23,6 +23,8 @@ export interface Post {
   likeCount: number;
   hit: number;
   commentCount?: number;
+  isLiked?: boolean;
+  attachments?: Array<{ id: string; name: string; url: string }>;
 }
 
 /**
