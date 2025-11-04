@@ -192,10 +192,11 @@ export default function PostShow() {
    * - 수정된 댓글 내용을 서버에 전송
    */
   function handleCommentUpdate() {
-    if (!editingCommentText.trim() || editingCommentId === null) return;
+    if (!editingCommentText.trim() || editingCommentId === null || !postId) return;
 
     updateCommentMutation.mutate({
       commentId: String(editingCommentId),
+      postId: postId,
       data: { content: editingCommentText.trim() },
     });
   }

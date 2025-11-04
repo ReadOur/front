@@ -100,11 +100,11 @@ export function useCreateComment(
  * 댓글 수정
  */
 export function useUpdateComment(
-  options?: UseMutationOptions<Comment, Error, { commentId: string; data: UpdateCommentRequest }>
+  options?: UseMutationOptions<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<Comment, Error, { commentId: string; data: UpdateCommentRequest }>({
+  return useMutation<Comment, Error, { commentId: string; postId: string; data: UpdateCommentRequest }>({
     mutationFn: ({ commentId, data }) => commentService.updateComment(commentId, data),
     onSuccess: (data, variables, context) => {
       // 해당 댓글 상세 무효화
@@ -115,6 +115,11 @@ export function useUpdateComment(
       // 댓글 목록도 무효화
       queryClient.invalidateQueries({
         queryKey: COMMENT_QUERY_KEYS.lists(),
+      });
+
+      // 게시글 상세도 무효화 (댓글 내용 업데이트)
+      queryClient.invalidateQueries({
+        queryKey: POST_QUERY_KEYS.detail(variables.postId),
       });
 
       // 사용자 정의 onSuccess 실행
