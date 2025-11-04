@@ -8,8 +8,18 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { ApiResponse, ApiError } from "@/types";
 
 // ===== 환경변수 =====
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+// 개발 환경에서는 Vite 프록시를 사용하므로 "/api"만 사용
+// 프로덕션 환경에서는 전체 URL 사용
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
+
+// 디버깅: 현재 API 설정 출력
+console.log('🔧 API Client Configuration:', {
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
+  env: import.meta.env.MODE,
+  note: 'Using Vite proxy in development to avoid CORS issues',
+});
 
 /**
  * Axios 인스턴스 생성
@@ -32,9 +42,19 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
+    // 디버깅: 실제 요청 URL 출력
+    const fullUrl = `${config.baseURL}${config.url}`;
+    const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
+    console.log('📡 API Request:', {
+      method: config.method?.toUpperCase(),
+      url: fullUrl + params,
+      params: config.params,
+    });
+
     return config;
   },
   (error) => {
+    console.error('❌ API Request Error:', error);
     return Promise.reject(error);
   }
 );
@@ -42,10 +62,26 @@ axiosInstance.interceptors.request.use(
 // ===== 응답 인터셉터 =====
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
-    // 성공 응답은 그대로 반환
+    // 성공 응답 로그
+    console.log('✅ API Response:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data,
+    });
     return response;
   },
   async (error) => {
+    // 에러 상세 로그
+    console.error('❌ API Error:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      data: error.response?.data,
+    });
+
     const originalRequest = error.config;
 
     // 401 Unauthorized - 토큰 만료

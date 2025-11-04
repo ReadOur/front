@@ -103,13 +103,34 @@ export const BRD_List: React.FC = () => {
       <div className="absolute left-[100px] w-[1250px]" style={{ top: 300 }}>
         {/* 에러 */}
         {error && (
-          <div className="w-full h-[68px] rounded-[var(--radius-md)]
+          <div className="w-full min-h-[120px] rounded-[var(--radius-md)]
                           bg-[color:var(--color-bg-elev-2)]
                           border border-[color:var(--color-border-default)]
-                          flex items-center justify-center">
-            <span className="text-[color:var(--color-fg-danger)]">
-              에러: {error instanceof Error ? error.message : '데이터를 불러올 수 없습니다'}
+                          flex flex-col items-center justify-center p-4">
+            <span className="text-[color:var(--color-fg-danger)] text-lg font-bold mb-2">
+              ❌ 데이터를 불러올 수 없습니다
             </span>
+            <span className="text-[color:var(--color-fg-muted)] text-sm mb-2">
+              에러 메시지: {error instanceof Error ? error.message : '알 수 없는 에러'}
+            </span>
+            <span className="text-[color:var(--color-fg-muted)] text-xs">
+              💡 확인사항: 백엔드 서버가 http://localhost:8080 에서 실행 중인가요?
+            </span>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-3 px-4 py-2 bg-[color:var(--color-accent)] text-white rounded hover:opacity-90"
+            >
+              🔄 새로고침
+            </button>
+            {/* 디버깅 정보 */}
+            <details className="mt-3 w-full">
+              <summary className="cursor-pointer text-xs text-[color:var(--color-fg-muted)]">
+                디버깅 정보 보기
+              </summary>
+              <pre className="mt-2 p-2 bg-black text-green-400 text-xs rounded overflow-auto">
+                {JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}
+              </pre>
+            </details>
           </div>
         )}
 
