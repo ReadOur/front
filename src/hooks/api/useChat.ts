@@ -90,20 +90,22 @@ export function useInfiniteMessages(threadId: string, pageSize: number = 50) {
  * 채팅 스레드 생성
  */
 export function useCreateThread(
-  options?: UseMutationOptions<ChatThread, Error, CreateThreadRequest>
+  options?: UseMutationOptions<ChatThread, Error, CreateThreadRequest, unknown>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<ChatThread, Error, CreateThreadRequest>({
+  return useMutation<ChatThread, Error, CreateThreadRequest, unknown>({
+    ...options,
     mutationFn: chatService.createThread,
     onSuccess: (data, variables, context) => {
       // 스레드 목록 무효화
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.threads() });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -111,11 +113,22 @@ export function useCreateThread(
  * 메시지 전송
  */
 export function useSendMessage(
-  options?: UseMutationOptions<ChatMessage, Error, SendMessageRequest>
+  options?: UseMutationOptions<
+    ChatMessage,
+    Error,
+    SendMessageRequest,
+    { previousMessages?: PaginatedResponse<ChatMessage> }
+  >
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<ChatMessage, Error, SendMessageRequest>({
+  return useMutation<
+    ChatMessage,
+    Error,
+    SendMessageRequest,
+    { previousMessages?: PaginatedResponse<ChatMessage> }
+  >({
+    ...options,
     mutationFn: chatService.sendMessage,
     onMutate: async (newMessage) => {
       // 낙관적 업데이트: 즉시 UI에 메시지 추가
@@ -136,7 +149,7 @@ export function useSendMessage(
           nickname: "나",
         },
         content: newMessage.content,
-        type: newMessage.type || "TEXT" as any,
+        type: (newMessage.type || "TEXT") as any,
         isRead: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -159,6 +172,9 @@ export function useSendMessage(
           context.previousMessages
         );
       }
+      if (options?.onError) {
+        (options.onError as any)(err, newMessage, context);
+      }
     },
     onSuccess: (data, variables, context) => {
       // 서버 응답으로 메시지 목록 업데이트
@@ -168,9 +184,10 @@ export function useSendMessage(
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.threads() });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
 
@@ -178,11 +195,12 @@ export function useSendMessage(
  * 메시지 읽음 처리
  */
 export function useMarkAsRead(
-  options?: UseMutationOptions<MarkAsReadResponse, Error, MarkAsReadRequest>
+  options?: UseMutationOptions<MarkAsReadResponse, Error, MarkAsReadRequest, unknown>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<MarkAsReadResponse, Error, MarkAsReadRequest>({
+  return useMutation<MarkAsReadResponse, Error, MarkAsReadRequest, unknown>({
+    ...options,
     mutationFn: chatService.markAsRead,
     onSuccess: (data, variables, context) => {
       // 해당 스레드의 unreadCount 업데이트
@@ -195,8 +213,9 @@ export function useMarkAsRead(
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(variables.threadId) });
 
       // 사용자 정의 onSuccess 실행
-      options?.onSuccess?.(data, variables, context);
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
     },
-    ...options,
   });
 }
