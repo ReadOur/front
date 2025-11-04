@@ -12,7 +12,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const isEditMode = !!postId;
 
   const [title, setTitle] = useState<string>("");
-  const [contentHtml, setContentHtml] = useState<string>("<p></p>");
+  const [contentHtml, setContentHtml] = useState<string>("");
   const [tags, setTags] = useState<string>("");
   const [category, setCategory] = useState<string>("FREE");
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
@@ -66,7 +66,13 @@ export const BRD_06 = (): React.JSX.Element => {
     }
 
     // HTML 콘텐츠 sanitize
-    const safeHtml = DOMPurify.sanitize(contentHtml, { USE_PROFILES: { html: true } });
+    let safeHtml = DOMPurify.sanitize(contentHtml, { USE_PROFILES: { html: true } });
+
+    // 빈 태그 제거 (앞뒤의 빈 <p></p>, <p><br></p> 등)
+    safeHtml = safeHtml
+      .replace(/^(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>)+/gi, '') // 앞쪽 빈 태그
+      .replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>)+$/gi, '') // 뒤쪽 빈 태그
+      .trim();
 
     // 태그 파싱: "#태그1 #태그2" → ["태그1", "태그2"]
     const parsedTags = tags
