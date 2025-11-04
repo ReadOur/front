@@ -52,10 +52,6 @@ export default function PostShow() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentText, setEditingCommentText] = useState("");
 
-  // 대댓글 작성 상태 관리
-  const [replyingToCommentId, setReplyingToCommentId] = useState<number | null>(null);
-  const [replyText, setReplyText] = useState("");
-
   // ===== API 데이터 페칭 =====
 
   // 1. 게시글 상세 정보 가져오기 (GET /community/posts/{postId})
@@ -140,42 +136,7 @@ export default function PostShow() {
     createCommentMutation.mutate(request);
   }
 
-  /**
-   * 대댓글 작성 모드 진입
-   */
-  function handleReplyClick(commentId: number) {
-    setReplyingToCommentId(commentId);
-    setReplyText("");
-  }
 
-  /**
-   * 대댓글 작성 제출
-   */
-  function handleReplySubmit(parentId: number) {
-    const trimmed = replyText.trim();
-    if (!trimmed || !postId) return;
-
-    const request: CreateCommentRequest = {
-      postId,
-      content: trimmed,
-      parentId,
-    };
-
-    createCommentMutation.mutate(request, {
-      onSuccess: () => {
-        setReplyingToCommentId(null);
-        setReplyText("");
-      },
-    });
-  }
-
-  /**
-   * 대댓글 작성 취소
-   */
-  function handleReplyCancel() {
-    setReplyingToCommentId(null);
-    setReplyText("");
-  }
 
   /**
    * 댓글 수정 모드 진입 핸들러
@@ -520,45 +481,6 @@ export default function PostShow() {
                       </div>
                     )}
                   </div>
-
-                  {/* 답글 입력 폼 */}
-                  {replyingToCommentId === comment.commentId && (
-                    <div className="ml-[52px] mb-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleReplySubmit(comment.commentId);
-                            } else if (e.key === "Escape") {
-                              handleReplyCancel();
-                            }
-                          }}
-                          placeholder="답글을 입력하세요"
-                          disabled={createCommentMutation.isPending}
-                          className="flex-1 px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleReplySubmit(comment.commentId)}
-                          disabled={createCommentMutation.isPending || !replyText.trim()}
-                          className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {createCommentMutation.isPending ? "등록 중..." : "등록"}
-                        </button>
-                        <button
-                          onClick={handleReplyCancel}
-                          disabled={createCommentMutation.isPending}
-                          className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-2)] text-sm hover:opacity-90 disabled:opacity-50"
-                        >
-                          취소
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </React.Fragment>
               );
             })
