@@ -113,9 +113,6 @@ export const BRD_List: React.FC = () => {
             <span className="text-[color:var(--color-fg-muted)] text-sm mb-2">
               에러 메시지: {error instanceof Error ? error.message : '알 수 없는 에러'}
             </span>
-            <span className="text-[color:var(--color-fg-muted)] text-xs">
-              💡 확인사항: 백엔드 서버가 http://localhost:8080 에서 실행 중인가요?
-            </span>
             <button
               onClick={() => window.location.reload()}
               className="mt-3 px-4 py-2 bg-[color:var(--color-accent)] text-white rounded hover:opacity-90"
@@ -135,7 +132,7 @@ export const BRD_List: React.FC = () => {
         )}
 
         {/* 게시글 목록 */}
-        {data?.items.map((post, idx) => {
+        {(data?.items ?? []).map((post, idx) => {
           const top = 0 + idx * 68;
           const badges = calculateBadges(post);
 

@@ -38,6 +38,10 @@ export const POST_ENDPOINTS = {
   VIEW: (postId: string) => `/community/posts/${postId}/view`,
 } as const;
 
+export const GET_ALL = {
+
+}
+
 /**
  * 댓글 관련 엔드포인트
  */
