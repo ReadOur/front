@@ -15,8 +15,6 @@ import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 위치는 프로젝트에 맞게
-
 /**
  * 게시글 상세 페이지 (BRD_05)
  *
@@ -327,6 +325,7 @@ export default function PostShow() {
       className="w-full min-w-[1100px] min-h-[800px] mx-auto px-6 py-8 bg-[color:var(--color-bg-elev-1)]"
       data-model-id="post:show"
     >
+
       {/* ========== 상단 헤더 바 ========== */}
       {/* 게시글 메타 정보 표시: 작성일, 조회수, 작성자 */}
       <section className="rounded-xl overflow-hidden border border-[color:var(--color-border-subtle)] shadow-sm mb-4">
@@ -347,7 +346,7 @@ export default function PostShow() {
       {/* 제목, 내용, 좋아요 버튼, 첨부파일을 표시하는 메인 영역 */}
       <article
         aria-labelledby="title"
-        className="relative bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-xl p-5 shadow-sm"
+        className="relative bg-[color:var(--color-bg-elev-1)] pl-[10px] border border-[color:var(--color-border-subtle)] rounded-xl p-5 shadow-sm"
       >
         {post.isSpoiler && !isSpoilerRevealed && (
           <button
@@ -479,7 +478,7 @@ export default function PostShow() {
         {/* 댓글 입력 폼 */}
         {/* - 텍스트 입력 필드 + 등록 버튼 */}
         {/* - Enter 키로도 제출 가능 (Shift+Enter는 제외) */}
-        <div className="grid grid-cols-[1fr_auto] gap-2 mt-3">
+        <div className="grid grid-cols-[1fr_auto] gap-2 mt-3 py-6">
           <input
             type="text"
             value={commentText}
@@ -494,7 +493,10 @@ export default function PostShow() {
             placeholder="댓글을 입력하세요"
             aria-label="댓글 입력"
             disabled={createCommentMutation.isPending}  // 제출 중에는 비활성화
-            className="px-3 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
+            className="px-4 py-[8px] rounded-lg border
+             border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]
+              text-[color:var(--color-fg-primary)] outline-none focus:ring-2
+               focus:ring-[color:var(--color-accent)] disabled:opacity-50"
           />
           <button
             onClick={handleCommentSubmit}
@@ -523,7 +525,10 @@ export default function PostShow() {
                 <React.Fragment key={comment.commentId}>
                   <div className="grid grid-cols-[40px_1fr_auto] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]">
                     {/* 작성자 아바타 (닉네임의 첫 글자로 표시) */}
-                    <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] flex items-center justify-center text-[color:var(--color-fg-muted)] text-sm font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)]
+                      border border-[color:var(--color-border-subtle)] flex
+                      items-center justify-center text-[color:var(--color-fg-muted)]
+                      text-sm font-semibold">
                       {comment.authorNickname[0]?.toUpperCase() || "?"}
                     </div>
 
