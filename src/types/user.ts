@@ -63,6 +63,10 @@ export interface SignupRequest {
   email: string;
   password: string;
   nickname: string;
+  /**
+   * 선택 사용자 아이디 (이메일과 별개의 로그인 ID)
+   */
+  userId?: string;
 }
 
 /**
