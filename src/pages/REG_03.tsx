@@ -1,152 +1,204 @@
-import React, {useState} from 'react'
+import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
 
-export default function Register() {
-  const [formData, setFormData] = useState({
-    email:"",
-    id: "",
-    nickname: "",
-    password: "",
-    passwordConfirm: "",
-  });
+import { signup } from '@/services/authService';
 
-  const handleInputChange =
-    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+interface RegisterFormState {
+  email: string;
+  userId: string;
+  nickname: string;
+  password: string;
+  passwordConfirm: string;
+}
+
+const defaultFormState: RegisterFormState = {
+  email: '',
+  userId: '',
+  nickname: '',
+  password: '',
+  passwordConfirm: '',
+};
+
+export default function REG_03() {
+  const [formState, setFormState] = useState<RegisterFormState>(defaultFormState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const isFormValid = useMemo(() => {
+    return (
+      formState.email.trim() !== '' &&
+      formState.nickname.trim() !== '' &&
+      formState.password.length >= 8 &&
+      formState.password === formState.passwordConfirm
+    );
+  }, [formState]);
+
+  const handleChange = (field: keyof RegisterFormState) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setFormState((prev) => ({ ...prev, [field]: event.target.value }));
     };
 
-  const handleSubmit = (e:React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted: ", formData);
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting) return;
+
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (formState.password !== formState.passwordConfirm) {
+      setErrorMessage('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
+    if (formState.password.length < 8) {
+      setErrorMessage('비밀번호는 최소 8자 이상이어야 합니다.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await signup({
+        email: formState.email,
+        password: formState.password,
+        nickname: formState.nickname,
+        userId: formState.userId.trim() ? formState.userId.trim() : undefined,
+      });
+
+      setSuccessMessage('회원가입이 완료되었습니다. 로그인 페이지에서 로그인해 주세요.');
+      setFormState(defaultFormState);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const apiMessage =
+          (typeof error.response?.data === 'object' && error.response?.data?.message) ||
+          error.response?.data?.error ||
+          error.message;
+        setErrorMessage(apiMessage ?? '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      } else {
+        setErrorMessage('회원가입 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="bg-white w-full min-w[1431px] min-h[1059px] relative">
-      <div className="absoulute top-[87px] left-[270px] w-[891px] h-855px] bg-netrual-mid">
-        <h1 className="top-[103px] left-[606px] w-[219px] text-black text-center absolute
-        [font-family: 'Inter-Regular', Helvetica] font-normal text-4xl tracking-[0]
-        leading-[normal]">
-           회원가입
-        </h1>
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-16">
+      <div className="w-full max-w-2xl rounded-3xl bg-white p-12 shadow-lg">
+        <header className="mb-10 text-center">
+          <h1 className="text-3xl font-semibold text-slate-900">회원가입</h1>
+          <p className="mt-3 text-sm text-slate-600">
+            아래 정보를 입력해 회원가입을 완료해 주세요.
+          </p>
+        </header>
 
-        <form onSubmit={handleSubmit}>
-          <div className="absolute top-[245px] left-[322px] w-[789px] h-[154px]">
-            <div className="absolute top-0 left-0 w-[787px] h-[66px] bg-netrual-light" />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="email" className="text-sm font-medium text-slate-800">
+                이메일
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={formState.email}
+                onChange={handleChange('email')}
+                placeholder="example@email.com"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                autoComplete="email"
+                required
+              />
+            </div>
 
-            <label htmlFor="email" className="sr-only">
-              이메일
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange("email")}
-              placeholder="이메일"
-              className="top-[11px] left-[15px] w-[757px] h-[44px] opacity-50 text-black
-              absolute [font-family: 'Inter-Regular', Helvetica] font-normal text-4xl tracking-[0]
-              leading-[normal] placeholder:opacity-50 placeholder:text-black focus:opacity-100"
-              aria-label="이메일"
-              required
-            />
+            <div className="flex flex-col gap-2">
+              <label htmlFor="userId" className="text-sm font-medium text-slate-800">
+                아이디 (선택)
+              </label>
+              <input
+                id="userId"
+                type="text"
+                value={formState.userId}
+                onChange={handleChange('userId')}
+                placeholder="로그인에 사용할 ID"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                autoComplete="username"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="nickname" className="text-sm font-medium text-slate-800">
+                닉네임
+              </label>
+              <input
+                id="nickname"
+                type="text"
+                value={formState.nickname}
+                onChange={handleChange('nickname')}
+                placeholder="표시할 닉네임"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                autoComplete="nickname"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="password" className="text-sm font-medium text-slate-800">
+                비밀번호
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={formState.password}
+                onChange={handleChange('password')}
+                placeholder="비밀번호를 입력하세요"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <label htmlFor="passwordConfirm" className="text-sm font-medium text-slate-800">
+                비밀번호 확인
+              </label>
+              <input
+                id="passwordConfirm"
+                type="password"
+                value={formState.passwordConfirm}
+                onChange={handleChange('passwordConfirm')}
+                placeholder="비밀번호를 다시 입력하세요"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                autoComplete="new-password"
+                minLength={8}
+                required
+              />
+            </div>
           </div>
 
-          <div className="absolute top-[347px] left-322px] w-[789px] h-[154px]">
-            <div className="absoulte top-0 left-0 w-[787px] h-[66px] bg-netrual-light" />
+          {errorMessage && (
+            <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {errorMessage}
+            </p>
+          )}
 
-            <label htmlFor="userId" className="sr-only">
-              ID
-            </label>
-            <input
-              type="text"
-              id="userId"
-              name="userId"
-              value={formData.id}
-              onChange={handleInputChange("id")}
-              placeholder="ID"
-              className="absolute top-[11px] left-[15px] w-[757px] h-[44px] opacity-50
-               [font-family: 'Inter-Regular', Hevletica] font normal text-4xl tracking-[0]
-              leading-[normal] placeholder:opacity-50 placeholder:text-black focus:opacity-100"
-              aria-label="ID"
-              required
-            />
-          </div>
+          {successMessage && (
+            <p className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-600">
+              {successMessage}
+            </p>
+          )}
 
-          <div className="absolute top-[445px] left-[322px] w-[789px] h-[154px]">
-            <div className="absolute top-0 left-0 w-[787px] h-[66px] bg-netrual-light" />
-
-            <label htmlFor="nickname" className="sr-only">
-              닉네임
-            </label>
-            <input
-              type="text"
-              id="nickname"
-              name="nickname"
-              value={formData.nickname}
-              onChange={handleInputChange("nickname")}
-              placeholder="닉네임"
-              className="top-[11px] left-[15px] w-[757px] h-44px] opacity-50 text-black
-              text-center absolute [font-family: 'Inter-Regular', Helvetica] font-normal text-4xl tracking-[0]
-              leading-[normal] placeholder:opacity-50 placeholder:text-black focus:opacity-100"
-              aria-label="Nickname"
-              required
-            />
-          </div>
-
-          <div className="absolute top-[540px] left-[321px] w-[790px] h-[235px]">
-            <div className="absolute top-0 left-0 w-[787px] h-[66px] bg-netrual-light" />
-            <label htmlFor="password" className="sr-only">
-              비밀번호
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange("password")}
-              placeholder="비밀번호"
-              className="top-[11px] left-[15px] w-[757px] h-[44px] opacity-50 text-black
-              absolute [font-family: 'Inter-Regular', Helvetica] font-normal text-4xl tracking-[0]
-              leading-[normal] placeholder:opacity-50 placeholder:text-black focus:opacity-100"
-              aria-label="Password"
-              required
-            />
-          </div>
-
-          <div className="top-[94px] left-px bg-netrual-light absolute w-[787px] h-66px">
-          <label htmlFor="passwordConform" className="sr-only">
-                 비밀번호 확인
-          </label>
-          <input
-            type="password"
-            id="passwordConform"
-            name="passwordConform"
-            value={formData.password}
-            onChange={handleInputChange("passwordConform")}
-            placeholder="비밀번호 확인"
-            className="top-[11px] left-[15px] w-[757px] h-[44px] opacity-50 text-black
-              absolute [font-family: 'Inter-Regular', Helvetica] font-normal text-4xl tracking-[0]
-              leading-[normal] placeholder:opacity-50 placeholder:text-black focus:opacity-100"
-            aria-label="Password Conform"
-            required
-          />
-        </div>
-
-          <div className="absolute top-[727px] left-[321px] w-[789px] h-[146px">
-            <button
-              type="submit"
-              className="top-0 left-0 bg-secondary rounded-[10px] absolute w-[787px]
-              h-[66px] cursor-pointer hover:opacioty-90 transition-opacity"
-              aria-label="Submit"
-              >
-              <span className="top-[11px] left-[283px] w-[395px] text-netural-mid absolute
-              [font-family: 'Inter-Regular', Helvetica] font-normal text-4xl tracking-[0]
-              leading-[normal]">
-                회원가입하기
-              </span>
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="mt-4 w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isSubmitting || !isFormValid}
+          >
+            {isSubmitting ? '가입 중...' : '회원가입하기'}
+          </button>
         </form>
       </div>
     </div>
-  )
+  );
 }
