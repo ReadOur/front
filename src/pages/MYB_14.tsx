@@ -1,5 +1,6 @@
 // MYB_14.tsx - 내 서재 페이지
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 // 책 타입 정의
 interface Book {
@@ -26,17 +27,51 @@ const mockReviewedBooks: Book[] = [
   { id: 10, title: "책 제목 5", author: "저자 5" },
 ];
 
-export default function MYB_14() {
-  const [searchQuery, setSearchQuery] = useState("");
+// 목업 연관 검색어 (나중에 API로 교체)
+const mockSuggestions = [
+  "연관 검색 1",
+  "연관 검색 2",
+  "연관 검색 3",
+  "연관 검색 4",
+];
 
-  const handleSearch = () => {
-    console.log("검색:", searchQuery);
-    // TODO: 검색 API 호출
+export default function MYB_14() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearch = (query?: string) => {
+    const searchTerm = query || searchQuery;
+    if (!searchTerm.trim()) return;
+
+    console.log("검색:", searchTerm);
+    // TODO: 검색 결과 페이지로 이동
+    navigate(`/library/search?q=${encodeURIComponent(searchTerm)}`);
+    setShowSuggestions(false);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    handleSearch(suggestion);
   };
 
   const handleBookClick = (book: Book) => {
     console.log("책 클릭:", book);
-    // TODO: 책 상세 페이지로 이동
+    // TODO: 책 상세 페이지(BOD_15)로 이동
+    navigate(`/books/${book.id}`);
   };
 
   return (
@@ -46,7 +81,7 @@ export default function MYB_14() {
     >
       <div className="max-w-[1400px] mx-auto">
         {/* 검색바 */}
-        <div className="mb-12">
+        <div className="mb-12 relative" ref={searchRef}>
           <div
             className="flex items-center gap-4 px-6 py-6 rounded-full"
             style={{
@@ -57,7 +92,13 @@ export default function MYB_14() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(e.target.value.length > 0);
+              }}
+              onFocus={() => {
+                if (searchQuery.length > 0) setShowSuggestions(true);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleSearch();
               }}
@@ -66,7 +107,7 @@ export default function MYB_14() {
               style={{ color: "#1E1E1E" }}
             />
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
             >
               <svg
@@ -82,6 +123,30 @@ export default function MYB_14() {
               </svg>
             </button>
           </div>
+
+          {/* 연관 검색어 드롭다운 */}
+          {showSuggestions && searchQuery.length > 0 && (
+            <div
+              className="absolute top-full mt-4 w-full rounded-[30px] p-6 z-10"
+              style={{ background: "#E9E5DC" }}
+            >
+              {mockSuggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="py-3 px-4 cursor-pointer hover:bg-black/5 transition rounded"
+                  style={{
+                    opacity: 0.4,
+                    color: "black",
+                    fontSize: "24px",
+                    lineHeight: "24px",
+                  }}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 위시리스트 섹션 */}
