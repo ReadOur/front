@@ -1,0 +1,229 @@
+# 📋 ReadOur Front - TODO & Roadmap
+
+> **Last Updated:** 2025-11-05
+> **Current Status:** 게시판 CRUD 완료, 페이지 구현 단계
+
+---
+
+## 🎯 진행 중 (In Progress)
+
+- [ ] 프로젝트 구조 문서화
+
+---
+
+## 📌 우선순위 높음 (High Priority)
+
+### 🔐 인증 시스템 (Authentication)
+- [ ] 로그인 페이지 구현 (LOG_02)
+  - [ ] 로그인 폼 UI
+  - [ ] 로그인 API 연동
+  - [ ] 토큰 저장 및 관리
+  - [ ] 소셜 로그인 (선택)
+- [ ] 회원가입 페이지 구현 (REG_03)
+  - [ ] 회원가입 폼 UI
+  - [ ] 유효성 검증 (이메일, 비밀번호 강도)
+  - [ ] 회원가입 API 연동
+- [ ] 인증 가드 구현
+  - [ ] ProtectedRoute 컴포넌트
+  - [ ] 로그인 상태 관리 (Context/Zustand)
+  - [ ] 자동 로그아웃 (토큰 만료 시)
+
+### 👤 사용자 기능 (User Features)
+- [ ] 마이페이지 (MYB_14)
+  - [ ] 프로필 조회
+  - [ ] 프로필 수정 (닉네임, 프로필 이미지)
+  - [ ] 내가 쓴 글/댓글 목록
+  - [ ] 비밀번호 변경
+- [ ] 프로필 페이지 (PRF_10)
+  - [ ] 다른 사용자 프로필 조회
+  - [ ] 작성한 글 목록
+  - [ ] 팔로우/팔로잉 (선택)
+
+### 📚 내서재 기능 (Library)
+- [ ] 내서재 페이지 기본 구조
+  - [ ] 책 목록 조회
+  - [ ] 책 추가/삭제
+  - [ ] 읽은 책/읽고 있는 책/읽을 책 분류
+- [ ] 책 상세 페이지
+  - [ ] 책 정보 표시
+  - [ ] 독서 노트 작성
+  - [ ] 북마크 기능
+
+### ⚙️ 설정 페이지 (SET_13)
+- [ ] 설정 페이지 기본 구조
+- [ ] 다크모드 토글 UI 구현
+  - [ ] 토글 스위치 컴포넌트
+  - [ ] data-theme 전환 로직
+  - [ ] localStorage에 테마 저장
+- [ ] 알림 설정
+- [ ] 개인정보 설정
+
+---
+
+## 📌 중간 우선순위 (Medium Priority)
+
+### 🤖 AI 어시스턴트 (AI_09)
+- [ ] AI 어시스턴트 페이지 구조
+- [ ] AI API 연동
+- [ ] 채팅 UI (ChatDock 활용)
+- [ ] 대화 히스토리 저장
+
+### 📅 캘린더 개선 (CAL_11)
+- [ ] 일정 CRUD 기능
+- [ ] 일정 알림 기능
+- [ ] 캘린더 뷰 개선 (월/주/일)
+
+### 💬 댓글/채팅 개선
+- [ ] 댓글 대댓글 기능
+- [ ] 댓글 좋아요/신고
+- [ ] 실시간 채팅 (WebSocket)
+- [ ] 읽음/안읽음 표시
+
+### 🔍 검색 기능
+- [ ] 게시글 검색
+- [ ] 필터링 (카테고리, 태그, 날짜)
+- [ ] 검색 자동완성
+- [ ] 검색 결과 하이라이트
+
+---
+
+## 📌 낮은 우선순위 (Low Priority)
+
+### 🎨 UI/UX 개선
+- [ ] 로딩 스켈레톤 UI
+- [ ] 애니메이션 개선
+- [ ] 반응형 디자인 보완
+- [ ] 접근성 개선 (ARIA 레이블, 키보드 네비게이션)
+
+### 🧪 테스트
+- [ ] 단위 테스트 (utils, hooks)
+- [ ] 컴포넌트 테스트 (React Testing Library)
+- [ ] E2E 테스트 (Playwright/Cypress)
+- [ ] API Mock 테스트
+
+### 📊 성능 최적화
+- [ ] 이미지 최적화 (lazy loading, WebP)
+- [ ] 코드 스플리팅
+- [ ] 번들 사이즈 분석 및 최적화
+- [ ] React Query 캐싱 최적화
+
+### 🚀 배포 및 인프라
+- [ ] Vercel/Netlify 배포 설정
+- [ ] CI/CD 파이프라인 (GitHub Actions)
+- [ ] 환경변수 관리 (dev/staging/prod)
+- [ ] 에러 모니터링 (Sentry)
+- [ ] 분석 도구 연동 (GA4)
+
+---
+
+## ✅ 완료됨 (Completed)
+
+### 기본 구조
+- [x] 프로젝트 초기 설정 (Vite, React, TypeScript)
+- [x] 라우팅 설정 (React Router v7)
+- [x] 디자인 토큰 시스템 (tokens.css, globals.css, mixins.css)
+- [x] API 클라이언트 설정 (axios, interceptors)
+- [x] React Query 설정
+- [x] Tailwind CSS 설정
+
+### 공통 컴포넌트
+- [x] Avatar
+- [x] Badge
+- [x] Button
+- [x] Card
+- [x] Checkbox
+- [x] Divider
+- [x] Icon
+- [x] Input
+- [x] Loading
+- [x] Logo
+- [x] Modal
+- [x] RichTextEditor (TipTap)
+- [x] Spinner
+- [x] Switch
+- [x] Toast
+- [x] Tooltip
+
+### 유틸리티 함수
+- [x] classnames (cn, clsx)
+- [x] date (formatDate, formatDateTime, formatRelativeTime)
+- [x] string (truncate, capitalize, kebabToCamel, slugify)
+- [x] storage (localStorage/sessionStorage helpers)
+- [x] debounce/throttle
+- [x] array (unique, groupBy, chunk, shuffle)
+- [x] format (formatNumber, formatCurrency, formatFileSize)
+- [x] validation (email, phone, password, credit card)
+
+### 레이아웃
+- [x] HeaderApp (전역 헤더)
+- [x] ChatDock (채팅 독)
+
+### 게시판 기능
+- [x] 게시글 목록 (BRD_04)
+- [x] 게시글 상세 (BRD_05)
+- [x] 게시글 작성/수정 (BRD_06)
+- [x] 게시글 삭제
+- [x] 댓글 조회/작성/삭제
+
+### 기타
+- [x] 캘린더 페이지 기본 구조 (CAL_11)
+
+---
+
+## 🗂️ 페이지 ID 매핑
+
+| 경로 | 페이지 ID | 상태 |
+|------|----------|------|
+| `/` | BRD_04 (게시판 목록) | ✅ 완료 |
+| `/boards` | BRD_04 (게시판 목록) | ✅ 완료 |
+| `/boards/write` | BRD_06 (게시글 작성) | ✅ 완료 |
+| `/boards/:postId` | BRD_05 (게시글 상세) | ✅ 완료 |
+| `/boards/:postId/edit` | BRD_06 (게시글 수정) | ✅ 완료 |
+| `/calendar` | CAL_11 (캘린더) | 🚧 기본 구조만 |
+| `/login` | LOG_02 (로그인) | ❌ 미구현 |
+| `/register` | REG_03 (회원가입) | ❌ 미구현 |
+| `/mypage` | MYB_14 (마이페이지) | ❌ 미구현 |
+| `/profile/:userId` | PRF_10 (프로필) | ❌ 미구현 |
+| `/library` | (내서재) | ❌ 미구현 |
+| `/settings` | SET_13 (설정) | ❌ 미구현 |
+| `/assistant` | AI_09 (AI 어시스턴트) | ❌ 미구현 |
+
+---
+
+## 📝 컨벤션 체크리스트
+
+작업 시 항상 확인:
+- [ ] `var(--*)` 토큰 사용 (하드코딩 색상/간격 금지)
+- [ ] 컴포넌트 파일은 PascalCase
+- [ ] 유틸리티 함수는 camelCase
+- [ ] 페이지 파일명은 `[기능약어]_[번호]` 형식
+- [ ] `@/` 별칭 사용
+- [ ] React Query 사용 시 적절한 query key 설정
+- [ ] 타입 정의 (any 사용 지양)
+- [ ] ESLint/Prettier 규칙 준수
+- [ ] 커밋 메시지: `feat:`, `fix:`, `refactor:`, `docs:` 등
+
+---
+
+## 💡 아이디어 / 나중에 검토
+
+- [ ] PWA 지원 (Service Worker, Offline)
+- [ ] 다국어 지원 (i18n)
+- [ ] 북마크/즐겨찾기 기능
+- [ ] 글 임시저장 기능
+- [ ] Markdown 편집기 옵션
+- [ ] 태그 시스템
+- [ ] 좋아요/추천 기능
+- [ ] 알림 센터
+- [ ] 활동 로그
+- [ ] 통계/대시보드
+
+---
+
+## 🔗 관련 문서
+
+- [API 사용 가이드](./API_USAGE.md)
+- [API 커스터마이징 가이드](./API_CUSTOMIZATION_GUIDE.md)
+- [API 플로우 설명](./API_FLOW_EXPLANATION.md)
+- [엔드포인트 사용 가이드](./ENDPOINT_USAGE_GUIDE.md)
+- [루트 README](../README.md)
