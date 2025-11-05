@@ -58,3 +58,7 @@ Thumbs.db
 
 # Vite
 *.local
+
+# TypeScript 빌드 임시 파일
+ts-out.json
+*.tsbuildinfo
