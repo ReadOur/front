@@ -6,6 +6,7 @@ import { TagInput } from "@/components/TagInput/TagInput";
 import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
 import { CreatePostRequest, UpdatePostRequest } from "@/types";
 import { Loading } from "@/components/Loading";
+import { useToast } from "@/components/Toast/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
 import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 경로는 프로젝트 구조에 맞게 조정
 
@@ -13,6 +14,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
   const { postId } = useParams<{ postId: string }>();
   const isEditMode = !!postId;
+  const toast = useToast();
 
   const [title, setTitle] = useState<string>("");
   const [contentHtml, setContentHtml] = useState<string>("");
@@ -62,11 +64,11 @@ export const BRD_06 = (): React.JSX.Element => {
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
       await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
-      alert("게시글이 작성되었습니다.");
+      toast.show({ title: "게시글이 작성되었습니다.", variant: "success" });
       navigate("/boards"); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error) => {
-      alert(`게시글 작성 실패: ${error.message}`);
+      toast.show({ title: `게시글 작성 실패: ${error.message}`, variant: "error" });
     },
   });
 
@@ -76,11 +78,11 @@ export const BRD_06 = (): React.JSX.Element => {
       // 모든 posts 관련 쿼리 무효화 (상세 페이지 및 리스트 모두)
       await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
-      alert("게시글이 수정되었습니다.");
+      toast.show({ title: "게시글이 수정되었습니다.", variant: "success" });
       navigate(`/boards/${data.postId}`);
     },
     onError: (error) => {
-      alert(`게시글 수정 실패: ${error.message}`);
+      toast.show({ title: `게시글 수정 실패: ${error.message}`, variant: "error" });
     },
   });
 
@@ -90,7 +92,7 @@ export const BRD_06 = (): React.JSX.Element => {
 
     // 제목 검증
     if (!title.trim()) {
-      alert("제목을 입력해주세요.");
+      toast.show({ title: "제목을 입력해주세요.", variant: "warning" });
       return;
     }
 

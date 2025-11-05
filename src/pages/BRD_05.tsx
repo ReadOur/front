@@ -11,6 +11,8 @@ import {
 } from "@/hooks/api";
 import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
+import { useToast } from "@/components/Toast/ToastProvider";
+import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 위치는 프로젝트에 맞게
@@ -47,6 +49,7 @@ export default function PostShow() {
   // URL에서 postId 파라미터 추출 (예: /boards/123 → postId = "123")
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
 
   // 댓글 입력 필드의 상태 관리
   const [commentText, setCommentText] = useState("");
@@ -57,6 +60,11 @@ export default function PostShow() {
 
   // 스포일러 가림막 상태 (true가 되면 가림막 해제)
   const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
+
+  // 삭제 확인 모달 상태
+  const [deletePostModalOpen, setDeletePostModalOpen] = useState(false);
+  const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
   // ===== API 데이터 페칭 =====
 
@@ -107,11 +115,13 @@ export default function PostShow() {
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
       await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
-      alert("게시글이 삭제되었습니다.");
+      toast.show({ title: "게시글이 삭제되었습니다.", variant: "success" });
+      setDeletePostModalOpen(false);
       navigate("/boards"); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error) => {
-      alert(`게시글 삭제 실패: ${error.message}`);
+      toast.show({ title: `게시글 삭제 실패: ${error.message}`, variant: "error" });
+      setDeletePostModalOpen(false);
     },
   });
 
@@ -218,15 +228,23 @@ export default function PostShow() {
 
   /**
    * 댓글 삭제 핸들러
-   * - 사용자 확인 후 댓글 삭제 요청
-   * - 성공 시 댓글 목록이 자동 갱신됨
+   * - 삭제 확인 모달 표시
    */
   function handleCommentDelete(commentId: string) {
     if (!postId) return;
     // TODO: 로그인 기능 구현 후 작성자 권한 체크
-    if (confirm("댓글을 삭제하시겠습니까?")) {
-      deleteCommentMutation.mutate({ commentId, postId });
-    }
+    setDeletingCommentId(commentId);
+    setDeleteCommentModalOpen(true);
+  }
+
+  /**
+   * 댓글 삭제 확인
+   */
+  function confirmCommentDelete() {
+    if (!postId || !deletingCommentId) return;
+    deleteCommentMutation.mutate({ commentId: deletingCommentId, postId });
+    setDeleteCommentModalOpen(false);
+    setDeletingCommentId(null);
   }
 
   /**
@@ -245,19 +263,24 @@ export default function PostShow() {
 
   /**
    * 게시글 삭제 핸들러
-   * - 사용자 확인 후 게시글 삭제 요청
-   * - 성공 시 목록으로 이동
+   * - 삭제 확인 모달 표시
    */
   function handleDelete() {
     if (!postId) return;
     // TODO: 로그인 기능 구현 후 작성자 권한 체크
     // if (post.authorId !== currentUser.id) {
-    //   alert("작성자만 삭제할 수 있습니다.");
+    //   toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
     //   return;
     // }
-    if (confirm("게시글을 삭제하시겠습니까?")) {
-      deletePostMutation.mutate(postId);
-    }
+    setDeletePostModalOpen(true);
+  }
+
+  /**
+   * 게시글 삭제 확인
+   */
+  function confirmPostDelete() {
+    if (!postId) return;
+    deletePostMutation.mutate(postId);
   }
 
   // ===== 로딩 및 에러 처리 =====
@@ -581,6 +604,35 @@ export default function PostShow() {
           )}
         </div>
       </section>
+
+      {/* 게시글 삭제 확인 모달 */}
+      <ConfirmModal
+        open={deletePostModalOpen}
+        onClose={() => setDeletePostModalOpen(false)}
+        onConfirm={confirmPostDelete}
+        title="게시글 삭제"
+        message="정말로 이 게시글을 삭제하시겠습니까?&#10;삭제된 게시글은 복구할 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={deletePostMutation.isPending}
+      />
+
+      {/* 댓글 삭제 확인 모달 */}
+      <ConfirmModal
+        open={deleteCommentModalOpen}
+        onClose={() => {
+          setDeleteCommentModalOpen(false);
+          setDeletingCommentId(null);
+        }}
+        onConfirm={confirmCommentDelete}
+        title="댓글 삭제"
+        message="정말로 이 댓글을 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={deleteCommentMutation.isPending}
+      />
     </main>
   );
 }
