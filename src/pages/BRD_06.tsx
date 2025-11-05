@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
+import { TagInput } from "@/components/TagInput/TagInput";
 import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
 import { CreatePostRequest, UpdatePostRequest } from "@/types";
 import { Loading } from "@/components/Loading";
@@ -15,9 +16,28 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const [title, setTitle] = useState<string>("");
   const [contentHtml, setContentHtml] = useState<string>("");
-  const [tags, setTags] = useState<string>("");
+  const [tags, setTags] = useState<string[]>([]);
   const [category, setCategory] = useState<string>("FREE");
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
+
+  // 태그 자동완성을 위한 추천 태그 목록
+  const suggestedTags = [
+    "스포일러",
+    "주의",
+    "반전",
+    "결말",
+    "추천",
+    "비추천",
+    "감동",
+    "재미",
+    "지루",
+    "힐링",
+    "스릴러",
+    "로맨스",
+    "판타지",
+    "SF",
+    "미스터리",
+  ];
 
   // 수정 모드: 기존 게시글 로드
   const { data: existingPost, isLoading: isLoadingPost } = usePost(postId || "", {
@@ -29,10 +49,7 @@ export const BRD_06 = (): React.JSX.Element => {
     if (isEditMode && existingPost) {
       setTitle(existingPost.title);
       setContentHtml(existingPost.content);
-
-      // 태그 배열을 문자열로 변환 (현재 백엔드에서 tags를 반환하지 않을 수 있음)
-      // setTags(existingPost.tags ? existingPost.tags.map(t => `#${t}`).join(" ") : "");
-
+      setTags(existingPost.tags || []);
       setCategory(existingPost.category);
       setIsSpoiler(existingPost.isSpoiler || false);
     }
@@ -86,13 +103,6 @@ export const BRD_06 = (): React.JSX.Element => {
       .replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>)+$/gi, '') // 뒤쪽 빈 태그
       .trim();
 
-    // 태그 파싱: "#태그1 #태그2" → ["태그1", "태그2"]
-    const parsedTags = tags
-      .split(/\s+/)
-      .filter((tag) => tag.startsWith("#"))
-      .map((tag) => tag.substring(1))
-      .filter((tag) => tag.length > 0);
-
     if (isEditMode && postId) {
       // 수정 모드
       const updateData: UpdatePostRequest = {
@@ -100,7 +110,7 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         isSpoiler: isSpoiler,
-        tags: parsedTags.length > 0 ? parsedTags : undefined,
+        tags: tags.length > 0 ? tags : undefined,
       };
       updatePostMutation.mutate({ postId, data: updateData });
     } else {
@@ -110,7 +120,7 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         isSpoiler: isSpoiler,
-        tags: parsedTags.length > 0 ? parsedTags : undefined,
+        tags: tags.length > 0 ? tags : undefined,
       };
       createPostMutation.mutate(createData);
     }
@@ -191,10 +201,21 @@ export const BRD_06 = (): React.JSX.Element => {
               <span className="text-xs">스포일러로 등록</span>
             </label>
 
-            {/* 태그 프리뷰 (가운데 정렬, hairline만) */}
+            {/* 태그 프리뷰 (가운데 정렬) */}
             <div className="flex-1">
-              <div className="w-full text-center text-sm shadow-[inset_0_-1px_0_0_var(--color-border-subtle)] pb-1">
-                {tags || <span className="text-[color:var(--color-fg-muted)]">#주의사항 입력</span>}
+              <div className="w-full text-center text-sm flex flex-wrap gap-2 justify-center items-center min-h-[32px]">
+                {tags.length > 0 ? (
+                  tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center px-2.5 py-1 rounded-full bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-xs font-medium"
+                    >
+                      #{tag}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-[color:var(--color-fg-muted)]">#주의사항 입력</span>
+                )}
               </div>
             </div>
           </div>
@@ -246,26 +267,18 @@ export const BRD_06 = (): React.JSX.Element => {
             </div>
           </div>
 
-          {/* 태그 입력 (우측 정렬) */}
+          {/* 태그 입력 (TagInput 컴포넌트 사용) */}
           <div className="flex justify-end">
-            <label htmlFor="tags-input" className="sr-only">태그</label>
-            <input
-              id="tags-input"
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="#주의사항 입력"
-              className="
-                w-full sm:w-[420px] h-10
-                rounded-[var(--radius-md)]
-                bg-[color:var(--color-bg-elev-1)]
-                text-[color:var(--color-fg-primary)]
-                border border-transparent
-                focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
-                px-3
-              "
-              aria-label="주의사항 입력"
-            />
+            <div className="w-full sm:w-[600px]">
+              <TagInput
+                value={tags}
+                onChange={setTags}
+                placeholder="#태그 입력 (Enter로 추가)"
+                suggestions={suggestedTags}
+                maxTags={10}
+                helperText="태그를 입력하고 Enter 또는 스페이스를 눌러 추가하세요"
+              />
+            </div>
           </div>
 
           {/* 등록/수정 버튼: 더 키움 */}
