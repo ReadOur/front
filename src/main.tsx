@@ -12,6 +12,7 @@ import { BRD_06 } from '@/pages/BRD_06';
 import CAL_11 from "@/pages/CAL_11";
 import PRF_10 from "@/pages/PRF_10";
 import SET_13 from "@/pages/SET_13";
+import MYB_14 from "@/pages/MYB_14";
 import { queryClient } from "@/lib/queryClient";
 
 const router = createBrowserRouter([
@@ -28,8 +29,7 @@ const router = createBrowserRouter([
       { path: "calendar", element: <CAL_11 /> },
       { path: "mypage", element: <PRF_10 /> },
       { path: "settings", element: <SET_13 /> },
-      // 아직 없는 라우트들도 차후에 추가할 수 있음:
-      // { path: "library", element: <Library /> },
+      { path: "library", element: <MYB_14 /> },
     ],
   },
 ]);
