@@ -1,5 +1,6 @@
 // PRF_10.tsx - 마이페이지
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 // 목업 데이터 (나중에 API로 교체)
 const mockChatRooms = [
@@ -21,12 +22,36 @@ const mockNotifications = [
 ];
 
 export default function PRF_10() {
+  const navigate = useNavigate();
+
   return (
     <div
       className="w-full min-h-screen p-8"
       style={{ background: "#FFF9F2" }}
     >
       <div className="max-w-[1400px] mx-auto">
+        {/* 설정 버튼 */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => navigate("/settings")}
+            className="px-6 py-3 rounded-lg hover:opacity-80 transition flex items-center gap-2"
+            style={{ background: "#90BE6D", color: "#6B4F3F" }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6m0-18l-2 2m2-2l2 2m-2 16l-2-2m2 2l2-2m9-10h-6m-6 0H1m18 0l-2-2m2 2l-2 2M1 12l2-2m-2 2l2 2"></path>
+            </svg>
+            <span className="text-xl font-semibold">설정</span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 좌측: 채팅방 목록 */}
           <div className="space-y-4">
