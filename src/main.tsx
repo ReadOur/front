@@ -13,6 +13,7 @@ import CAL_11 from "@/pages/CAL_11";
 import PRF_10 from "@/pages/PRF_10";
 import SET_13 from "@/pages/SET_13";
 import MYB_14 from "@/pages/MYB_14";
+import LibrarySearch from "@/pages/LibrarySearch";
 import { queryClient } from "@/lib/queryClient";
 
 const router = createBrowserRouter([
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
       { path: "mypage", element: <PRF_10 /> },
       { path: "settings", element: <SET_13 /> },
       { path: "library", element: <MYB_14 /> },
+      { path: "library/search", element: <LibrarySearch /> },
     ],
   },
 ]);
