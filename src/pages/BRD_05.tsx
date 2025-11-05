@@ -11,6 +11,8 @@ import {
 } from "@/hooks/api";
 import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
+import { useToast } from "@/components/Toast/ToastProvider";
+import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 
 import { useQueryClient } from "@tanstack/react-query";
 /**
@@ -45,6 +47,7 @@ export default function PostShow() {
   // URL에서 postId 파라미터 추출 (예: /boards/123 → postId = "123")
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
 
   // 댓글 입력 필드의 상태 관리
   const [commentText, setCommentText] = useState("");
@@ -55,6 +58,11 @@ export default function PostShow() {
 
   // 스포일러 가림막 상태 (true가 되면 가림막 해제)
   const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
+
+  // 삭제 확인 모달 상태
+  const [deletePostModalOpen, setDeletePostModalOpen] = useState(false);
+  const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
   // ===== API 데이터 페칭 =====
 
@@ -105,11 +113,13 @@ export default function PostShow() {
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
       await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
 
-      alert("게시글이 삭제되었습니다.");
+      toast.show({ title: "게시글이 삭제되었습니다.", variant: "success" });
+      setDeletePostModalOpen(false);
       navigate("/boards"); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error) => {
-      alert(`게시글 삭제 실패: ${error.message}`);
+      toast.show({ title: `게시글 삭제 실패: ${error.message}`, variant: "error" });
+      setDeletePostModalOpen(false);
     },
   });
 
@@ -117,12 +127,27 @@ export default function PostShow() {
   // 7. 게시글 조회수 증가 mutation (POST /community/posts/{postId}/view)
   const viewPostMutation = useViewPost();
 
-  // ===== 조회수 자동 증가 =====
-  // 게시글이 로드되면 조회수를 증가시킴
+  // ===== 조회수 자동 증가 (중복 방지) =====
+  // 게시글이 로드되면 조회수를 증가시킴 (localStorage로 중복 방지)
   useEffect(() => {
-    if (postId && post) {
-      viewPostMutation.mutate(postId);
+    if (!postId || !post) return;
+
+    // localStorage에서 조회 기록 확인
+    const viewKey = `post_viewed_${postId}`;
+    const lastViewed = localStorage.getItem(viewKey);
+    const now = Date.now();
+
+    // 24시간(86400000ms) 이내에 조회한 기록이 있으면 조회수 증가 안 함
+    if (lastViewed && now - parseInt(lastViewed) < 86400000) {
+      return;
     }
+
+    // 조회수 증가 API 호출
+    viewPostMutation.mutate(postId);
+
+    // localStorage에 조회 시간 저장
+    localStorage.setItem(viewKey, now.toString());
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, post?.postId]); // post?.postId로 게시글이 로드되었을 때만 실행
 
@@ -201,15 +226,23 @@ export default function PostShow() {
 
   /**
    * 댓글 삭제 핸들러
-   * - 사용자 확인 후 댓글 삭제 요청
-   * - 성공 시 댓글 목록이 자동 갱신됨
+   * - 삭제 확인 모달 표시
    */
   function handleCommentDelete(commentId: string) {
     if (!postId) return;
     // TODO: 로그인 기능 구현 후 작성자 권한 체크
-    if (confirm("댓글을 삭제하시겠습니까?")) {
-      deleteCommentMutation.mutate({ commentId, postId });
-    }
+    setDeletingCommentId(commentId);
+    setDeleteCommentModalOpen(true);
+  }
+
+  /**
+   * 댓글 삭제 확인
+   */
+  function confirmCommentDelete() {
+    if (!postId || !deletingCommentId) return;
+    deleteCommentMutation.mutate({ commentId: deletingCommentId, postId });
+    setDeleteCommentModalOpen(false);
+    setDeletingCommentId(null);
   }
 
   /**
@@ -228,19 +261,24 @@ export default function PostShow() {
 
   /**
    * 게시글 삭제 핸들러
-   * - 사용자 확인 후 게시글 삭제 요청
-   * - 성공 시 목록으로 이동
+   * - 삭제 확인 모달 표시
    */
   function handleDelete() {
     if (!postId) return;
     // TODO: 로그인 기능 구현 후 작성자 권한 체크
     // if (post.authorId !== currentUser.id) {
-    //   alert("작성자만 삭제할 수 있습니다.");
+    //   toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
     //   return;
     // }
-    if (confirm("게시글을 삭제하시겠습니까?")) {
-      deletePostMutation.mutate(postId);
-    }
+    setDeletePostModalOpen(true);
+  }
+
+  /**
+   * 게시글 삭제 확인
+   */
+  function confirmPostDelete() {
+    if (!postId) return;
+    deletePostMutation.mutate(postId);
   }
 
   // ===== 로딩 및 에러 처리 =====
@@ -314,16 +352,23 @@ export default function PostShow() {
           <button
             type="button"
             onClick={() => setIsSpoilerRevealed(true)}
-            className="absolute inset-0 z-10 pl-[10px] translate-x-[450px] translate-y-[30px]
-             p-8
-             flex flex-col items-center justify-center gap-2 rounded-xl
-             bg-[color:var(--color-bg-elev-2)]/95 text-center text-base font-semibold
-             text-[clamp(8px,2vw,16px)]
-             text-[color:var(--color-fg-primary)] backdrop-blur"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-[color:var(--color-bg-elev-2)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)] backdrop-blur"
             aria-label="스포일러 가림막 해제"
           >
             <span className="text-lg">스포일러 방지</span>
-            <span className="pl-[10px] text-md text-[color:var(--color-fg-secondary)]">클릭하면 게시글이 표시됩니다.</span>
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 justify-center px-4">
+                {post.tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)]"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            <span className="text-sm text-[color:var(--color-fg-secondary)]">클릭하면 게시글이 표시됩니다.</span>
           </button>
         )}
 
@@ -564,6 +609,35 @@ export default function PostShow() {
           )}
         </div>
       </section>
+
+      {/* 게시글 삭제 확인 모달 */}
+      <ConfirmModal
+        open={deletePostModalOpen}
+        onClose={() => setDeletePostModalOpen(false)}
+        onConfirm={confirmPostDelete}
+        title="게시글 삭제"
+        message="정말로 이 게시글을 삭제하시겠습니까?&#10;삭제된 게시글은 복구할 수 없습니다."
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={deletePostMutation.isPending}
+      />
+
+      {/* 댓글 삭제 확인 모달 */}
+      <ConfirmModal
+        open={deleteCommentModalOpen}
+        onClose={() => {
+          setDeleteCommentModalOpen(false);
+          setDeletingCommentId(null);
+        }}
+        onConfirm={confirmCommentDelete}
+        title="댓글 삭제"
+        message="정말로 이 댓글을 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={deleteCommentMutation.isPending}
+      />
     </main>
   );
 }
