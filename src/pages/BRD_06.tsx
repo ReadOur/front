@@ -52,7 +52,8 @@ export const BRD_06 = (): React.JSX.Element => {
     if (isEditMode && existingPost) {
       setTitle(existingPost.title);
       setContentHtml(existingPost.content);
-      setWarnings(existingPost.warnings || []);
+      // warnings 객체 배열을 문자열 배열로 변환
+      setWarnings(existingPost.warnings?.map(w => w.id.warning) || []);
       setCategory(existingPost.category);
       setBookId(existingPost.bookId);
       setIsSpoiler(existingPost.isSpoiler || false);

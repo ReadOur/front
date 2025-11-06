@@ -12,6 +12,16 @@ import { PaginationParams } from "./api";
 export type PostCategory = "NOTICE" | "GENERAL" | "QNA" | "FREE" | "REVIEW" | "DISCUSSION" | "QUESTION";
 
 /**
+ * 게시글 경고/주의사항 (백엔드 응답 형식)
+ */
+export interface PostWarning {
+  id: {
+    postId: number;
+    warning: string;
+  };
+}
+
+/**
  * 게시글 댓글 (간략 버전)
  */
 export interface PostComment {
@@ -38,7 +48,7 @@ export interface Post {
   likeCount: number;
   commentCount: number;
   isLiked: boolean;
-  warnings?: string[]; // 스포일러/주의사항 태그 (백엔드에서 warnings로 전달)
+  warnings?: PostWarning[]; // 스포일러/주의사항 태그 (백엔드에서 객체 배열로 전달)
   attachments?: Attachment[];
   createdAt: string;
   updatedAt: string;

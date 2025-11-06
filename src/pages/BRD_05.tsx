@@ -377,7 +377,7 @@ export default function PostShow() {
                 key={idx}
                 className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)] hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
               >
-                #{warning}
+                #{warning.id.warning}
               </span>
             ))}
           </div>
