@@ -2,7 +2,7 @@ import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderApp from "@/features/layout/Header/HeaderApp";
 import ChatDock from "@/features/message/ChatDock";
-import { useUnreadCount } from "@/hooks/api/useChat";
+// import { useUnreadCount } from "@/hooks/api/useChat"; // TODO: 백엔드 API 준비되면 활성화
 import "@/style/tokens.css"
 import "@/style/globals.css"
 
@@ -11,8 +11,8 @@ export default function App() {
   const { pathname } = useLocation();
 
   // 채팅 읽지 않은 메시지 수 조회
-  const { data: chatUnreadData } = useUnreadCount();
-  const chatUnreadCount = chatUnreadData?.count || 0;
+  // const { data: chatUnreadData } = useUnreadCount(); // TODO: 백엔드 API 준비되면 활성화
+  const chatUnreadCount = 0; // 임시로 0 설정
 
   // 중앙 탭 라우팅 (SPA로 이동)
   const navItems = [
