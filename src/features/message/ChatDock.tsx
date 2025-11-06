@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
-import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2 } from "lucide-react";
+import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { useNavigate } from "react-router-dom";
 import "./ChatDock.css";
 
 /**
@@ -253,6 +254,7 @@ function ChatWindow({
 
 // ===== Dock (collapsed icon that expands on hover/click) =====
 export default function ChatDock() {
+  const navigate = useNavigate();
   const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
@@ -464,20 +466,54 @@ export default function ChatDock() {
                   })}
                 </div>
               )}
-              {/* 전체 채팅 목록 */}
-              <div className="p-1">
-                {threads.map((t) => (
-                  <ThreadChip
-                    key={t.id}
-                    thread={t}
-                    onOpen={(thr) => {
-                      openThread(thr);
-                      setPanelOpen(false); // 항목 클릭하면 패널 닫기 (원하면 유지로 바꿔도 됨)
-                    }}
-                  />
-                ))}
+              {/* 열려있는 채팅 목록 (최소화되지 않은 것만) */}
+              <div className="p-2">
+                <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1 px-1">
+                  열린 채팅
+                </div>
+                {openThreadIds.filter(id => !minimizedThreadIds.includes(id)).length > 0 ? (
+                  openThreadIds
+                    .filter(id => !minimizedThreadIds.includes(id))
+                    .map((id) => {
+                      const t = threads.find(x => x.id === id);
+                      if (!t) return null;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => {
+                            bringToFront(id);
+                            setPanelOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 p-2 rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-left"
+                        >
+                          <Circle className="w-2 h-2 fill-[color:var(--color-primary)] text-[color:var(--color-primary)]" />
+                          <div className="flex-1 text-sm truncate text-[color:var(--chatdock-fg-primary)]">
+                            {t.users.map((u) => u.name).join(", ")}
+                          </div>
+                        </button>
+                      );
+                    })
+                ) : (
+                  <div className="px-2 py-4 text-center text-xs text-[color:var(--chatdock-fg-muted)]">
+                    {minimizedThreadIds.length > 0
+                      ? "열린 채팅이 없습니다"
+                      : "채팅방을 열려면 아래 버튼을 클릭하세요"}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* 전체 채팅 보기 버튼 */}
+            <button
+              onClick={() => {
+                navigate("/chat");
+                setPanelOpen(false);
+              }}
+              className="w-full h-10 flex items-center justify-center gap-2 border-t border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] transition-colors text-sm font-medium text-[color:var(--color-primary)]"
+            >
+              <Plus className="w-4 h-4" />
+              전체 채팅 보기
+            </button>
           </div>
         </div>
       </div>
