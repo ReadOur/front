@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   usePost,
@@ -127,10 +127,19 @@ export default function PostShow() {
   // 7. 게시글 조회수 증가 mutation (POST /community/posts/{postId}/view)
   const viewPostMutation = useViewPost();
 
-  // ===== 조회수 자동 증가 (중복 방지) =====
-  // 게시글이 로드되면 조회수를 증가시킴 (sessionStorage로 세션 기반 중복 방지)
+  // 조회수 증가 여부를 추적하는 ref (같은 게시글에서 한 번만 실행되도록)
+  const hasIncrementedView = useRef(false);
+
+  // postId가 변경되면 (다른 게시글로 이동) ref 초기화
   useEffect(() => {
-    if (!postId || !post) return;
+    hasIncrementedView.current = false;
+  }, [postId]);
+
+  // ===== 조회수 자동 증가 (중복 방지) =====
+  // 게시글이 로드되면 조회수를 증가시킴 (sessionStorage + useRef로 중복 방지)
+  useEffect(() => {
+    // 이미 이 게시글에서 조회수를 증가시켰으면 실행하지 않음
+    if (!post || hasIncrementedView.current) return;
 
     // sessionStorage에서 조회 기록 확인 (세션 단위 중복 방지)
     const viewKey = `post_viewed_${postId}`;
@@ -138,19 +147,19 @@ export default function PostShow() {
 
     // 이미 이번 세션에 조회한 기록이 있으면 조회수 증가 안 함
     if (hasViewed) {
+      hasIncrementedView.current = true;
       return;
     }
 
     // 조회수 증가 API 호출
-    viewPostMutation.mutate(postId, {
+    viewPostMutation.mutate(postId!, {
       onSuccess: () => {
         // API 호출 성공 후에만 sessionStorage에 기록
         sessionStorage.setItem(viewKey, "true");
+        hasIncrementedView.current = true;
       },
     });
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId, post?.postId]); // post?.postId로 게시글이 로드되었을 때만 실행
+  }, [post, postId, viewPostMutation]);
 
   // 스포일러 게시글이 로드될 때마다 가림막 초기화
   useEffect(() => {
