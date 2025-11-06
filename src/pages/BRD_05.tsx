@@ -128,25 +128,26 @@ export default function PostShow() {
   const viewPostMutation = useViewPost();
 
   // ===== 조회수 자동 증가 (중복 방지) =====
-  // 게시글이 로드되면 조회수를 증가시킴 (localStorage로 중복 방지)
+  // 게시글이 로드되면 조회수를 증가시킴 (sessionStorage로 세션 기반 중복 방지)
   useEffect(() => {
     if (!postId || !post) return;
 
-    // localStorage에서 조회 기록 확인
+    // sessionStorage에서 조회 기록 확인 (세션 단위 중복 방지)
     const viewKey = `post_viewed_${postId}`;
-    const lastViewed = localStorage.getItem(viewKey);
-    const now = Date.now();
+    const hasViewed = sessionStorage.getItem(viewKey);
 
-    // 24시간(86400000ms) 이내에 조회한 기록이 있으면 조회수 증가 안 함
-    if (lastViewed && now - parseInt(lastViewed) < 86400000) {
+    // 이미 이번 세션에 조회한 기록이 있으면 조회수 증가 안 함
+    if (hasViewed) {
       return;
     }
 
     // 조회수 증가 API 호출
-    viewPostMutation.mutate(postId);
-
-    // localStorage에 조회 시간 저장
-    localStorage.setItem(viewKey, now.toString());
+    viewPostMutation.mutate(postId, {
+      onSuccess: () => {
+        // API 호출 성공 후에만 sessionStorage에 기록
+        sessionStorage.setItem(viewKey, "true");
+      },
+    });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, post?.postId]); // post?.postId로 게시글이 로드되었을 때만 실행
@@ -380,9 +381,24 @@ export default function PostShow() {
         >
           <header className="flex items-center justify-between gap-4">
           {/* 게시글 제목 (API의 title 필드) */}
-          <h1 id="title" className="text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
-            {post.title}
-          </h1>
+          <div className="flex-1 min-w-0">
+            <h1 id="title" className="text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
+              {post.title}
+            </h1>
+            {/* 태그 영역 - 항상 표시 */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {post.tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)] hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* 버튼 그룹 */}
           <div className="flex items-center gap-2">
