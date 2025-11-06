@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/components/Toast/ToastProvider";
+import { ChatProvider } from "@/contexts/ChatContext";
 
 import "./index.css";
 
@@ -16,6 +17,7 @@ import SET_13 from "@/pages/SET_13";
 import MYB_14 from "@/pages/MYB_14";
 import LibrarySearch from "@/pages/LibrarySearch";
 import BOD_15 from "@/pages/BOD_15";
+import CHT_17 from "@/pages/CHT_17";
 import { queryClient } from "@/lib/queryClient";
 
 const router = createBrowserRouter([
@@ -35,6 +37,7 @@ const router = createBrowserRouter([
       { path: "library", element: <MYB_14 /> },
       { path: "library/search", element: <LibrarySearch /> },
       { path: "books/:bookId", element: <BOD_15 /> },
+      { path: "chat", element: <CHT_17 /> },
     ],
   },
 ]);
@@ -43,7 +46,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <RouterProvider router={router} />
+        <ChatProvider>
+          <RouterProvider router={router} />
+        </ChatProvider>
       </ToastProvider>
     </QueryClientProvider>
   </React.StrictMode>

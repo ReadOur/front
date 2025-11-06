@@ -36,6 +36,12 @@ export default function App() {
       active: pathname.startsWith("/library"),
     },
     {
+      key: "chat",
+      label: "채팅",
+      onClick: () => navigate("/chat"),
+      active: pathname.startsWith("/chat"),
+    },
+    {
       key: "settings",
       label: "설정",
       onClick: () => navigate("/settings"),
