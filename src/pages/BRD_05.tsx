@@ -157,14 +157,6 @@ export default function PostShow() {
     setIsSpoilerRevealed(false);
   }, [post?.postId]);
 
-  // 디버깅: warnings 데이터 확인
-  useEffect(() => {
-    if (post) {
-      console.log('Post data:', post);
-      console.log('Warnings:', post.warnings);
-    }
-  }, [post]);
-
   // ===== 이벤트 핸들러 =====
 
   /**
@@ -377,7 +369,7 @@ export default function PostShow() {
                 key={idx}
                 className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)] hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
               >
-                #{warning}
+                #{warning.id.warning}
               </span>
             ))}
           </div>
