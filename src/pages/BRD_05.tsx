@@ -158,6 +158,11 @@ export default function PostShow() {
         sessionStorage.setItem(viewKey, "true");
         hasIncrementedView.current = true;
       },
+      onError: (error) => {
+        // 에러 발생 시에도 더 이상 시도하지 않도록 표시
+        console.error("조회수 증가 실패:", error);
+        hasIncrementedView.current = true;
+      },
     });
   }, [post, postId, viewPostMutation]);
 
