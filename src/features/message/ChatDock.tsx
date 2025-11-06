@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
-import { X, Minus, Send, Circle, Loader2, MessageCircle } from "lucide-react";
+import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2 } from "lucide-react";
+import { useChatContext } from "@/contexts/ChatContext";
 import "./ChatDock.css";
 
 /**
@@ -252,6 +253,8 @@ function ChatWindow({
 
 // ===== Dock (collapsed icon that expands on hover/click) =====
 export default function ChatDock() {
+  const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
+
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
 
@@ -313,7 +316,6 @@ export default function ChatDock() {
     }
   };
 
-  const [openIds, setOpenIds] = useState<string[]>([]); // opened window threadIds (order matters)
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({
     t1: [
       { id: "a", threadId: "t1", fromId: "u1", text: "안녕!", createdAt: Date.now() - 86400000 },
@@ -372,7 +374,7 @@ export default function ChatDock() {
   const unreadTotal = Math.min(99, threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0));
 
   const openThread = (t: ChatThread) => {
-    setOpenIds((ids) => (ids.includes(t.id) ? ids : [...ids, t.id].slice(-3)));
+    openThreadInContext(t.id);
     setThreads((prev) =>
       prev.map((x) => (x.id === t.id ? { ...x, unreadCount: 0 } : x))
     );
@@ -390,8 +392,8 @@ export default function ChatDock() {
     bringToFront(t.id)
   };
 
-  const closeThread = (id: string) => setOpenIds((ids) => ids.filter((x) => x !== id));
-  const minimizeThread = (id: string) => setOpenIds((ids) => [id, ...ids.filter((x) => x !== id)]); // move to leftmost
+  const closeThread = (id: string) => closeThreadInContext(id);
+  const minimizeThread = (id: string) => minimizeThreadInContext(id);
 
   const sendMessage = (threadId: string, text: string) => {
     const msg: ChatMessage = { id: Math.random().toString(36).slice(2), threadId, fromId: me.id, text, createdAt: Date.now() };
@@ -436,24 +438,55 @@ export default function ChatDock() {
                 닫기
               </button>
             </div>
-            <div className="max-h-[60vh] overflow-auto p-1">
-              {threads.map((t) => (
-                <ThreadChip
-                  key={t.id}
-                  thread={t}
-                  onOpen={(thr) => {
-                    openThread(thr);
-                    setPanelOpen(false); // 항목 클릭하면 패널 닫기 (원하면 유지로 바꿔도 됨)
-                  }}
-                />
-              ))}
+            <div className="max-h-[60vh] overflow-auto">
+              {/* 최소화된 채팅 목록 */}
+              {minimizedThreadIds.length > 0 && (
+                <div className="p-2 border-b border-[color:var(--chatdock-border-subtle)]">
+                  <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1 px-1">최소화된 채팅</div>
+                  {minimizedThreadIds.map((id) => {
+                    const t = threads.find((x) => x.id === id);
+                    if (!t) return null;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => {
+                          restoreThread(id);
+                          setPanelOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 p-2 rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-left"
+                      >
+                        <Maximize2 className="w-3 h-3 text-[color:var(--color-primary)]" />
+                        <div className="flex-1 text-sm truncate text-[color:var(--chatdock-fg-primary)]">
+                          {t.users.map((u) => u.name).join(", ")}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {/* 전체 채팅 목록 */}
+              <div className="p-1">
+                {threads.map((t) => (
+                  <ThreadChip
+                    key={t.id}
+                    thread={t}
+                    onOpen={(thr) => {
+                      openThread(thr);
+                      setPanelOpen(false); // 항목 클릭하면 패널 닫기 (원하면 유지로 바꿔도 됨)
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Floating chat windows */}
-      {openIds.map((id) => {
+      {openThreadIds.map((id) => {
+          // 최소화된 창은 렌더링하지 않음
+          if (minimizedThreadIds.includes(id)) return null;
+
           const t = threads.find((x) => x.id === id);
           if (!t) return null;
           const msgs = messages[id] || [];

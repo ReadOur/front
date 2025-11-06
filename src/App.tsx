@@ -2,12 +2,17 @@ import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderApp from "@/features/layout/Header/HeaderApp";
 import ChatDock from "@/features/message/ChatDock";
+import { useUnreadCount } from "@/hooks/api/useChat";
 import "@/style/tokens.css"
 import "@/style/globals.css"
 
 export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  // 채팅 읽지 않은 메시지 수 조회
+  const { data: chatUnreadData } = useUnreadCount();
+  const chatUnreadCount = chatUnreadData?.count || 0;
 
   // 중앙 탭 라우팅 (SPA로 이동)
   const navItems = [
@@ -36,6 +41,12 @@ export default function App() {
       active: pathname.startsWith("/library"),
     },
     {
+      key: "chat",
+      label: "채팅",
+      onClick: () => navigate("/chat"),
+      active: pathname.startsWith("/chat"),
+    },
+    {
       key: "settings",
       label: "설정",
       onClick: () => navigate("/settings"),
@@ -51,9 +62,11 @@ export default function App() {
         onLogoClick={() => navigate("/boards")}
         navItems={navItems}
         unreadCount={0}
+        chatUnreadCount={chatUnreadCount}
         onClickNotifications={() => {
           console.log("알림 버튼 클릭");
         }}
+        onClickChat={() => navigate("/chat")}
         user={{
           name: "user",
         }}
