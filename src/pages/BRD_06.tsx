@@ -18,12 +18,12 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const [title, setTitle] = useState<string>("");
   const [contentHtml, setContentHtml] = useState<string>("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>("FREE");
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
 
-  // 태그 자동완성을 위한 추천 태그 목록
-  const suggestedTags = [
+  // 주의사항/태그 자동완성을 위한 추천 목록
+  const suggestedWarnings = [
     "스포일러",
     "주의",
     "반전",
@@ -51,7 +51,7 @@ export const BRD_06 = (): React.JSX.Element => {
     if (isEditMode && existingPost) {
       setTitle(existingPost.title);
       setContentHtml(existingPost.content);
-      setTags(existingPost.tags || []);
+      setWarnings(existingPost.warnings || []);
       setCategory(existingPost.category);
       setIsSpoiler(existingPost.isSpoiler || false);
     }
@@ -112,7 +112,7 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         isSpoiler: isSpoiler,
-        tags: tags.length > 0 ? tags : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
       updatePostMutation.mutate({ postId, data: updateData });
     } else {
@@ -122,7 +122,7 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         isSpoiler: isSpoiler,
-        tags: tags.length > 0 ? tags : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
       createPostMutation.mutate(createData);
     }
@@ -203,16 +203,16 @@ export const BRD_06 = (): React.JSX.Element => {
               <span className="text-xs">스포일러로 등록</span>
             </label>
 
-            {/* 태그 프리뷰 (가운데 정렬) */}
+            {/* 주의사항/태그 프리뷰 (가운데 정렬) */}
             <div className="flex-1">
               <div className="w-full text-center text-sm flex flex-wrap gap-2 justify-center items-center min-h-[32px]">
-                {tags.length > 0 ? (
-                  tags.map((tag, idx) => (
+                {warnings.length > 0 ? (
+                  warnings.map((warning, idx) => (
                     <span
                       key={idx}
                       className="inline-flex items-center px-2.5 py-1 rounded-full bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-xs font-medium"
                     >
-                      #{tag}
+                      #{warning}
                     </span>
                   ))
                 ) : (
@@ -269,16 +269,16 @@ export const BRD_06 = (): React.JSX.Element => {
             </div>
           </div>
 
-          {/* 태그 입력 (TagInput 컴포넌트 사용) */}
+          {/* 주의사항/태그 입력 (TagInput 컴포넌트 사용) */}
           <div className="flex justify-end">
             <div className="w-full sm:w-[600px]">
               <TagInput
-                value={tags}
-                onChange={setTags}
-                placeholder="#태그 입력 (Enter로 추가)"
-                suggestions={suggestedTags}
+                value={warnings}
+                onChange={setWarnings}
+                placeholder="#주의사항 입력 (Enter로 추가)"
+                suggestions={suggestedWarnings}
                 maxTags={10}
-                helperText="태그를 입력하고 Enter 또는 스페이스를 눌러 추가하세요"
+                helperText="주의사항/태그를 입력하고 Enter 또는 스페이스를 눌러 추가하세요"
               />
             </div>
           </div>

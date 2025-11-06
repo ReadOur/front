@@ -361,15 +361,15 @@ export default function PostShow() {
           </button>
         )}
 
-        {/* 태그 영역 - 항상 표시 (spoiler 가림막 밖) */}
-        {post.tags && post.tags.length > 0 && (
+        {/* 주의사항/태그 영역 - 항상 표시 (spoiler 가림막 밖) */}
+        {post.warnings && post.warnings.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4 relative z-0">
-            {post.tags.map((tag, idx) => (
+            {post.warnings.map((warning, idx) => (
               <span
                 key={idx}
                 className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)] hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
               >
-                #{tag}
+                #{warning}
               </span>
             ))}
           </div>
