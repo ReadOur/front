@@ -20,6 +20,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [contentHtml, setContentHtml] = useState<string>("");
   const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>("FREE");
+  const [bookId, setBookId] = useState<number | undefined>(undefined);
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
 
   // 주의사항/태그 자동완성을 위한 추천 목록
@@ -53,6 +54,7 @@ export const BRD_06 = (): React.JSX.Element => {
       setContentHtml(existingPost.content);
       setWarnings(existingPost.warnings || []);
       setCategory(existingPost.category);
+      setBookId(existingPost.bookId);
       setIsSpoiler(existingPost.isSpoiler || false);
     }
   }, [isEditMode, existingPost]);
@@ -111,6 +113,7 @@ export const BRD_06 = (): React.JSX.Element => {
         title: title.trim(),
         content: safeHtml,
         category: category,
+        bookId: bookId,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
       };
@@ -121,6 +124,7 @@ export const BRD_06 = (): React.JSX.Element => {
         title: title.trim(),
         content: safeHtml,
         category: category,
+        bookId: bookId,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
       };

@@ -33,6 +33,7 @@ export interface Post {
   isSpoiler?: boolean;
   authorNickname: string;
   authorId: number;
+  bookId?: number; // 책 ID (리뷰 게시글용)
   hit: number;
   likeCount: number;
   commentCount: number;
@@ -82,6 +83,7 @@ export interface CreatePostRequest {
   title: string;
   content: string;
   category?: string;
+  bookId?: number; // 책 ID (리뷰 게시글용)
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
   attachmentIds?: string[];
@@ -94,6 +96,7 @@ export interface UpdatePostRequest {
   title?: string;
   content?: string;
   category?: string;
+  bookId?: number; // 책 ID (리뷰 게시글용)
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
   attachmentIds?: string[];
