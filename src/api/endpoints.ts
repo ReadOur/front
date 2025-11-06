@@ -36,7 +36,7 @@ export const POST_ENDPOINTS = {
   DELETE: (postId: string) => `/community/posts/${postId}`,
   LIKE: (postId: string) => `/community/posts/${postId}/like`,
   UNLIKE: (postId: string) => `/community/posts/${postId}/unlike`,
-  VIEW: (postId: string) => `/community/posts/${postId}`,
+  VIEW: (postId: string) => `/community/posts/${postId}`, // 백엔드에서 GET 시 자동 증가 (사용 안 함)
 } as const;
 
 export const GET_ALL = {
