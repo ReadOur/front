@@ -34,11 +34,14 @@ export interface ChatMessage {
   createdAt: number; // epoch ms
 }
 
+export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
+
 export interface ChatThread {
   id: string;
   users: ChatUser[]; // participants
   lastMessage?: ChatMessage;
   unreadCount?: number;
+  category: ChatCategory; // 1:1, 단체, 모임
 }
 
 // ===== Mock socket (dev only) =====
@@ -268,9 +271,9 @@ export default function ChatDock() {
   // Mock data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
   const [threads, setThreads] = useState<ChatThread[]>([
-    { id: "t1", users: [{ id: "u1", name: "콩콩" }], unreadCount: 2, lastMessage: { id: "m0", threadId: "t1", fromId: "u1", text: "오늘 저녁?", createdAt: Date.now() - 600000 } },
-    { id: "t2", users: [{ id: "u2", name: "쭈꾸미" }], lastMessage: { id: "m1", threadId: "t2", fromId: "u2", text: "파일 확인했어!", createdAt: Date.now() - 3600000 } },
-    { id: "t3", users: [{ id: "u3", name: "자몽" }], lastMessage: { id: "m2", threadId: "t3", fromId: "u3", text: "굿굿", createdAt: Date.now() - 7200000 } },
+    { id: "t1", users: [{ id: "u1", name: "콩콩" }], category: "DIRECT", unreadCount: 2, lastMessage: { id: "m0", threadId: "t1", fromId: "u1", text: "오늘 저녁?", createdAt: Date.now() - 600000 } },
+    { id: "t2", users: [{ id: "u2", name: "쭈꾸미" }], category: "DIRECT", lastMessage: { id: "m1", threadId: "t2", fromId: "u2", text: "파일 확인했어!", createdAt: Date.now() - 3600000 } },
+    { id: "t3", users: [{ id: "u3", name: "자몽" }], category: "DIRECT", lastMessage: { id: "m2", threadId: "t3", fromId: "u3", text: "굿굿", createdAt: Date.now() - 7200000 } },
   ]);
   // ===== 추가 =====
 

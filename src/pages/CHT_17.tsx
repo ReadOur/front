@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { MessageCircle, Search, Star, Users, Send, Loader2 } from "lucide-react";
+import { MessageCircle, Search, Star, Users, Send, Loader2, User } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
-import { ChatThread, ChatUser } from "@/features/message/ChatDock";
+import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
 import { useThreads } from "@/hooks/api/useChat";
 
 /**
@@ -13,9 +13,11 @@ import { useThreads } from "@/hooks/api/useChat";
 
 // Mock 데이터 (실제로는 API에서 가져옴)
 const mockThreads: ChatThread[] = [
+  // 1:1 채팅
   {
     id: "t1",
     users: [{ id: "u1", name: "콩콩", online: true }],
+    category: "DIRECT",
     unreadCount: 2,
     lastMessage: {
       id: "m0",
@@ -28,6 +30,7 @@ const mockThreads: ChatThread[] = [
   {
     id: "t2",
     users: [{ id: "u2", name: "쭈꾸미", online: false }],
+    category: "DIRECT",
     lastMessage: {
       id: "m1",
       threadId: "t2",
@@ -39,6 +42,7 @@ const mockThreads: ChatThread[] = [
   {
     id: "t3",
     users: [{ id: "u3", name: "자몽", online: true }],
+    category: "DIRECT",
     lastMessage: {
       id: "m2",
       threadId: "t3",
@@ -50,6 +54,7 @@ const mockThreads: ChatThread[] = [
   {
     id: "t4",
     users: [{ id: "u4", name: "망고", online: false }],
+    category: "DIRECT",
     unreadCount: 5,
     lastMessage: {
       id: "m3",
@@ -59,6 +64,7 @@ const mockThreads: ChatThread[] = [
       createdAt: Date.now() - 10800000,
     },
   },
+  // 단체 채팅
   {
     id: "t5",
     users: [
@@ -66,6 +72,7 @@ const mockThreads: ChatThread[] = [
       { id: "u6", name: "바나나" },
       { id: "u7", name: "오렌지" },
     ],
+    category: "GROUP",
     unreadCount: 12,
     lastMessage: {
       id: "m4",
@@ -73,6 +80,59 @@ const mockThreads: ChatThread[] = [
       fromId: "u5",
       text: "스터디 그룹에 오신 걸 환영합니다!",
       createdAt: Date.now() - 14400000,
+    },
+  },
+  {
+    id: "t6",
+    users: [
+      { id: "u8", name: "포도" },
+      { id: "u9", name: "키위" },
+      { id: "u10", name: "복숭아" },
+      { id: "u11", name: "수박" },
+    ],
+    category: "GROUP",
+    unreadCount: 3,
+    lastMessage: {
+      id: "m5",
+      threadId: "t6",
+      fromId: "u8",
+      text: "다음주 프로젝트 일정 공유드립니다",
+      createdAt: Date.now() - 18000000,
+    },
+  },
+  // 모임 채팅
+  {
+    id: "t7",
+    users: [
+      { id: "u12", name: "레몬" },
+      { id: "u13", name: "라임" },
+      { id: "u14", name: "귤" },
+    ],
+    category: "MEETING",
+    unreadCount: 8,
+    lastMessage: {
+      id: "m6",
+      threadId: "t7",
+      fromId: "u12",
+      text: "이번 주 토요일 독서 모임 참석 가능하신 분?",
+      createdAt: Date.now() - 21600000,
+    },
+  },
+  {
+    id: "t8",
+    users: [
+      { id: "u15", name: "사과", online: true },
+      { id: "u16", name: "배" },
+      { id: "u17", name: "감" },
+      { id: "u18", name: "밤" },
+    ],
+    category: "MEETING",
+    lastMessage: {
+      id: "m7",
+      threadId: "t8",
+      fromId: "u15",
+      text: "다음 모임 장소 투표합시다!",
+      createdAt: Date.now() - 28800000,
     },
   },
 ];
@@ -153,8 +213,18 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
   );
 }
 
+type CategoryFilter = "ALL" | ChatCategory;
+
+const categoryLabels: Record<CategoryFilter, string> = {
+  ALL: "전체",
+  DIRECT: "1:1",
+  GROUP: "단체",
+  MEETING: "모임",
+};
+
 export default function CHT_17() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("ALL");
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
 
   // TODO: 백엔드 준비되면 useThreads 훅 사용
@@ -165,7 +235,21 @@ export default function CHT_17() {
   const threads = mockThreads;
   const isLoading = false;
 
+  // 카테고리별 읽지 않은 메시지 수 계산
+  const unreadCounts = {
+    ALL: threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    DIRECT: threads.filter(t => t.category === "DIRECT").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    GROUP: threads.filter(t => t.category === "GROUP").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    MEETING: threads.filter(t => t.category === "MEETING").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+  };
+
   const filteredThreads = threads.filter((thread) => {
+    // 카테고리 필터
+    if (selectedCategory !== "ALL" && thread.category !== selectedCategory) {
+      return false;
+    }
+
+    // 검색 필터
     const displayName = thread.users.map((u) => u.name).join(", ");
     return displayName.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -181,7 +265,7 @@ export default function CHT_17() {
             채팅
           </h1>
           {/* 검색 */}
-          <div className="relative">
+          <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--color-fg-muted)]" />
             <input
               type="text"
@@ -190,6 +274,36 @@ export default function CHT_17() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-10 pl-10 pr-4 rounded-[var(--radius-md)] bg-[color:var(--color-bg-subtle)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)]"
             />
+          </div>
+          {/* 카테고리 탭 */}
+          <div className="flex gap-1 p-1 bg-[color:var(--color-bg-subtle)] rounded-[var(--radius-md)]">
+            {(["ALL", "DIRECT", "GROUP", "MEETING"] as CategoryFilter[]).map((category) => {
+              const isActive = selectedCategory === category;
+              const Icon = category === "DIRECT" ? User : category === "GROUP" ? Users : category === "MEETING" ? MessageCircle : MessageCircle;
+              const unreadCount = unreadCounts[category];
+
+              return (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`relative flex-1 h-8 px-2 rounded-[var(--radius-sm)] text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)] shadow-sm"
+                      : "text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg-primary)]"
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <Icon className="w-3 h-3" />
+                    <span>{categoryLabels[category]}</span>
+                    {unreadCount > 0 && (
+                      <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[color:var(--color-accent)] text-[color:var(--color-fg-primary)] leading-none">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
