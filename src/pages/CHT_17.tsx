@@ -235,6 +235,14 @@ export default function CHT_17() {
   const threads = mockThreads;
   const isLoading = false;
 
+  // 카테고리별 읽지 않은 메시지 수 계산
+  const unreadCounts = {
+    ALL: threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    DIRECT: threads.filter(t => t.category === "DIRECT").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    GROUP: threads.filter(t => t.category === "GROUP").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    MEETING: threads.filter(t => t.category === "MEETING").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+  };
+
   const filteredThreads = threads.filter((thread) => {
     // 카테고리 필터
     if (selectedCategory !== "ALL" && thread.category !== selectedCategory) {
@@ -272,12 +280,13 @@ export default function CHT_17() {
             {(["ALL", "DIRECT", "GROUP", "MEETING"] as CategoryFilter[]).map((category) => {
               const isActive = selectedCategory === category;
               const Icon = category === "DIRECT" ? User : category === "GROUP" ? Users : category === "MEETING" ? MessageCircle : MessageCircle;
+              const unreadCount = unreadCounts[category];
 
               return (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`flex-1 h-8 px-2 rounded-[var(--radius-sm)] text-xs font-medium transition-all ${
+                  className={`relative flex-1 h-8 px-2 rounded-[var(--radius-sm)] text-xs font-medium transition-all ${
                     isActive
                       ? "bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)] shadow-sm"
                       : "text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg-primary)]"
@@ -286,6 +295,11 @@ export default function CHT_17() {
                   <div className="flex items-center justify-center gap-1">
                     <Icon className="w-3 h-3" />
                     <span>{categoryLabels[category]}</span>
+                    {unreadCount > 0 && (
+                      <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-[color:var(--color-accent)] text-[color:var(--color-fg-primary)] leading-none">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
                   </div>
                 </button>
               );
