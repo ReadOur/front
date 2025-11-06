@@ -357,20 +357,22 @@ export default function PostShow() {
             aria-label="스포일러 가림막 해제"
           >
             <span className="text-lg">스포일러 방지</span>
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-center px-4">
-                {post.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)]"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
             <span className="text-sm text-[color:var(--color-fg-secondary)]">클릭하면 게시글이 표시됩니다.</span>
           </button>
+        )}
+
+        {/* 태그 영역 - 항상 표시 (spoiler 가림막 밖) */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4 relative z-0">
+            {post.tags.map((tag, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)] hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
         )}
 
         <div
@@ -381,24 +383,9 @@ export default function PostShow() {
         >
           <header className="flex items-center justify-between gap-4">
           {/* 게시글 제목 (API의 title 필드) */}
-          <div className="flex-1 min-w-0">
-            <h1 id="title" className="text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
-              {post.title}
-            </h1>
-            {/* 태그 영역 - 항상 표시 */}
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {post.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center px-3 py-1 rounded-full bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm text-[color:var(--color-fg-secondary)] hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          <h1 id="title" className="flex-1 text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
+            {post.title}
+          </h1>
 
           {/* 버튼 그룹 */}
           <div className="flex items-center gap-2">
