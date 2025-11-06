@@ -157,6 +157,14 @@ export default function PostShow() {
     setIsSpoilerRevealed(false);
   }, [post?.postId]);
 
+  // 디버깅: warnings 데이터 확인
+  useEffect(() => {
+    if (post) {
+      console.log('Post data:', post);
+      console.log('Warnings:', post.warnings);
+    }
+  }, [post]);
+
   // ===== 이벤트 핸들러 =====
 
   /**
@@ -361,9 +369,9 @@ export default function PostShow() {
           </button>
         )}
 
-        {/* 주의사항/태그 영역 - 항상 표시 (spoiler 가림막 밖) */}
+        {/* 주의사항/태그 영역 - 항상 표시 (spoiler 가림막 위에) */}
         {post.warnings && post.warnings.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4 relative z-0">
+          <div className="flex flex-wrap gap-2 mb-4 relative z-20">
             {post.warnings.map((warning, idx) => (
               <span
                 key={idx}
