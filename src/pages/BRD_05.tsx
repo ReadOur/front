@@ -157,14 +157,6 @@ export default function PostShow() {
     setIsSpoilerRevealed(false);
   }, [post?.postId]);
 
-  // 디버깅: warnings 데이터 확인
-  useEffect(() => {
-    if (post) {
-      console.log('Post data:', post);
-      console.log('Warnings:', post.warnings);
-    }
-  }, [post]);
-
   // ===== 이벤트 핸들러 =====
 
   /**
