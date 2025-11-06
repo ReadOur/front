@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { MessageCircle, Search, Star, Users, Send } from "lucide-react";
+import { MessageCircle, Search, Star, Users, Send, Loader2 } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser } from "@/features/message/ChatDock";
+import { useThreads } from "@/hooks/api/useChat";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -156,7 +157,15 @@ export default function CHT_17() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
 
-  const filteredThreads = mockThreads.filter((thread) => {
+  // TODO: 백엔드 준비되면 useThreads 훅 사용
+  // const { data, isLoading } = useThreads();
+  // const threads = data?.items || [];
+
+  // 현재는 mock 데이터 사용
+  const threads = mockThreads;
+  const isLoading = false;
+
+  const filteredThreads = threads.filter((thread) => {
     const displayName = thread.users.map((u) => u.name).join(", ");
     return displayName.toLowerCase().includes(searchQuery.toLowerCase());
   });
@@ -186,9 +195,14 @@ export default function CHT_17() {
 
         {/* 채팅방 목록 */}
         <div className="flex-1 overflow-y-auto">
-          {filteredThreads.length === 0 ? (
+          {isLoading ? (
+            <div className="p-8 flex flex-col items-center justify-center text-[color:var(--color-fg-muted)]">
+              <Loader2 className="w-8 h-8 animate-spin mb-2" />
+              <p>로딩 중...</p>
+            </div>
+          ) : filteredThreads.length === 0 ? (
             <div className="p-8 text-center text-[color:var(--color-fg-muted)]">
-              채팅방이 없습니다
+              {searchQuery ? "검색 결과가 없습니다" : "채팅방이 없습니다"}
             </div>
           ) : (
             filteredThreads.map((thread) => (

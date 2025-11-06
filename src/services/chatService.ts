@@ -72,6 +72,13 @@ export async function markAsRead(data: MarkAsReadRequest): Promise<MarkAsReadRes
 }
 
 /**
+ * 읽지 않은 채팅 메시지 수 조회
+ */
+export async function getUnreadCount(): Promise<{ count: number }> {
+  return apiClient.get<{ count: number }>(CHAT_ENDPOINTS.UNREAD_COUNT);
+}
+
+/**
  * 채팅 서비스 객체
  */
 export const chatService = {
@@ -84,6 +91,7 @@ export const chatService = {
   getMessages,
   sendMessage,
   markAsRead,
+  getUnreadCount,
 };
 
 export default chatService;

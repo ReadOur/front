@@ -23,6 +23,7 @@ export const CHAT_QUERY_KEYS = {
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,
   messages: (threadId: string) => [...CHAT_QUERY_KEYS.all, "messages", threadId] as const,
+  unreadCount: () => [...CHAT_QUERY_KEYS.all, "unread-count"] as const,
 };
 
 // ===== Queries =====
@@ -81,6 +82,17 @@ export function useInfiniteMessages(threadId: string, pageSize: number = 50) {
     },
     initialPageParam: undefined,
     enabled: !!threadId,
+  });
+}
+
+/**
+ * 읽지 않은 채팅 메시지 수 조회
+ */
+export function useUnreadCount() {
+  return useQuery<{ count: number }>({
+    queryKey: CHAT_QUERY_KEYS.unreadCount(),
+    queryFn: () => chatService.getUnreadCount(),
+    refetchInterval: 30000, // 30초마다 자동 갱신
   });
 }
 
@@ -183,6 +195,9 @@ export function useSendMessage(
       // 스레드 목록도 업데이트 (lastMessage 변경)
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.threads() });
 
+      // 읽지 않은 메시지 수 갱신
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.unreadCount() });
+
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, variables, context);
@@ -211,6 +226,9 @@ export function useMarkAsRead(
 
       // 메시지 목록 업데이트 (isRead 상태 변경)
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.messages(variables.threadId) });
+
+      // 읽지 않은 메시지 수 갱신
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.unreadCount() });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {

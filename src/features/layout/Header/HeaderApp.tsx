@@ -1,6 +1,7 @@
 // src/features/layout/header/HeaderApp.tsx
 import React from "react";
 import logo from "@/assets/logo.png";
+import { MessageCircle } from "lucide-react";
 
 type NavItem = { key: string; label: string; active?: boolean; onClick: () => void };
 type User = { name: string; } | null;
@@ -8,7 +9,9 @@ type User = { name: string; } | null;
 interface HeaderAppProps {
   navItems: NavItem[];
   unreadCount: number;
+  chatUnreadCount?: number;
   onClickNotifications: () => void;
+  onClickChat?: () => void;
   user: User;
   onLogin?: () => void;
   onLogoClick: () => void;
@@ -17,7 +20,9 @@ interface HeaderAppProps {
 export default function HeaderApp({
                                     navItems,
                                     unreadCount,
+                                    chatUnreadCount = 0,
                                     onClickNotifications,
+                                    onClickChat,
                                     user,
                                     onLogin,
                                     onLogoClick,
@@ -70,8 +75,23 @@ export default function HeaderApp({
             </ul>
           </nav>
 
-          {/* RIGHT: 알림 + 유저 */}
+          {/* RIGHT: 채팅 + 알림 + 유저 */}
           <div className="shrink-0 flex items-center gap-[15px] justify-end pb-4 pointer-events-none" style={{ position: 'relative', top: '-25px' }}>
+            {/* 채팅 버튼 */}
+            <button
+              onClick={onClickChat}
+              className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] transition-colors cursor-pointer pointer-events-auto"
+              aria-label="채팅"
+            >
+              <MessageCircle className="w-6 h-6 text-[color:var(--color-fg-primary)]" />
+              {chatUnreadCount > 0 && (
+                <span className="absolute -top-4 -right-1 min-w-6 h-6 px-1.5 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+                  {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* 알림 버튼 */}
             <button
               onClick={onClickNotifications}
               className="relative w-14 h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] text-2xl transition-colors cursor-pointer pointer-events-auto"
