@@ -76,6 +76,9 @@ export const CHAT_ENDPOINTS = {
   ROOMS_OVERVIEW: "/chat/rooms/overview", // 전체 채팅방 overview
   MY_ROOMS: "/chat/rooms/my", // 내 채팅방 목록
 
+  // 채팅방 메시지 (백엔드 API)
+  ROOM_MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`, // 채팅방 메시지 조회
+
   // 기존 엔드포인트 (향후 사용)
   THREADS: "/chat/threads",
   THREAD_DETAIL: (threadId: string) => `/chat/threads/${threadId}`,
