@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import "./ChatDock.css";
 
@@ -318,6 +318,25 @@ export default function ChatDock() {
   // 채팅방 목록 API 연결
   const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ userId, page: 0, size: 20 });
 
+  // 메시지 전송 mutation
+  const sendMessageMutation = useSendRoomMessage({
+    onSuccess: (data) => {
+      // 전송 성공 시 로컬 메시지 목록에 추가
+      const convertedMessage: ChatMessage = {
+        id: data.id.toString(),
+        threadId: data.roomId.toString(),
+        fromId: data.senderId.toString(),
+        text: data.body.text,
+        createdAt: new Date(data.createdAt).getTime(),
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [data.roomId.toString()]: [...(prev[data.roomId.toString()] || []), convertedMessage],
+      }));
+    },
+  });
+
   // 백엔드 응답을 UI 형식으로 변환
   const threads = useMemo(() => {
     if (!myRoomsData) return [];
@@ -515,10 +534,16 @@ export default function ChatDock() {
   const minimizeThread = (id: string) => minimizeThreadInContext(id);
 
   const sendMessage = (threadId: string, text: string) => {
-    const msg: ChatMessage = { id: Math.random().toString(36).slice(2), threadId, fromId: me.id, text, createdAt: Date.now() };
-    setMessages((prev) => ({ ...prev, [threadId]: [...(prev[threadId] || []), msg] }));
-    setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, lastMessage: msg } : t)));
-    socket.sendMessage(msg);
+    const roomId = parseInt(threadId, 10);
+
+    // API 호출로 메시지 전송
+    sendMessageMutation.mutate({
+      senderId: userId,
+      roomId,
+      type: "TEXT",
+      body: { text },
+      replyToMsgId: null,
+    });
   };
 
   // 변경 2: 반환부 전체 교체 (return ...)

@@ -22,6 +22,8 @@ import {
   GetRoomMessagesParams,
   MyRoomsResponse,
   GetMyRoomsParams,
+  SendRoomMessageRequest,
+  RoomMessage,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -141,6 +143,39 @@ export function useUnreadCount() {
 }
 
 // ===== Mutations =====
+
+/**
+ * 채팅방 메시지 전송
+ */
+export function useSendRoomMessage(
+  options?: UseMutationOptions<RoomMessage, Error, SendRoomMessageRequest, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<RoomMessage, Error, SendRoomMessageRequest, unknown>({
+    ...options,
+    mutationFn: chatService.sendRoomMessage,
+    onSuccess: (data, variables, context) => {
+      // 해당 채팅방의 메시지 목록 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId, variables.senderId)
+      });
+
+      // 채팅방 목록 무효화 (lastMessage 업데이트)
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomsOverview(variables.senderId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.myRooms(variables.senderId, 0)
+      });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
 
 /**
  * 채팅 스레드 생성
