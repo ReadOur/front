@@ -7,7 +7,9 @@ interface Book {
   id: number;
   title: string;
   author?: string;
+  publisher?: string;
   description?: string;
+  highlights?: string[];
   rating?: number;
   coverImage?: string;
 }
@@ -26,7 +28,9 @@ const mockBook: Book = {
   id: 1,
   title: "책 제목",
   author: "저자명",
+  publisher: "출판사명",
   description: "설명문입니다. 이 책은 정말 흥미로운 내용을 담고 있습니다.",
+  highlights: ["판타지", "모험", "베스트셀러"],
   rating: 4.11,
 };
 
@@ -136,6 +140,35 @@ export default function BOD_15() {
             >
               {mockBook.title}
             </h1>
+
+            {/* 작가 및 출판사 */}
+            <div
+              className="text-xl mb-4"
+              style={{ color: "#6B4F3F" }}
+            >
+              {mockBook.author && <span>{mockBook.author}</span>}
+              {mockBook.author && mockBook.publisher && <span className="mx-2">|</span>}
+              {mockBook.publisher && <span>{mockBook.publisher}</span>}
+            </div>
+
+            {/* 하이라이트 태그 */}
+            {mockBook.highlights && mockBook.highlights.length > 0 && (
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {mockBook.highlights.map((highlight, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 rounded-full text-base"
+                    style={{
+                      background: "#E9E5DC",
+                      color: "#6B4F3F",
+                    }}
+                  >
+                    #{highlight}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <p
               className="text-xl mb-6"
               style={{ color: "black" }}
