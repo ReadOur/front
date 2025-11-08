@@ -20,6 +20,8 @@ import {
   GetRoomsOverviewParams,
   RoomMessagesResponse,
   GetRoomMessagesParams,
+  MyRoomsResponse,
+  GetMyRoomsParams,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -29,6 +31,13 @@ import {
  */
 export async function getRoomsOverview(params: GetRoomsOverviewParams): Promise<RoomsOverviewResponse> {
   return apiClient.get<RoomsOverviewResponse>(CHAT_ENDPOINTS.ROOMS_OVERVIEW, { params });
+}
+
+/**
+ * 내 채팅방 목록 조회
+ */
+export async function getMyRooms(params: GetMyRoomsParams): Promise<MyRoomsResponse> {
+  return apiClient.get<MyRoomsResponse>(CHAT_ENDPOINTS.MY_ROOMS, { params });
 }
 
 /**
@@ -125,6 +134,7 @@ export async function pinThread(data: PinThreadRequest): Promise<PinThreadRespon
 export const chatService = {
   // 채팅방 목록
   getRoomsOverview,
+  getMyRooms,
   getRoomMessages,
 
   // 스레드

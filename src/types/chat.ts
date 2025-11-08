@@ -212,6 +212,23 @@ export interface GetRoomsOverviewParams {
   userId: number;
 }
 
+/**
+ * 내 채팅방 목록 응답
+ */
+export interface MyRoomsResponse {
+  items: MyRoomItem[];
+  page: PageInfo;
+}
+
+/**
+ * 내 채팅방 목록 조회 파라미터
+ */
+export interface GetMyRoomsParams {
+  userId: number;
+  page?: number;
+  size?: number;
+}
+
 // ===== 채팅방 메시지 API =====
 
 /**
