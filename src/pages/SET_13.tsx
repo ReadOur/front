@@ -1,5 +1,7 @@
 // SET_13.tsx - 설정 페이지
 import React, { useState } from "react";
+import { apiClient } from "@/api/client";
+import { LIBRARY_ENDPOINTS } from "@/api/endpoints";
 
 // TODO: API 연동 시 아래 서비스를 import 하세요
 // import { updateUserNickname, updateUserEmail, updateUserPersonalInfo } from "@/services/userService";
@@ -42,11 +44,13 @@ export default function SET_13() {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
+  const [isAddingLibrary, setIsAddingLibrary] = useState(false);
 
   // 임시 값 상태
   const [tempNickname, setTempNickname] = useState(userData.nickname);
   const [tempEmail, setTempEmail] = useState(userData.email);
   const [tempPersonalInfo, setTempPersonalInfo] = useState(userData.personalInfo);
+  const [tempLibraryName, setTempLibraryName] = useState("");
 
   // 닉네임 수정 핸들러
   const handleEditNickname = () => {
@@ -146,16 +150,57 @@ export default function SET_13() {
 
   // 도서관 추가 핸들러
   const handleAddLibrary = () => {
-    console.log("관심 도서관 추가");
-    // TODO: 도서관 선택 모달 열기
+    setTempLibraryName("");
+    setIsAddingLibrary(true);
+  };
+
+  const handleSaveLibrary = async () => {
+    if (!tempLibraryName.trim()) {
+      alert("도서관 이름을 입력해주세요.");
+      return;
+    }
+
+    try {
+      // API 호출: 관심 도서관 추가
+      await apiClient.post(LIBRARY_ENDPOINTS.ADD_FAVORITE_LIBRARY, {
+        libraryName: tempLibraryName.trim(),
+      });
+
+      // 로컬 상태 업데이트
+      setUserData({
+        ...userData,
+        favoriteLibraries: [...userData.favoriteLibraries, tempLibraryName.trim()],
+      });
+      setIsAddingLibrary(false);
+      setTempLibraryName("");
+      console.log("관심 도서관 추가:", tempLibraryName);
+    } catch (error) {
+      console.error("관심 도서관 추가 실패:", error);
+      alert("관심 도서관 추가에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  const handleCancelAddLibrary = () => {
+    setTempLibraryName("");
+    setIsAddingLibrary(false);
   };
 
   // 도서관 삭제 핸들러
-  const handleRemoveLibrary = (library: string) => {
-    setUserData({
-      ...userData,
-      favoriteLibraries: userData.favoriteLibraries.filter((lib) => lib !== library),
-    });
+  const handleRemoveLibrary = async (library: string) => {
+    try {
+      // API 호출: 관심 도서관 삭제
+      await apiClient.delete(LIBRARY_ENDPOINTS.REMOVE_FAVORITE_LIBRARY(library));
+
+      // 로컬 상태 업데이트
+      setUserData({
+        ...userData,
+        favoriteLibraries: userData.favoriteLibraries.filter((lib) => lib !== library),
+      });
+      console.log("관심 도서관 삭제:", library);
+    } catch (error) {
+      console.error("관심 도서관 삭제 실패:", error);
+      alert("관심 도서관 삭제에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   return (
@@ -521,37 +566,88 @@ export default function SET_13() {
                   className="px-6 py-6 rounded"
                   style={{ background: "#E9E5DC" }}
                 >
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4 mb-4">
                     <span
-                      className="flex-1"
                       style={{
                         color: "black",
                         fontSize: "36px",
                         opacity: 0.6,
                         lineHeight: "36px",
+                        minWidth: "240px",
                       }}
                     >
                       관심 도서관
                     </span>
-                    <button
-                      onClick={handleAddLibrary}
-                      className="px-6 py-3 rounded hover:opacity-80 transition"
-                      style={{
-                        background: "#6B4F3F",
-                        opacity: 0.3,
-                      }}
-                    >
-                      <span
+                    {!isAddingLibrary ? (
+                      <button
+                        onClick={handleAddLibrary}
+                        className="px-6 py-3 rounded hover:opacity-90 transition ml-auto"
                         style={{
-                          color: "black",
-                          fontSize: "36px",
-                          opacity: 0.7,
-                          lineHeight: "36px",
+                          background: "#6B4F3F",
+                          color: "white",
                         }}
                       >
-                        추가
-                      </span>
-                    </button>
+                        <span
+                          style={{
+                            fontSize: "28px",
+                            lineHeight: "36px",
+                          }}
+                        >
+                          추가
+                        </span>
+                      </button>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          value={tempLibraryName}
+                          onChange={(e) => setTempLibraryName(e.target.value)}
+                          placeholder="도서관 이름을 입력하세요"
+                          className="flex-1 px-4 py-2 rounded"
+                          style={{
+                            background: "#FFF9F2",
+                            color: "black",
+                            fontSize: "28px",
+                            lineHeight: "36px",
+                            border: "2px solid #6B4F3F",
+                          }}
+                        />
+                        <button
+                          onClick={handleSaveLibrary}
+                          className="px-6 py-3 rounded hover:opacity-90 transition"
+                          style={{
+                            background: "#6B4F3F",
+                            color: "white",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "28px",
+                              lineHeight: "36px",
+                            }}
+                          >
+                            저장
+                          </span>
+                        </button>
+                        <button
+                          onClick={handleCancelAddLibrary}
+                          className="px-6 py-3 rounded hover:opacity-90 transition"
+                          style={{
+                            background: "#D9D9D9",
+                            color: "black",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "28px",
+                              lineHeight: "36px",
+                            }}
+                          >
+                            취소
+                          </span>
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   {/* 도서관 태그들 */}
