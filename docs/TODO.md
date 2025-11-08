@@ -1,7 +1,7 @@
 # 📋 ReadOur Front - TODO & Roadmap
 
-> **Last Updated:** 2025-11-05
-> **Current Status:** 게시판 CRUD 완료, 페이지 구현 단계
+> **Last Updated:** 2025-11-08
+> **Current Status:** 게시판 CRUD 완료, 채팅 API 연동 완료, 페이지 구현 단계
 
 ---
 
@@ -94,8 +94,16 @@
 ### 💬 댓글/채팅 개선
 - [ ] 댓글 대댓글 기능
 - [ ] 댓글 좋아요/신고
-- [ ] 실시간 채팅 (WebSocket)
-- [ ] 읽음/안읽음 표시
+- [ ] **채팅 기능**
+  - [x] 채팅방 목록 API 연동 (CHT_17)
+  - [x] ChatDock 채팅방 목록 API 연동
+  - [x] ChatDock 메시지 로드 기능
+  - [ ] 핀 토글 기능 백엔드 API 연동
+  - [ ] 실시간 채팅 (WebSocket 연동)
+  - [ ] 실시간 업데이트 (React Query 캐시 무효화)
+  - [ ] userId 동적 로딩 (로그인 연동)
+  - [ ] 읽음/안읽음 표시
+  - [ ] 메시지 전송 기능
 
 ### 🔍 검색 기능
 - [ ] 게시글 검색
@@ -176,6 +184,9 @@
 ### 레이아웃
 - [x] HeaderApp (전역 헤더)
 - [x] ChatDock (채팅 독)
+  - [x] 기본 UI 구조
+  - [x] 채팅방 목록 API 연동
+  - [x] 메시지 로드 기능
 
 ### 게시판 기능
 - [x] 게시글 목록 (BRD_04)
@@ -183,6 +194,16 @@
 - [x] 게시글 작성/수정 (BRD_06)
 - [x] 게시글 삭제
 - [x] 댓글 조회/작성/삭제
+
+### 채팅 기능
+- [x] 채팅방 목록 페이지 (CHT_17)
+  - [x] 채팅방 목록 API 연동 (getRoomsOverview)
+  - [x] 카테고리별 필터링 (1:1, 단체, 모임)
+  - [x] 검색 기능
+- [x] ChatDock API 연동
+  - [x] 내 채팅방 목록 조회 (getMyRooms)
+  - [x] 채팅방 메시지 조회 (getRoomMessages)
+  - [x] 백엔드 응답 → UI 형식 변환
 
 ### 기타
 - [x] 캘린더 페이지 기본 구조 (CAL_11)
@@ -199,6 +220,7 @@
 | `/boards/:postId` | BRD_05 (게시글 상세) | ✅ 완료 |
 | `/boards/:postId/edit` | BRD_06 (게시글 수정) | ✅ 완료 |
 | `/calendar` | CAL_11 (캘린더) | 🚧 기본 구조만 |
+| `/chat` | CHT_17 (채팅방 목록) | ✅ 완료 |
 | `/login` | LOG_02 (로그인) | ❌ 미구현 |
 | `/register` | REG_03 (회원가입) | ❌ 미구현 |
 | `/mypage` | MYB_14 (마이페이지) | ❌ 미구현 |
