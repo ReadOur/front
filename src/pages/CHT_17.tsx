@@ -229,7 +229,7 @@ export default function CHT_17() {
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
 
   // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
-  const userId = 32; // 임시 userId
+  const userId = 1; // 테스트용 userId
 
   // 채팅방 데이터 가져오기
   const { data, isLoading, error } = useRoomsOverview({ userId });
