@@ -150,3 +150,64 @@ export interface PinThreadResponse {
   threadId: string;
   isPinned: boolean;
 }
+
+// ===== 채팅방 Overview API =====
+
+/**
+ * 내 채팅방 아이템 (myRooms)
+ */
+export interface MyRoomItem {
+  roomId: number;
+  name: string;
+  lastMsg: {
+    id: number;
+    preview: string;
+    createdAt: string;
+  };
+  unreadCount: number;
+  updatedAt: string;
+  pinned: boolean;
+  pinOrder: number;
+}
+
+/**
+ * 공개 채팅방 아이템 (publicRooms)
+ */
+export interface PublicRoomItem {
+  roomId: number;
+  name: string;
+  description: string;
+  memberCount: number;
+  joined: boolean;
+  updatedAt: string;
+}
+
+/**
+ * 페이지 정보
+ */
+export interface PageInfo {
+  number: number;
+  size: number;
+  hasNext: boolean;
+}
+
+/**
+ * 채팅방 목록 응답
+ */
+export interface RoomsOverviewResponse {
+  myRooms: {
+    items: MyRoomItem[];
+    page: PageInfo;
+  };
+  publicRooms: {
+    items: PublicRoomItem[];
+    page: PageInfo;
+  };
+}
+
+/**
+ * 채팅방 Overview 조회 파라미터
+ */
+export interface GetRoomsOverviewParams {
+  userId: number;
+}

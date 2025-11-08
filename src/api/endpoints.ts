@@ -72,6 +72,11 @@ export const ATTACHMENT_ENDPOINTS = {
  * 채팅 관련 엔드포인트
  */
 export const CHAT_ENDPOINTS = {
+  // 채팅방 목록 (백엔드 API)
+  ROOMS_OVERVIEW: "/chat/rooms/overview", // 전체 채팅방 overview
+  MY_ROOMS: "/chat/rooms/my", // 내 채팅방 목록
+
+  // 기존 엔드포인트 (향후 사용)
   THREADS: "/chat/threads",
   THREAD_DETAIL: (threadId: string) => `/chat/threads/${threadId}`,
   MESSAGES: (threadId: string) => `/chat/threads/${threadId}/messages`,
