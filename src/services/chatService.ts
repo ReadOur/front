@@ -18,6 +18,10 @@ import {
   PaginatedResponse,
   RoomsOverviewResponse,
   GetRoomsOverviewParams,
+  RoomMessagesResponse,
+  GetRoomMessagesParams,
+  MyRoomsResponse,
+  GetMyRoomsParams,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -27,6 +31,29 @@ import {
  */
 export async function getRoomsOverview(params: GetRoomsOverviewParams): Promise<RoomsOverviewResponse> {
   return apiClient.get<RoomsOverviewResponse>(CHAT_ENDPOINTS.ROOMS_OVERVIEW, { params });
+}
+
+/**
+ * 내 채팅방 목록 조회
+ */
+export async function getMyRooms(params: GetMyRoomsParams): Promise<MyRoomsResponse> {
+  return apiClient.get<MyRoomsResponse>(CHAT_ENDPOINTS.MY_ROOMS, { params });
+}
+
+/**
+ * 채팅방 메시지 조회
+ */
+export async function getRoomMessages(params: GetRoomMessagesParams): Promise<RoomMessagesResponse> {
+  const { roomId, userId, before } = params;
+  return apiClient.get<RoomMessagesResponse>(
+    CHAT_ENDPOINTS.ROOM_MESSAGES(roomId),
+    {
+      params: before ? { before } : undefined,
+      headers: {
+        'X-User-Id': userId.toString(),
+      },
+    }
+  );
 }
 
 // ===== 스레드 (대화방) 관련 =====
@@ -107,6 +134,8 @@ export async function pinThread(data: PinThreadRequest): Promise<PinThreadRespon
 export const chatService = {
   // 채팅방 목록
   getRoomsOverview,
+  getMyRooms,
+  getRoomMessages,
 
   // 스레드
   getThreads,

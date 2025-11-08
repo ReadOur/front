@@ -151,13 +151,11 @@ function formatRelativeTime(ms: number): string {
 }
 
 function ThreadListItem({ thread }: { thread: ChatThread }) {
-  const { openThread, isThreadOpen } = useChatContext();
+  const { openThread } = useChatContext();
   const isGroup = thread.users.length > 1;
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
     : thread.users[0]?.name || "알 수 없음";
-
-  const isOpen = isThreadOpen(thread.id);
 
   return (
     <div
@@ -203,11 +201,6 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
               {thread.unreadCount}
             </span>
           ) : null}
-          {isOpen && (
-            <span className="text-xs text-[color:var(--color-primary)] font-medium">
-              Dock에서 열림
-            </span>
-          )}
         </div>
       </div>
     </div>

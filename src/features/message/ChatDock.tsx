@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useNavigate } from "react-router-dom";
+import { useMyRooms } from "@/hooks/api/useChat";
+import { chatService } from "@/services/chatService";
 import "./ChatDock.css";
 
 /**
@@ -307,19 +309,42 @@ export default function ChatDock() {
     setZMap(prev => ({ ...prev, [id]: zSeed.current }));
   };
 
-  // Mock data
+  // User data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
-  const [threads, setThreads] = useState<ChatThread[]>([
-    { id: "t1", users: [{ id: "u1", name: "콩콩" }], category: "DIRECT", unreadCount: 2, isPinned: false, lastMessage: { id: "m0", threadId: "t1", fromId: "u1", text: "오늘 저녁?", createdAt: Date.now() - 600000 } },
-    { id: "t2", users: [{ id: "u2", name: "쭈꾸미" }], category: "DIRECT", isPinned: false, lastMessage: { id: "m1", threadId: "t2", fromId: "u2", text: "파일 확인했어!", createdAt: Date.now() - 3600000 } },
-    { id: "t3", users: [{ id: "u3", name: "자몽" }], category: "DIRECT", isPinned: false, lastMessage: { id: "m2", threadId: "t3", fromId: "u3", text: "굿굿", createdAt: Date.now() - 7200000 } },
-  ]);
+
+  // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
+  const userId = 1; // 테스트용 userId
+
+  // 채팅방 목록 API 연결
+  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ userId, page: 0, size: 20 });
+
+  // 백엔드 응답을 UI 형식으로 변환
+  const threads = useMemo(() => {
+    if (!myRoomsData) return [];
+
+    return myRoomsData.items.map((room) => ({
+      id: room.roomId.toString(),
+      users: [{ id: "unknown", name: room.name }],
+      category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
+      unreadCount: room.unreadCount,
+      isPinned: room.pinned,
+      lastMessage: room.lastMsg
+        ? {
+            id: room.lastMsg.id.toString(),
+            threadId: room.roomId.toString(),
+            fromId: "unknown",
+            text: room.lastMsg.preview,
+            createdAt: new Date(room.lastMsg.createdAt).getTime(),
+          }
+        : undefined,
+    }));
+  }, [myRoomsData]);
 
   // 핀 토글 함수
+  // TODO: 백엔드 API에 핀 토글 엔드포인트 추가 후 구현 필요
   const togglePin = (threadId: string) => {
-    setThreads((prev) =>
-      prev.map((t) => (t.id === threadId ? { ...t, isPinned: !t.isPinned } : t))
-    );
+    console.log("Pin toggle requested for room:", threadId);
+    // 백엔드 API 연동 필요: PUT /chat/rooms/{roomId}/pin
   };
 
   // 핀된 채팅방을 상단에 표시하도록 정렬
@@ -378,11 +403,8 @@ export default function ChatDock() {
     }
   };
 
-  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({
-    t1: [
-      { id: "a", threadId: "t1", fromId: "u1", text: "안녕!", createdAt: Date.now() - 86400000 },
-    ],
-  });
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [loadingMessages, setLoadingMessages] = useState<Record<string, boolean>>({});
   const [typing, setTyping] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
 
@@ -412,12 +434,47 @@ export default function ChatDock() {
     };
   }, []);
 
+  // ===== 메시지 로딩 =====
+  // 채팅방이 열릴 때 메시지 가져오기
+  useEffect(() => {
+    openThreadIds.forEach(async (threadId) => {
+      // 이미 로딩 중이거나 메시지가 있으면 스킵
+      if (loadingMessages[threadId] || messages[threadId]) {
+        return;
+      }
+
+      setLoadingMessages((prev) => ({ ...prev, [threadId]: true }));
+
+      try {
+        const roomId = parseInt(threadId, 10);
+        const response = await chatService.getRoomMessages({ roomId, userId });
+
+        // 백엔드 메시지를 UI 형식으로 변환
+        const convertedMessages: ChatMessage[] = response.items.map((msg) => ({
+          id: msg.id.toString(),
+          threadId: msg.roomId.toString(),
+          fromId: msg.senderId.toString(),
+          text: msg.body.text,
+          createdAt: new Date(msg.createdAt).getTime(),
+        }));
+
+        setMessages((prev) => ({
+          ...prev,
+          [threadId]: convertedMessages,
+        }));
+      } catch (error) {
+        console.error("Failed to load messages for thread:", threadId, error);
+      } finally {
+        setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
+      }
+    });
+  }, [openThreadIds, userId]);
 
   const socket = useMockSocket();
   useEffect(() => {
     const offMsg = socket.on("message", (m: ChatMessage) => {
       setMessages((prev) => ({ ...prev, [m.threadId]: [...(prev[m.threadId] || []), m] }));
-      setThreads((prev) => prev.map((t) => (t.id === m.threadId ? { ...t, lastMessage: m, unreadCount: (t.unreadCount || 0) + (m.fromId === me.id ? 0 : 1) } : t)));
+      // TODO: 실시간 업데이트를 위해 React Query 캐시 무효화 또는 WebSocket 사용 필요
     });
     const offTyping = socket.on("typing", ({ threadId, userId, typing }: { threadId: string; userId: string; typing: boolean }) => {
       setTyping((prev) => {

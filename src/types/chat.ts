@@ -211,3 +211,68 @@ export interface RoomsOverviewResponse {
 export interface GetRoomsOverviewParams {
   userId: number;
 }
+
+/**
+ * 내 채팅방 목록 응답
+ */
+export interface MyRoomsResponse {
+  items: MyRoomItem[];
+  page: PageInfo;
+}
+
+/**
+ * 내 채팅방 목록 조회 파라미터
+ */
+export interface GetMyRoomsParams {
+  userId: number;
+  page?: number;
+  size?: number;
+}
+
+// ===== 채팅방 메시지 API =====
+
+/**
+ * 메시지 타입 (백엔드 API)
+ */
+export type RoomMessageType = "TEXT" | "IMAGE" | "FILE" | "POLL";
+
+/**
+ * 채팅방 메시지 아이템
+ */
+export interface RoomMessage {
+  id: number;
+  roomId: number;
+  senderId: number;
+  type: RoomMessageType;
+  body: {
+    text: string;
+    extra?: string;
+  };
+  replyToMsgId: number | null;
+  createdAt: string;
+  deletedAt: string | null;
+}
+
+/**
+ * 메시지 페이징 정보
+ */
+export interface MessagePaging {
+  nextBefore: string | null;
+}
+
+/**
+ * 채팅방 메시지 목록 응답
+ */
+export interface RoomMessagesResponse {
+  items: RoomMessage[];
+  paging: MessagePaging;
+}
+
+/**
+ * 채팅방 메시지 조회 파라미터
+ */
+export interface GetRoomMessagesParams {
+  roomId: number;
+  userId: number;
+  before?: string; // 커서 기반 페이징
+}
