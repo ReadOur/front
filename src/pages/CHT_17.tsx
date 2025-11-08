@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { MessageCircle, Search, Star, Users, Send, Loader2, User } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useThreads } from "@/hooks/api/useChat";
+import { useRoomsOverview } from "@/hooks/api/useChat";
+import { MyRoomItem, PublicRoomItem } from "@/types/chat";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -227,13 +228,42 @@ export default function CHT_17() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("ALL");
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
 
-  // TODO: 백엔드 준비되면 useThreads 훅 사용
-  // const { data, isLoading } = useThreads();
-  // const threads = data?.items || [];
+  // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
+  const userId = 32; // 임시 userId
 
-  // 현재는 mock 데이터 사용
-  const threads = mockThreads;
-  const isLoading = false;
+  // 채팅방 데이터 가져오기
+  const { data, isLoading, error } = useRoomsOverview({ userId });
+
+  // 백엔드 응답을 UI 형식으로 변환
+  const threads = useMemo(() => {
+    if (!data) return [];
+
+    const myRooms: ChatThread[] = data.myRooms.items.map((room) => ({
+      id: room.roomId.toString(),
+      users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
+      category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
+      unreadCount: room.unreadCount,
+      lastMessage: room.lastMsg
+        ? {
+            id: room.lastMsg.id.toString(),
+            threadId: room.roomId.toString(),
+            fromId: "unknown",
+            text: room.lastMsg.preview,
+            createdAt: new Date(room.lastMsg.createdAt).getTime(),
+          }
+        : undefined,
+    }));
+
+    const publicRooms: ChatThread[] = data.publicRooms.items.map((room) => ({
+      id: room.roomId.toString(),
+      users: [{ id: "unknown", name: room.name }],
+      category: "MEETING" as ChatCategory, // 공개방은 MEETING으로 표시
+      unreadCount: 0,
+      lastMessage: undefined,
+    }));
+
+    return [...myRooms, ...publicRooms];
+  }, [data]);
 
   // 카테고리별 읽지 않은 메시지 수 계산
   const unreadCounts = {
@@ -313,6 +343,13 @@ export default function CHT_17() {
             <div className="p-8 flex flex-col items-center justify-center text-[color:var(--color-fg-muted)]">
               <Loader2 className="w-8 h-8 animate-spin mb-2" />
               <p>로딩 중...</p>
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">
+              <p className="mb-2">채팅방을 불러오는 중 오류가 발생했습니다.</p>
+              <p className="text-sm text-[color:var(--color-fg-muted)]">
+                {error instanceof Error ? error.message : "알 수 없는 오류"}
+              </p>
             </div>
           ) : filteredThreads.length === 0 ? (
             <div className="p-8 text-center text-[color:var(--color-fg-muted)]">

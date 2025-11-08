@@ -16,11 +16,14 @@ import {
   PinThreadRequest,
   PinThreadResponse,
   PaginatedResponse,
+  RoomsOverviewResponse,
+  GetRoomsOverviewParams,
 } from "@/types";
 
 // ===== Query Keys =====
 export const CHAT_QUERY_KEYS = {
   all: ["chat"] as const,
+  roomsOverview: (userId: number) => [...CHAT_QUERY_KEYS.all, "rooms-overview", userId] as const,
   threads: () => [...CHAT_QUERY_KEYS.all, "threads"] as const,
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,
@@ -29,6 +32,17 @@ export const CHAT_QUERY_KEYS = {
 };
 
 // ===== Queries =====
+
+/**
+ * 채팅방 Overview 조회 (myRooms + publicRooms)
+ */
+export function useRoomsOverview(params: GetRoomsOverviewParams, options?: { enabled?: boolean }) {
+  return useQuery<RoomsOverviewResponse>({
+    queryKey: CHAT_QUERY_KEYS.roomsOverview(params.userId),
+    queryFn: () => chatService.getRoomsOverview(params),
+    enabled: options?.enabled !== false && !!params.userId,
+  });
+}
 
 /**
  * 채팅 스레드 목록 조회
