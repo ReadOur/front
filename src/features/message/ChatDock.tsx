@@ -206,7 +206,9 @@ function ChatWindow({
                       onMinimize,
                       onSend,
                       __onDragStart,
-
+                      __onResizeStart,
+                      width = 320,
+                      height = 420,
                     }: {
   me: ChatUser;
   thread: ChatThread;
@@ -215,7 +217,10 @@ function ChatWindow({
   onClose: () => void;
   onMinimize: () => void;
   onSend: (text: string) => void;
-  __onDragStart? : (e: React.PointerEvent) => void;
+  __onDragStart?: (e: React.PointerEvent) => void;
+  __onResizeStart?: (e: React.PointerEvent) => void;
+  width?: number;
+  height?: number;
 }) {
   const [text, setText] = useState("");
   const boxRef = useRef<HTMLDivElement>(null);
@@ -226,11 +231,14 @@ function ChatWindow({
   const title = thread.users.map((u) => u.name).join(", ");
 
   return (
-    <div className="w-[320px] h-[420px] flex flex-col overflow-hidden
+    <div
+      className="flex flex-col overflow-hidden relative
              rounded-[var(--radius-lg)]
              bg-[color:var(--chatdock-bg-elev-2)]
              border border-[color:var(--chatdock-border-strong)]
-             shadow-xl">
+             shadow-xl"
+      style={{ width: `${width}px`, height: `${height}px` }}
+    >
       {/* header */}
       <div className="h-11 flex items-center gap-2 px-2 border-b border-[color:var(--chatdock-border-subtle)] cursor-move select-none"
         onPointerDown={__onDragStart}
@@ -292,6 +300,17 @@ function ChatWindow({
           </button>
         </div>
       </form>
+
+      {/* 리사이즈 핸들 - 우측 하단 모서리 */}
+      {__onResizeStart && (
+        <div
+          onPointerDown={__onResizeStart}
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
+          style={{ touchAction: 'none' }}
+        >
+          <div className="absolute bottom-0.5 right-0.5 w-3 h-3 border-r-2 border-b-2 border-[color:var(--chatdock-border-subtle)] group-hover:border-[color:var(--color-accent)]" />
+        </div>
+      )}
     </div>
   );
 }
@@ -341,23 +360,29 @@ export default function ChatDock() {
   const threads = useMemo(() => {
     if (!myRoomsData) return [];
 
-    return myRoomsData.items.map((room) => ({
-      id: room.roomId.toString(),
-      users: [{ id: "unknown", name: room.name }],
-      category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
-      unreadCount: room.unreadCount,
-      isPinned: room.pinned,
-      lastMessage: room.lastMsg
-        ? {
-            id: room.lastMsg.id.toString(),
-            threadId: room.roomId.toString(),
-            fromId: "unknown",
-            text: room.lastMsg.preview,
-            createdAt: new Date(room.lastMsg.createdAt).getTime(),
-          }
-        : undefined,
-    }));
-  }, [myRoomsData]);
+    return myRoomsData.items.map((room) => {
+      const threadId = room.roomId.toString();
+      // 채팅방이 열려있으면 (focus 상태) unreadCount를 0으로 설정
+      const isOpen = openThreadIds.includes(threadId);
+
+      return {
+        id: threadId,
+        users: [{ id: "unknown", name: room.name }],
+        category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
+        unreadCount: isOpen ? 0 : room.unreadCount,
+        isPinned: room.pinned,
+        lastMessage: room.lastMsg
+          ? {
+              id: room.lastMsg.id.toString(),
+              threadId: room.roomId.toString(),
+              fromId: "unknown",
+              text: room.lastMsg.preview,
+              createdAt: new Date(room.lastMsg.createdAt).getTime(),
+            }
+          : undefined,
+      };
+    });
+  }, [myRoomsData, openThreadIds]);
 
   // 핀 토글 함수
   // TODO: 백엔드 API에 핀 토글 엔드포인트 추가 후 구현 필요
@@ -381,11 +406,23 @@ export default function ChatDock() {
 // 채팅창 위치 상태 (픽셀 단위)
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
 
+// 채팅창 크기 상태 (픽셀 단위)
+  const [sizes, setSizes] = useState<Record<string, { width: number; height: number }>>({});
+
 // 드래그 중인 창 정보
   const dragInfo = useRef<{ id: string | null; offsetX: number; offsetY: number }>({
     id: null,
     offsetX: 0,
     offsetY: 0,
+  });
+
+// 리사이즈 중인 창 정보
+  const resizeInfo = useRef<{ id: string | null; startX: number; startY: number; startWidth: number; startHeight: number }>({
+    id: null,
+    startX: 0,
+    startY: 0,
+    startWidth: 0,
+    startHeight: 0,
   });
 
   const onDragStart = (id: string, e: React.PointerEvent) => {
@@ -415,6 +452,47 @@ export default function ChatDock() {
 
   const onDragEnd = (e: React.PointerEvent) => {
     dragInfo.current.id = null;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // ignore safely: pointer capture may already be released
+    }
+  };
+
+  // 리사이즈 시작
+  const onResizeStart = (id: string, e: React.PointerEvent) => {
+    e.stopPropagation(); // 드래그 이벤트와 충돌 방지
+    const currentSize = sizes[id] || { width: 320, height: 420 };
+    resizeInfo.current = {
+      id,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: currentSize.width,
+      startHeight: currentSize.height,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  // 리사이즈 이동
+  const onResizeMove = (e: React.PointerEvent) => {
+    const id = resizeInfo.current.id;
+    if (!id) return;
+
+    const deltaX = e.clientX - resizeInfo.current.startX;
+    const deltaY = e.clientY - resizeInfo.current.startY;
+
+    const newWidth = Math.max(280, Math.min(800, resizeInfo.current.startWidth + deltaX));
+    const newHeight = Math.max(300, Math.min(800, resizeInfo.current.startHeight + deltaY));
+
+    setSizes((prev) => ({
+      ...prev,
+      [id]: { width: newWidth, height: newHeight },
+    }));
+  };
+
+  // 리사이즈 종료
+  const onResizeEnd = (e: React.PointerEvent) => {
+    resizeInfo.current.id = null;
     try {
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {
@@ -685,9 +763,18 @@ export default function ChatDock() {
             <div
               key={id}
               style={{ position: "fixed", left: pos.x, top: pos.y, zIndex: z }}
-              onPointerMove={onDragMove}
-              onPointerUp={onDragEnd}
-              onPointerCancel={onDragEnd}
+              onPointerMove={(e) => {
+                onDragMove(e);
+                onResizeMove(e);
+              }}
+              onPointerUp={(e) => {
+                onDragEnd(e);
+                onResizeEnd(e);
+              }}
+              onPointerCancel={(e) => {
+                onDragEnd(e);
+                onResizeEnd(e);
+              }}
               onMouseDown={() => bringToFront(id)}   // ✅ 클릭 시 맨 위
             >
               <ChatWindow
@@ -699,6 +786,9 @@ export default function ChatDock() {
                 onMinimize={() => minimizeThread(id)}
                 onSend={(text) => sendMessage(id, text)}
                 __onDragStart={(e: React.PointerEvent) => onDragStart(id, e)}
+                __onResizeStart={(e: React.PointerEvent) => onResizeStart(id, e)}
+                width={sizes[id]?.width || 320}
+                height={sizes[id]?.height || 420}
               />
             </div>
           );
