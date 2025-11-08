@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
+import { useQueryClient } from "@tanstack/react-query";
 import "./ChatDock.css";
 
 /**
@@ -218,7 +219,7 @@ function ChatWindow({
   onMinimize: () => void;
   onSend: (text: string) => void;
   __onDragStart?: (e: React.PointerEvent) => void;
-  __onResizeStart?: (e: React.PointerEvent) => void;
+  __onResizeStart?: (direction: string, e: React.PointerEvent) => void;
   width?: number;
   height?: number;
 }) {
@@ -301,15 +302,53 @@ function ChatWindow({
         </div>
       </form>
 
-      {/* 리사이즈 핸들 - 우측 하단 모서리 */}
+      {/* 리사이즈 핸들 - 8방향 */}
       {__onResizeStart && (
-        <div
-          onPointerDown={__onResizeStart}
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize group"
-          style={{ touchAction: 'none' }}
-        >
-          <div className="absolute bottom-0.5 right-0.5 w-3 h-3 border-r-2 border-b-2 border-[color:var(--chatdock-border-subtle)] group-hover:border-[color:var(--color-accent)]" />
-        </div>
+        <>
+          {/* 모서리 4개 */}
+          <div
+            onPointerDown={(e) => __onResizeStart('nw', e)}
+            className="absolute top-0 left-0 w-3 h-3 cursor-nw-resize"
+            style={{ touchAction: 'none' }}
+          />
+          <div
+            onPointerDown={(e) => __onResizeStart('ne', e)}
+            className="absolute top-0 right-0 w-3 h-3 cursor-ne-resize"
+            style={{ touchAction: 'none' }}
+          />
+          <div
+            onPointerDown={(e) => __onResizeStart('sw', e)}
+            className="absolute bottom-0 left-0 w-3 h-3 cursor-sw-resize"
+            style={{ touchAction: 'none' }}
+          />
+          <div
+            onPointerDown={(e) => __onResizeStart('se', e)}
+            className="absolute bottom-0 right-0 w-3 h-3 cursor-se-resize"
+            style={{ touchAction: 'none' }}
+          />
+
+          {/* 변 4개 */}
+          <div
+            onPointerDown={(e) => __onResizeStart('n', e)}
+            className="absolute top-0 left-3 right-3 h-1 cursor-n-resize"
+            style={{ touchAction: 'none' }}
+          />
+          <div
+            onPointerDown={(e) => __onResizeStart('s', e)}
+            className="absolute bottom-0 left-3 right-3 h-1 cursor-s-resize"
+            style={{ touchAction: 'none' }}
+          />
+          <div
+            onPointerDown={(e) => __onResizeStart('w', e)}
+            className="absolute top-3 bottom-3 left-0 w-1 cursor-w-resize"
+            style={{ touchAction: 'none' }}
+          />
+          <div
+            onPointerDown={(e) => __onResizeStart('e', e)}
+            className="absolute top-3 bottom-3 right-0 w-1 cursor-e-resize"
+            style={{ touchAction: 'none' }}
+          />
+        </>
       )}
     </div>
   );
@@ -333,6 +372,9 @@ export default function ChatDock() {
 
   // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
   const userId = 1; // 테스트용 userId
+
+  // React Query client
+  const queryClient = useQueryClient();
 
   // 채팅방 목록 API 연결
   const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ userId, page: 0, size: 20 });
@@ -417,12 +459,24 @@ export default function ChatDock() {
   });
 
 // 리사이즈 중인 창 정보
-  const resizeInfo = useRef<{ id: string | null; startX: number; startY: number; startWidth: number; startHeight: number }>({
+  const resizeInfo = useRef<{
+    id: string | null;
+    direction: string | null;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+    startPosX: number;
+    startPosY: number;
+  }>({
     id: null,
+    direction: null,
     startX: 0,
     startY: 0,
     startWidth: 0,
     startHeight: 0,
+    startPosX: 0,
+    startPosY: 0,
   });
 
   const onDragStart = (id: string, e: React.PointerEvent) => {
@@ -460,33 +514,62 @@ export default function ChatDock() {
   };
 
   // 리사이즈 시작
-  const onResizeStart = (id: string, e: React.PointerEvent) => {
+  const onResizeStart = (id: string, direction: string, e: React.PointerEvent) => {
     e.stopPropagation(); // 드래그 이벤트와 충돌 방지
     const currentSize = sizes[id] || { width: 320, height: 420 };
+    const currentPos = positions[id] || { x: 0, y: 0 };
     resizeInfo.current = {
       id,
+      direction,
       startX: e.clientX,
       startY: e.clientY,
       startWidth: currentSize.width,
       startHeight: currentSize.height,
+      startPosX: currentPos.x,
+      startPosY: currentPos.y,
     };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   // 리사이즈 이동
   const onResizeMove = (e: React.PointerEvent) => {
-    const id = resizeInfo.current.id;
-    if (!id) return;
+    const { id, direction } = resizeInfo.current;
+    if (!id || !direction) return;
 
     const deltaX = e.clientX - resizeInfo.current.startX;
     const deltaY = e.clientY - resizeInfo.current.startY;
 
-    const newWidth = Math.max(280, Math.min(800, resizeInfo.current.startWidth + deltaX));
-    const newHeight = Math.max(300, Math.min(800, resizeInfo.current.startHeight + deltaY));
+    let newWidth = resizeInfo.current.startWidth;
+    let newHeight = resizeInfo.current.startHeight;
+    let newX = resizeInfo.current.startPosX;
+    let newY = resizeInfo.current.startPosY;
+
+    // 방향에 따라 크기 및 위치 조정
+    if (direction.includes('e')) {
+      newWidth = Math.max(280, Math.min(800, resizeInfo.current.startWidth + deltaX));
+    }
+    if (direction.includes('w')) {
+      const widthChange = Math.max(280 - resizeInfo.current.startWidth, Math.min(800 - resizeInfo.current.startWidth, -deltaX));
+      newWidth = resizeInfo.current.startWidth + widthChange;
+      newX = resizeInfo.current.startPosX - widthChange;
+    }
+    if (direction.includes('s')) {
+      newHeight = Math.max(300, Math.min(800, resizeInfo.current.startHeight + deltaY));
+    }
+    if (direction.includes('n')) {
+      const heightChange = Math.max(300 - resizeInfo.current.startHeight, Math.min(800 - resizeInfo.current.startHeight, -deltaY));
+      newHeight = resizeInfo.current.startHeight + heightChange;
+      newY = resizeInfo.current.startPosY - heightChange;
+    }
 
     setSizes((prev) => ({
       ...prev,
       [id]: { width: newWidth, height: newHeight },
+    }));
+
+    setPositions((prev) => ({
+      ...prev,
+      [id]: { x: newX, y: newY },
     }));
   };
 
@@ -559,13 +642,19 @@ export default function ChatDock() {
           ...prev,
           [threadId]: convertedMessages,
         }));
+
+        // 메시지 조회 성공 시 백엔드에서 자동으로 읽음 처리되므로
+        // 채팅방 목록을 다시 가져와서 unreadCount 업데이트
+        queryClient.invalidateQueries({
+          queryKey: CHAT_QUERY_KEYS.myRooms(userId, 0)
+        });
       } catch (error) {
         console.error("Failed to load messages for thread:", threadId, error);
       } finally {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     });
-  }, [openThreadIds, userId]);
+  }, [openThreadIds, userId, queryClient]);
 
   const socket = useMockSocket();
   useEffect(() => {
@@ -786,7 +875,7 @@ export default function ChatDock() {
                 onMinimize={() => minimizeThread(id)}
                 onSend={(text) => sendMessage(id, text)}
                 __onDragStart={(e: React.PointerEvent) => onDragStart(id, e)}
-                __onResizeStart={(e: React.PointerEvent) => onResizeStart(id, e)}
+                __onResizeStart={(direction: string, e: React.PointerEvent) => onResizeStart(id, direction, e)}
                 width={sizes[id]?.width || 320}
                 height={sizes[id]?.height || 420}
               />
