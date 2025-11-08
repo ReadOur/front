@@ -56,6 +56,8 @@ export default function BOD_15() {
   const [searchQuery, setSearchQuery] = useState("");
   const [commentText, setCommentText] = useState("");
   const [selectedRating, setSelectedRating] = useState(0);
+  const [highlights, setHighlights] = useState<string[]>(mockBook.highlights || []);
+  const [newHighlight, setNewHighlight] = useState("");
 
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
@@ -75,6 +77,22 @@ export default function BOD_15() {
 
   const handleBookClick = (book: Book) => {
     navigate(`/books/${book.id}`);
+  };
+
+  const handleAddHighlight = () => {
+    if (!newHighlight.trim()) return;
+    if (highlights.includes(newHighlight.trim())) {
+      alert("이미 추가된 하이라이트입니다");
+      return;
+    }
+    setHighlights([...highlights, newHighlight.trim()]);
+    setNewHighlight("");
+    // TODO: API 호출하여 서버에 저장
+  };
+
+  const handleRemoveHighlight = (index: number) => {
+    setHighlights(highlights.filter((_, i) => i !== index));
+    // TODO: API 호출하여 서버에서 삭제
   };
 
   return (
@@ -152,22 +170,61 @@ export default function BOD_15() {
             </div>
 
             {/* 하이라이트 태그 */}
-            {mockBook.highlights && mockBook.highlights.length > 0 && (
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {mockBook.highlights.map((highlight, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 rounded-full text-base"
-                    style={{
-                      background: "#E9E5DC",
-                      color: "#6B4F3F",
-                    }}
-                  >
-                    #{highlight}
-                  </span>
-                ))}
+            <div className="mb-4">
+              {highlights.length > 0 && (
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  {highlights.map((highlight, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 rounded-full text-base flex items-center gap-2"
+                      style={{
+                        background: "#E9E5DC",
+                        color: "#6B4F3F",
+                      }}
+                    >
+                      #{highlight}
+                      <button
+                        onClick={() => handleRemoveHighlight(index)}
+                        className="ml-1 hover:opacity-70 transition"
+                        style={{ color: "#6B4F3F" }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* 하이라이트 입력 */}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={newHighlight}
+                  onChange={(e) => setNewHighlight(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddHighlight();
+                  }}
+                  placeholder="하이라이트 태그 추가"
+                  className="px-3 py-1 rounded-full text-base outline-none"
+                  style={{
+                    background: "white",
+                    border: "1px solid #E9E5DC",
+                    color: "#6B4F3F",
+                  }}
+                />
+                <button
+                  onClick={handleAddHighlight}
+                  className="px-4 py-1 rounded-full text-base hover:opacity-90 transition"
+                  style={{
+                    background: "#90BE6D",
+                    color: "white",
+                    fontWeight: 600,
+                  }}
+                >
+                  추가
+                </button>
               </div>
-            )}
+            </div>
 
             <p
               className="text-xl mb-6"
