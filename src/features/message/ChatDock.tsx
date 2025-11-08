@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
+import { useQueryClient } from "@tanstack/react-query";
 import "./ChatDock.css";
 
 /**
@@ -372,6 +373,9 @@ export default function ChatDock() {
   // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
   const userId = 1; // 테스트용 userId
 
+  // React Query client
+  const queryClient = useQueryClient();
+
   // 채팅방 목록 API 연결
   const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ userId, page: 0, size: 20 });
 
@@ -402,11 +406,6 @@ export default function ChatDock() {
       const threadId = room.roomId.toString();
       // 채팅방이 열려있으면 (focus 상태) unreadCount를 0으로 설정
       const isOpen = openThreadIds.includes(threadId);
-
-      // 디버깅용 로그
-      if (room.unreadCount > 0) {
-        console.log(`Room ${threadId} (${room.name}): unreadCount=${room.unreadCount}, isOpen=${isOpen}, openThreadIds=`, openThreadIds);
-      }
 
       return {
         id: threadId,
@@ -643,13 +642,19 @@ export default function ChatDock() {
           ...prev,
           [threadId]: convertedMessages,
         }));
+
+        // 메시지 조회 성공 시 백엔드에서 자동으로 읽음 처리되므로
+        // 채팅방 목록을 다시 가져와서 unreadCount 업데이트
+        queryClient.invalidateQueries({
+          queryKey: CHAT_QUERY_KEYS.myRooms(userId, 0)
+        });
       } catch (error) {
         console.error("Failed to load messages for thread:", threadId, error);
       } finally {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     });
-  }, [openThreadIds, userId]);
+  }, [openThreadIds, userId, queryClient]);
 
   const socket = useMockSocket();
   useEffect(() => {
