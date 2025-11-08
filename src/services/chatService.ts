@@ -13,6 +13,8 @@ import {
   CreateThreadRequest,
   MarkAsReadRequest,
   MarkAsReadResponse,
+  PinThreadRequest,
+  PinThreadResponse,
   PaginatedResponse,
 } from "@/types";
 
@@ -79,6 +81,16 @@ export async function getUnreadCount(): Promise<{ count: number }> {
 }
 
 /**
+ * 채팅 스레드 핀 토글
+ */
+export async function pinThread(data: PinThreadRequest): Promise<PinThreadResponse> {
+  return apiClient.post<PinThreadResponse, PinThreadRequest>(
+    CHAT_ENDPOINTS.PIN_THREAD(data.threadId),
+    data
+  );
+}
+
+/**
  * 채팅 서비스 객체
  */
 export const chatService = {
@@ -92,6 +104,9 @@ export const chatService = {
   sendMessage,
   markAsRead,
   getUnreadCount,
+
+  // 핀 기능
+  pinThread,
 };
 
 export default chatService;

@@ -64,6 +64,7 @@ export interface ChatThread extends BaseEntity {
   unreadCount: number;
   type: ThreadType;
   isActive: boolean;
+  isPinned: boolean; // 상단 고정 여부
 }
 
 /**
@@ -130,4 +131,22 @@ export interface MarkAsReadRequest {
 export interface MarkAsReadResponse {
   threadId: string;
   readCount: number;
+}
+
+// ===== 핀 기능 =====
+
+/**
+ * 스레드 핀 토글 요청
+ */
+export interface PinThreadRequest {
+  threadId: string;
+  isPinned: boolean;
+}
+
+/**
+ * 스레드 핀 토글 응답
+ */
+export interface PinThreadResponse {
+  threadId: string;
+  isPinned: boolean;
 }

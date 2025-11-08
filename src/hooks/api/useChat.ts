@@ -13,6 +13,8 @@ import {
   CreateThreadRequest,
   MarkAsReadRequest,
   MarkAsReadResponse,
+  PinThreadRequest,
+  PinThreadResponse,
   PaginatedResponse,
 } from "@/types";
 
@@ -229,6 +231,32 @@ export function useMarkAsRead(
 
       // 읽지 않은 메시지 수 갱신
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.unreadCount() });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅 스레드 핀 토글
+ */
+export function usePinThread(
+  options?: UseMutationOptions<PinThreadResponse, Error, PinThreadRequest, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<PinThreadResponse, Error, PinThreadRequest, unknown>({
+    ...options,
+    mutationFn: chatService.pinThread,
+    onSuccess: (data, variables, context) => {
+      // 스레드 목록 갱신 (정렬 순서 변경)
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.threads() });
+
+      // 해당 스레드 상세도 업데이트
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.threadDetail(variables.threadId) });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {

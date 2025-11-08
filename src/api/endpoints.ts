@@ -79,6 +79,7 @@ export const CHAT_ENDPOINTS = {
   MARK_READ: (threadId: string) => `/chat/threads/${threadId}/read`,
   UNREAD_COUNT: "/chat/unread-count",
   CREATE_THREAD: "/chat/threads",
+  PIN_THREAD: (threadId: string) => `/chat/threads/${threadId}/pin`,
 } as const;
 
 /**
