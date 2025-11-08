@@ -269,6 +269,20 @@ export interface RoomMessagesResponse {
 }
 
 /**
+ * 메시지 전송 요청
+ */
+export interface SendRoomMessageRequest {
+  senderId: number;
+  roomId: number;
+  type: RoomMessageType;
+  body: {
+    text: string;
+    extra?: string;
+  };
+  replyToMsgId?: number | null;
+}
+
+/**
  * 채팅방 메시지 조회 파라미터
  */
 export interface GetRoomMessagesParams {

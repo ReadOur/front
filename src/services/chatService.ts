@@ -22,6 +22,8 @@ import {
   GetRoomMessagesParams,
   MyRoomsResponse,
   GetMyRoomsParams,
+  SendRoomMessageRequest,
+  RoomMessage,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -53,6 +55,17 @@ export async function getRoomMessages(params: GetRoomMessagesParams): Promise<Ro
         'X-User-Id': userId.toString(),
       },
     }
+  );
+}
+
+/**
+ * 메시지 전송
+ */
+export async function sendRoomMessage(data: SendRoomMessageRequest): Promise<RoomMessage> {
+  const { roomId } = data;
+  return apiClient.post<RoomMessage>(
+    CHAT_ENDPOINTS.ROOM_MESSAGES(roomId),
+    data
   );
 }
 
@@ -136,6 +149,7 @@ export const chatService = {
   getRoomsOverview,
   getMyRooms,
   getRoomMessages,
+  sendRoomMessage,
 
   // 스레드
   getThreads,
