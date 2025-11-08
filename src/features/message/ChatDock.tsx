@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
-import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus } from "lucide-react";
+import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useNavigate } from "react-router-dom";
 import "./ChatDock.css";
@@ -42,6 +42,7 @@ export interface ChatThread {
   lastMessage?: ChatMessage;
   unreadCount?: number;
   category: ChatCategory; // 1:1, 단체, 모임
+  isPinned?: boolean; // 상단 고정 여부
 }
 
 // ===== Mock socket (dev only) =====
@@ -124,35 +125,73 @@ function Avatar({ user, size = 24 }: { user: ChatUser; size?: number }) {
   );
 }
 
-function ThreadChip({ thread, onOpen }: { thread: ChatThread; onOpen: (t: ChatThread) => void }) {
+function ThreadChip({
+  thread,
+  onOpen,
+  onTogglePin
+}: {
+  thread: ChatThread;
+  onOpen: (t: ChatThread) => void;
+  onTogglePin?: (threadId: string) => void;
+}) {
   const title = thread.users.map((u) => u.name).join(", ");
   const unread = Math.min(99, thread.unreadCount || 0);
+
   return (
-    <button
-      onClick={() => onOpen(thread)}
-      className="relative w-full flex items-center gap-2 p-2 rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-left"
-      title={title}
-    >
-      <div className="relative">
-        <Avatar user={thread.users[0]} />
-        {thread.users[0]?.online && (
-          <Circle className="absolute -right-1 -bottom-1 w-3 h-3" />
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium truncate text-[color:var(--chatdock-fg-primary)]">{title}</div>
-        {thread.lastMessage && (
-          <div className="text-xs text-[color:var(--chatdock-fg-muted)] truncate">
-            {thread.lastMessage.text}
+    <div className="relative w-full flex items-center gap-2 p-2 rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-left group">
+      <button
+        onClick={() => onOpen(thread)}
+        className="flex items-center gap-2 flex-1 min-w-0"
+        title={title}
+      >
+        <div className="relative">
+          <Avatar user={thread.users[0]} />
+          {thread.users[0]?.online && (
+            <Circle className="absolute -right-1 -bottom-1 w-3 h-3" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium truncate text-[color:var(--chatdock-fg-primary)] flex items-center gap-1">
+            {thread.isPinned && (
+              <Pin className="w-3 h-3 text-[color:var(--color-accent)] fill-[color:var(--color-accent)]" />
+            )}
+            {title}
           </div>
+          {thread.lastMessage && (
+            <div className="text-xs text-[color:var(--chatdock-fg-muted)] truncate">
+              {thread.lastMessage.text}
+            </div>
+          )}
+        </div>
+      </button>
+
+      <div className="flex items-center gap-1">
+        {unread > 0 && (
+          <span className="min-w-5 h-5 px-1 grid place-items-center rounded-full text-[10px] font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+            {unread}
+          </span>
+        )}
+        {onTogglePin && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin(thread.id);
+            }}
+            className="w-6 h-6 grid place-items-center rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-elev-2)] opacity-0 group-hover:opacity-100 transition-opacity"
+            title={thread.isPinned ? "핀 해제" : "상단 고정"}
+          >
+            <Pin
+              className={cls(
+                "w-3.5 h-3.5",
+                thread.isPinned
+                  ? "text-[color:var(--color-accent)] fill-[color:var(--color-accent)]"
+                  : "text-[color:var(--chatdock-fg-muted)]"
+              )}
+            />
+          </button>
         )}
       </div>
-      {unread > 0 && (
-        <span className="ml-auto min-w-5 h-5 px-1 grid place-items-center rounded-full text-[10px] font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
-          {unread}
-        </span>
-      )}
-    </button>
+    </div>
   );
 }
 
@@ -271,10 +310,28 @@ export default function ChatDock() {
   // Mock data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
   const [threads, setThreads] = useState<ChatThread[]>([
-    { id: "t1", users: [{ id: "u1", name: "콩콩" }], category: "DIRECT", unreadCount: 2, lastMessage: { id: "m0", threadId: "t1", fromId: "u1", text: "오늘 저녁?", createdAt: Date.now() - 600000 } },
-    { id: "t2", users: [{ id: "u2", name: "쭈꾸미" }], category: "DIRECT", lastMessage: { id: "m1", threadId: "t2", fromId: "u2", text: "파일 확인했어!", createdAt: Date.now() - 3600000 } },
-    { id: "t3", users: [{ id: "u3", name: "자몽" }], category: "DIRECT", lastMessage: { id: "m2", threadId: "t3", fromId: "u3", text: "굿굿", createdAt: Date.now() - 7200000 } },
+    { id: "t1", users: [{ id: "u1", name: "콩콩" }], category: "DIRECT", unreadCount: 2, isPinned: false, lastMessage: { id: "m0", threadId: "t1", fromId: "u1", text: "오늘 저녁?", createdAt: Date.now() - 600000 } },
+    { id: "t2", users: [{ id: "u2", name: "쭈꾸미" }], category: "DIRECT", isPinned: false, lastMessage: { id: "m1", threadId: "t2", fromId: "u2", text: "파일 확인했어!", createdAt: Date.now() - 3600000 } },
+    { id: "t3", users: [{ id: "u3", name: "자몽" }], category: "DIRECT", isPinned: false, lastMessage: { id: "m2", threadId: "t3", fromId: "u3", text: "굿굿", createdAt: Date.now() - 7200000 } },
   ]);
+
+  // 핀 토글 함수
+  const togglePin = (threadId: string) => {
+    setThreads((prev) =>
+      prev.map((t) => (t.id === threadId ? { ...t, isPinned: !t.isPinned } : t))
+    );
+  };
+
+  // 핀된 채팅방을 상단에 표시하도록 정렬
+  const sortedThreads = [...threads].sort((a, b) => {
+    // isPinned가 true인 것을 먼저
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    // 같은 isPinned 상태면 마지막 메시지 시간순
+    const aTime = a.lastMessage?.createdAt || 0;
+    const bTime = b.lastMessage?.createdAt || 0;
+    return bTime - aTime;
+  });
   // ===== 추가 =====
 
 // 채팅창 위치 상태 (픽셀 단위)
@@ -470,12 +527,12 @@ export default function ChatDock() {
                 </div>
               )}
               {/* 열려있는 채팅 목록 (최소화되지 않은 것만) */}
-              <div className="p-2">
-                <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1 px-1">
-                  열린 채팅
-                </div>
-                {openThreadIds.filter(id => !minimizedThreadIds.includes(id)).length > 0 ? (
-                  openThreadIds
+              {openThreadIds.filter(id => !minimizedThreadIds.includes(id)).length > 0 && (
+                <div className="p-2 border-b border-[color:var(--chatdock-border-subtle)]">
+                  <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1 px-1">
+                    열린 채팅
+                  </div>
+                  {openThreadIds
                     .filter(id => !minimizedThreadIds.includes(id))
                     .map((id) => {
                       const t = threads.find(x => x.id === id);
@@ -495,14 +552,23 @@ export default function ChatDock() {
                           </div>
                         </button>
                       );
-                    })
-                ) : (
-                  <div className="px-2 py-4 text-center text-xs text-[color:var(--chatdock-fg-muted)]">
-                    {minimizedThreadIds.length > 0
-                      ? "열린 채팅이 없습니다"
-                      : "채팅방을 열려면 아래 버튼을 클릭하세요"}
-                  </div>
-                )}
+                    })}
+                </div>
+              )}
+
+              {/* 모든 채팅 목록 (핀된 채팅 상단 표시) */}
+              <div className="p-2">
+                <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1 px-1">
+                  모든 채팅
+                </div>
+                {sortedThreads.map((thread) => (
+                  <ThreadChip
+                    key={thread.id}
+                    thread={thread}
+                    onOpen={openThread}
+                    onTogglePin={togglePin}
+                  />
+                ))}
               </div>
             </div>
 
