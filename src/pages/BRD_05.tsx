@@ -13,6 +13,7 @@ import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
+import DOMPurify from "dompurify";
 
 import { useQueryClient } from "@tanstack/react-query";
 /**
@@ -421,16 +422,16 @@ export default function PostShow() {
 
         {/* 본문 내용 */}
         {/* API의 content 필드를 표시 */}
-        {/* whitespace-pre-wrap으로 줄바꿈 유지 */}
+        {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
+        {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
         <div className="relative mt-4">
           <div
-            className={`text-[color:var(--color-fg-primary)] leading-relaxed whitespace-pre-wrap ${
+            className={`text-[color:var(--color-fg-primary)] leading-relaxed ${
               post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
             }`}
             aria-hidden={post.isSpoiler && !isSpoilerRevealed}
-          >
-            {post.content}
-          </div>
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+          />
 
           {post.isSpoiler && !isSpoilerRevealed && (
             <button
