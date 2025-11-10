@@ -3,8 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
 import { TagInput } from "@/components/TagInput/TagInput";
+import { FileUpload } from "@/components/FileUpload/FileUpload";
 import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
-import { CreatePostRequest, UpdatePostRequest } from "@/types";
+import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [category, setCategory] = useState<string>("FREE");
   const [bookId, setBookId] = useState<number | undefined>(undefined);
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   // 주의사항/태그 자동완성을 위한 추천 목록
   const suggestedWarnings = [
@@ -57,6 +59,7 @@ export const BRD_06 = (): React.JSX.Element => {
       setCategory(existingPost.category);
       setBookId(existingPost.bookId);
       setIsSpoiler(existingPost.isSpoiler || false);
+      setAttachments(existingPost.attachments || []);
     }
   }, [isEditMode, existingPost]);
 
@@ -117,6 +120,7 @@ export const BRD_06 = (): React.JSX.Element => {
         bookId: bookId,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
+        attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
       };
       updatePostMutation.mutate({ postId, data: updateData });
     } else {
@@ -128,6 +132,7 @@ export const BRD_06 = (): React.JSX.Element => {
         bookId: bookId,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
+        attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
       };
       createPostMutation.mutate(createData);
     }
@@ -286,6 +291,17 @@ export const BRD_06 = (): React.JSX.Element => {
                 helperText="주의사항/태그를 입력하고 Enter 또는 스페이스를 눌러 추가하세요"
               />
             </div>
+          </div>
+
+          {/* 파일 첨부 */}
+          <div>
+            <FileUpload
+              attachments={attachments}
+              onChange={setAttachments}
+              maxFiles={10}
+              maxFileSize={10 * 1024 * 1024}
+              disabled={isPending}
+            />
           </div>
 
           {/* 등록/수정 버튼: 더 키움 */}
