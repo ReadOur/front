@@ -81,7 +81,7 @@ export const BRD_List: React.FC = () => {
           keyword: searchQuery,
           page: page - 1, // searchPosts는 0부터 시작
           size: pageSize,
-          sort: "createdAt,desc",
+          sort: "desc",
           ...(category ? {category} : {}),
         });
       }

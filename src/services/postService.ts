@@ -141,7 +141,7 @@ function isCommonPage<T>(x: unknown): x is CommonPage<T> {
 
 // 3) any 없이 제너릭 지정 + 유니온으로 수신 후 분기
 export async function searchPosts(params: SearchPostsParams): Promise<PostListResponse> {
-  const { type, keyword, page = 0, size = 20, sort = "createdAt,desc" } = params;
+  const { type, keyword, page = 0, size = 20, sort = "desc" } = params;
 
   // apiClient는 데이터 언래핑을 해 준다는 전제(getPosts와 동일하게 사용)
   const res = await apiClient.get<SpringPage<PostListItem> | CommonPage<PostListItem>>(
