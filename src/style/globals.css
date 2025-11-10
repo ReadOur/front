@@ -89,12 +89,3 @@ hr {
     background: var(--color-border, rgba(0,0,0,0.1));
     margin: var(--space-lg) 0;
 }
-
-/* scrollbar-hide 유틸리티 */
-.scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
-}
