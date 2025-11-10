@@ -1,6 +1,6 @@
 // CAL_11.tsx - 캘린더 페이지
 import React, { useState, useMemo, useEffect } from "react";
-import { getEvents, createEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
+import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
 
 export default function CAL_11() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -12,6 +12,22 @@ export default function CAL_11() {
   // 조회 설정
   const [viewType, setViewType] = useState<ViewType>('MONTH');
   const [scope, setScope] = useState<Scope>('USER');
+
+  // 날짜 클릭 시 상세 일정 표시
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
+
+  // 일정 수정 모달
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [editEventData, setEditEventData] = useState<CreateEventData>({
+    title: "",
+    description: "",
+    location: "",
+    startsAt: "",
+    endsAt: "",
+    allDay: false,
+  });
 
   // 새 일정 입력 폼 상태
   const [newEvent, setNewEvent] = useState<CreateEventData>({
@@ -134,6 +150,106 @@ export default function CAL_11() {
       setIsAddModalOpen(false);
 
       // 일정 목록 새로고침
+      await refreshEvents();
+    } catch (error) {
+      console.error("일정 추가 실패:", error);
+      alert("일정 추가에 실패했습니다.");
+    }
+  };
+
+  // 특정 날짜의 일정 가져오기
+  const getEventsForDate = (dateStr: string): CalendarEvent[] => {
+    return events.filter(event => {
+      const eventStart = event.startDate.split('T')[0];
+      const eventEnd = event.endDate.split('T')[0];
+      return dateStr >= eventStart && dateStr <= eventEnd;
+    });
+  };
+
+  // 날짜 클릭 핸들러
+  const handleDateClick = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setSelectedDate(dateStr);
+    setIsEventDetailModalOpen(true);
+  };
+
+  // 일정 수정 모달 열기
+  const handleOpenEditModal = (event: CalendarEvent) => {
+    setEditingEvent(event);
+
+    // CalendarEvent를 CreateEventData 형식으로 변환
+    // startDate/endDate를 startsAt/endsAt로 변환하고, datetime-local 형식으로 맞춤
+    const formatDateTimeLocal = (dateStr: string) => {
+      // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)을 datetime-local 형식 (YYYY-MM-DDTHH:mm)으로 변환
+      if (dateStr.length >= 16) {
+        return dateStr.substring(0, 16);
+      }
+      return dateStr;
+    };
+
+    setEditEventData({
+      title: event.title,
+      description: event.description || "",
+      location: "", // API response에 location이 없으면 빈 문자열
+      startsAt: formatDateTimeLocal(event.startDate),
+      endsAt: formatDateTimeLocal(event.endDate),
+      allDay: false, // API response에 allDay가 없으면 기본값
+    });
+
+    setIsEditModalOpen(true);
+    setIsEventDetailModalOpen(false); // 상세 모달 닫기
+  };
+
+  // 일정 수정
+  const handleUpdateEvent = async () => {
+    if (!editingEvent || !editEventData.title || !editEventData.startsAt || !editEventData.endsAt) {
+      alert("제목, 시작 시간, 종료 시간은 필수입니다.");
+      return;
+    }
+
+    try {
+      // datetime-local 값에 초 추가 (백엔드 요구사항)
+      const eventData = {
+        ...editEventData,
+        startsAt: editEventData.startsAt.length === 16 ? `${editEventData.startsAt}:00` : editEventData.startsAt,
+        endsAt: editEventData.endsAt.length === 16 ? `${editEventData.endsAt}:00` : editEventData.endsAt,
+      };
+
+      await updateEvent(editingEvent.eventId, eventData);
+      alert("일정이 수정되었습니다.");
+      setIsEditModalOpen(false);
+      setEditingEvent(null);
+
+      // 일정 목록 새로고침
+      await refreshEvents();
+    } catch (error) {
+      console.error("일정 수정 실패:", error);
+      alert("일정 수정에 실패했습니다.");
+    }
+  };
+
+  // 일정 삭제
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!confirm("정말 이 일정을 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      await deleteEvent(eventId);
+      alert("일정이 삭제되었습니다.");
+      setIsEventDetailModalOpen(false);
+
+      // 일정 목록 새로고침
+      await refreshEvents();
+    } catch (error) {
+      console.error("일정 삭제 실패:", error);
+      alert("일정 삭제에 실패했습니다.");
+    }
+  };
+
+  // 일정 목록 새로고침 (재사용을 위한 헬퍼 함수)
+  const refreshEvents = async () => {
+    try {
       const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
       const data = await getEvents({
         viewDate,
@@ -142,8 +258,8 @@ export default function CAL_11() {
       });
       setEvents(data);
     } catch (error) {
-      console.error("일정 추가 실패:", error);
-      alert("일정 추가에 실패했습니다.");
+      console.error("일정을 가져오는데 실패했습니다:", error);
+      setEvents([]);
     }
   };
 
@@ -330,6 +446,7 @@ export default function CAL_11() {
               return (
                 <div
                   key={day}
+                  onClick={() => handleDateClick(day)}
                   className="relative aspect-square rounded cursor-pointer hover:opacity-80 transition flex flex-col items-center justify-center"
                   style={{
                     background: isTodayDate ? "#90BE6D" : "#E9E5DC",
@@ -579,6 +696,215 @@ export default function CAL_11() {
                   style={{ background: "#E9E5DC", color: "#6B4F3F" }}
                 >
                   닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 날짜별 일정 상세 모달 (오른쪽 사이드) */}
+        {isEventDetailModalOpen && selectedDate && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-end"
+            onClick={() => setIsEventDetailModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-md h-full overflow-y-auto shadow-2xl"
+              style={{ background: "#FFF9F2" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold" style={{ color: "#6B4F3F" }}>
+                    {selectedDate} 일정
+                  </h3>
+                  <button
+                    onClick={() => setIsEventDetailModalOpen(false)}
+                    className="text-2xl hover:opacity-70 transition"
+                    style={{ color: "#6B4F3F" }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* 일정 목록 */}
+                <div className="space-y-4">
+                  {getEventsForDate(selectedDate).length === 0 ? (
+                    <p className="text-center py-8" style={{ color: "#6B4F3F" }}>
+                      이 날짜에 일정이 없습니다.
+                    </p>
+                  ) : (
+                    getEventsForDate(selectedDate).map((event) => (
+                      <div
+                        key={event.eventId}
+                        className="p-4 rounded-lg border"
+                        style={{
+                          background: "white",
+                          borderColor: "#E9E5DC",
+                        }}
+                      >
+                        <h4 className="text-lg font-bold mb-2" style={{ color: "#6B4F3F" }}>
+                          {event.title}
+                        </h4>
+
+                        {event.description && (
+                          <p className="text-sm mb-2" style={{ color: "#6B4F3F" }}>
+                            {event.description}
+                          </p>
+                        )}
+
+                        <div className="text-sm mb-3" style={{ color: "#888" }}>
+                          <div>시작: {event.startDate}</div>
+                          <div>종료: {event.endDate}</div>
+                        </div>
+
+                        {/* 수정/삭제 버튼 */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleOpenEditModal(event)}
+                            className="flex-1 px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                            style={{ background: "#90BE6D", color: "white" }}
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(event.eventId)}
+                            className="flex-1 px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                            style={{ background: "#FF6B6B", color: "white" }}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 일정 수정 모달 */}
+        {isEditModalOpen && editingEvent && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setIsEditModalOpen(false)}
+          >
+            <div
+              className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#FFF9F2" }}
+            >
+              <h3 className="text-2xl font-bold mb-6" style={{ color: "#6B4F3F" }}>
+                일정 수정
+              </h3>
+
+              <div className="space-y-4">
+                {/* 제목 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    제목 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editEventData.title}
+                    onChange={(e) => setEditEventData({ ...editEventData, title: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    placeholder="일정 제목을 입력하세요"
+                  />
+                </div>
+
+                {/* 설명 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    설명
+                  </label>
+                  <textarea
+                    value={editEventData.description}
+                    onChange={(e) => setEditEventData({ ...editEventData, description: e.target.value })}
+                    className="w-full px-4 py-2 rounded border resize-none"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    placeholder="일정 설명을 입력하세요"
+                    rows={3}
+                  />
+                </div>
+
+                {/* 장소 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    장소
+                  </label>
+                  <input
+                    type="text"
+                    value={editEventData.location}
+                    onChange={(e) => setEditEventData({ ...editEventData, location: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    placeholder="예: 집 앞 카페"
+                  />
+                </div>
+
+                {/* 종일 일정 */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={editEventData.allDay}
+                    onChange={(e) => setEditEventData({ ...editEventData, allDay: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <label className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
+                    종일 일정
+                  </label>
+                </div>
+
+                {/* 시작 시간 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    시작 시간 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={editEventData.startsAt}
+                    onChange={(e) => setEditEventData({ ...editEventData, startsAt: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    disabled={editEventData.allDay}
+                  />
+                </div>
+
+                {/* 종료 시간 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    종료 시간 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={editEventData.endsAt}
+                    onChange={(e) => setEditEventData({ ...editEventData, endsAt: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    disabled={editEventData.allDay}
+                  />
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleUpdateEvent}
+                  className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#90BE6D", color: "white" }}
+                >
+                  수정
                 </button>
               </div>
             </div>
