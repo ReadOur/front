@@ -8,6 +8,8 @@ import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/use
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
+import AIDock from "@/features/ai/AIDock";
+import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
 
 /**
@@ -227,6 +229,8 @@ function ChatWindow({
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isAIDockOpen, setIsAIDockOpen] = useState(false);
+  const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [newEvent, setNewEvent] = useState<CreateEventData>({
@@ -348,7 +352,7 @@ function ChatWindow({
               </button>
               <button
                 onClick={() => {
-                  alert("AI 기능창은 추후 구현 예정입니다.");
+                  setIsAIDockOpen(true);
                   setIsMenuOpen(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -358,7 +362,7 @@ function ChatWindow({
               </button>
               <button
                 onClick={() => {
-                  alert("공지 목록 조회는 추후 구현 예정입니다.");
+                  setIsNoticeDockOpen(true);
                   setIsMenuOpen(false);
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -586,6 +590,21 @@ function ChatWindow({
           </div>
         </div>
       )}
+
+      {/* AI Dock */}
+      <AIDock
+        isOpen={isAIDockOpen}
+        onClose={() => setIsAIDockOpen(false)}
+        onMinimize={() => setIsAIDockOpen(false)}
+      />
+
+      {/* Notice Dock */}
+      <NoticeDock
+        isOpen={isNoticeDockOpen}
+        onClose={() => setIsNoticeDockOpen(false)}
+        onMinimize={() => setIsNoticeDockOpen(false)}
+        hasPermission={false} // TODO: 실제 권한 체크 로직 추가
+      />
     </div>
   );
 }
