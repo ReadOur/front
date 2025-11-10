@@ -1,6 +1,6 @@
 // CAL_11.tsx - 캘린더 페이지
 import React, { useState, useMemo, useEffect } from "react";
-import { getEvents, createEvent, CalendarEvent, CreateEventData } from "@/api/calendar";
+import { getEvents, createEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
 
 export default function CAL_11() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -8,6 +8,10 @@ export default function CAL_11() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 조회 설정
+  const [viewType, setViewType] = useState<ViewType>('MONTH');
+  const [scope, setScope] = useState<Scope>('USER');
 
   // 새 일정 입력 폼 상태
   const [newEvent, setNewEvent] = useState<CreateEventData>({
@@ -27,7 +31,14 @@ export default function CAL_11() {
     const fetchEvents = async () => {
       setIsLoading(true);
       try {
-        const data = await getEvents({ year, month: month + 1 });
+        // viewDate 형식: YYYY-MM-DD (해당 월의 1일)
+        const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+        const data = await getEvents({
+          viewDate,
+          viewType,
+          scope,
+        });
         setEvents(data);
       } catch (error) {
         console.error("일정을 가져오는데 실패했습니다:", error);
@@ -38,7 +49,7 @@ export default function CAL_11() {
     };
 
     fetchEvents();
-  }, [year, month]);
+  }, [year, month, viewType, scope]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -114,7 +125,12 @@ export default function CAL_11() {
       setIsAddModalOpen(false);
 
       // 일정 목록 새로고침
-      const data = await getEvents({ year, month: month + 1 });
+      const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const data = await getEvents({
+        viewDate,
+        viewType,
+        scope,
+      });
       setEvents(data);
     } catch (error) {
       console.error("일정 추가 실패:", error);
@@ -186,6 +202,87 @@ export default function CAL_11() {
 
           {/* 빈 공간 (레이아웃 균형) */}
           <div style={{ width: "120px" }} />
+        </div>
+
+        {/* 조회 설정: ViewType & Scope */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          {/* ViewType 선택 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
+              단위:
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setViewType('WEEK')}
+                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                style={{
+                  background: viewType === 'WEEK' ? "#90BE6D" : "#E9E5DC",
+                  color: viewType === 'WEEK' ? "white" : "#6B4F3F",
+                }}
+              >
+                주별
+              </button>
+              <button
+                onClick={() => setViewType('MONTH')}
+                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                style={{
+                  background: viewType === 'MONTH' ? "#90BE6D" : "#E9E5DC",
+                  color: viewType === 'MONTH' ? "white" : "#6B4F3F",
+                }}
+              >
+                월별
+              </button>
+            </div>
+          </div>
+
+          {/* Scope 선택 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
+              조회:
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setScope('USER')}
+                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                style={{
+                  background: scope === 'USER' ? "#90BE6D" : "#E9E5DC",
+                  color: scope === 'USER' ? "white" : "#6B4F3F",
+                }}
+              >
+                개인
+              </button>
+              <button
+                onClick={() => setScope('ROOM')}
+                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                style={{
+                  background: scope === 'ROOM' ? "#90BE6D" : "#E9E5DC",
+                  color: scope === 'ROOM' ? "white" : "#6B4F3F",
+                }}
+              >
+                방
+              </button>
+              <button
+                onClick={() => setScope('GLOBAL')}
+                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                style={{
+                  background: scope === 'GLOBAL' ? "#90BE6D" : "#E9E5DC",
+                  color: scope === 'GLOBAL' ? "white" : "#6B4F3F",
+                }}
+              >
+                모임
+              </button>
+              <button
+                onClick={() => setScope('ALL')}
+                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
+                style={{
+                  background: scope === 'ALL' ? "#90BE6D" : "#E9E5DC",
+                  color: scope === 'ALL' ? "white" : "#6B4F3F",
+                }}
+              >
+                전체
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* 캘린더 */}

@@ -22,13 +22,22 @@ export interface CalendarEvent {
 }
 
 /**
+ * 조회 단위
+ */
+export type ViewType = 'WEEK' | 'MONTH';
+
+/**
+ * 조회 기준
+ */
+export type Scope = 'USER' | 'ROOM' | 'GLOBAL' | 'ALL';
+
+/**
  * 일정 목록 조회 파라미터
  */
 export interface GetEventsParams {
-  year?: number;
-  month?: number; // 1-12
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
+  viewDate: string;    // 현재 날짜 (YYYY-MM-DD 형식)
+  viewType: ViewType;  // 단위 (WEEK, MONTH)
+  scope: Scope;        // 조회 기준 (USER, ROOM, GLOBAL, ALL)
 }
 
 /**
@@ -46,9 +55,13 @@ export interface CreateEventData {
  * 일정 목록 조회
  *
  * @example
- * const events = await getEvents({ year: 2025, month: 11 });
+ * const events = await getEvents({
+ *   viewDate: '2025-11-01',
+ *   viewType: 'MONTH',
+ *   scope: 'USER'
+ * });
  */
-export async function getEvents(params: GetEventsParams = {}): Promise<CalendarEvent[]> {
+export async function getEvents(params: GetEventsParams): Promise<CalendarEvent[]> {
   return apiClient.get<CalendarEvent[]>(CALENDAR_ENDPOINTS.EVENTS, {
     params,
   });
