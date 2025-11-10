@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getUserId, setUserId, removeUserId, GUEST_USER_ID } from '@/utils/auth';
 
 interface User {
   id: number;
@@ -16,20 +17,31 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // 임시로 로그인된 상태로 시작 (실제로는 localStorage나 세션에서 가져와야 함)
-  const [user, setUser] = useState<User | null>({ id: 1, name: 'user' });
+  const [user, setUser] = useState<User | null>(null);
+
+  // localStorage에서 userId 읽어오기 (페이지 새로고침 시에도 유지)
+  useEffect(() => {
+    const storedUserId = getUserId();
+    if (storedUserId !== GUEST_USER_ID) {
+      setUser({ id: storedUserId, name: 'user' });
+    } else {
+      // 테스트용: localStorage에 userId가 없으면 1로 설정
+      setUserId(1);
+      setUser({ id: 1, name: 'user' });
+    }
+  }, []);
 
   const login = (userData: User) => {
     setUser(userData);
-    // TODO: localStorage나 세션에 저장
+    setUserId(userData.id);
   };
 
   const logout = () => {
     setUser(null);
-    // TODO: localStorage나 세션에서 제거
+    removeUserId();
   };
 
-  const isAuthenticated = user !== null && user.id !== -1;
+  const isAuthenticated = user !== null && user.id !== GUEST_USER_ID;
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
