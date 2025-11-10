@@ -15,6 +15,7 @@ import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
 import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { useQueryClient } from "@tanstack/react-query";
 /**
