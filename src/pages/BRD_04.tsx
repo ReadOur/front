@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
 import { searchPosts, SearchType } from "@/services/postService";
-import { Loading } from "@/components/Loading";
+import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
 
 // 날짜 포맷 함수 (ISO -> yyyy.MM.dd)
 function formatDate(dateString: string): string {
@@ -138,7 +138,13 @@ export const BRD_List: React.FC = () => {
     setParams(params, { replace: true });
   };
 
-  if (isLoading) return <Loading message="게시글을 불러오는 중..." />;
+  if (isLoading) {
+    return (
+      <div className="animate-fadeIn">
+        <PostListSkeleton count={10} />
+      </div>
+    );
+  }
 
   // 공용 폭 컨테이너 (헤더 선과 리스트가 정확히 맞물리도록)
   // grid 정의: 헤더와 행 모두 동일하게 사용

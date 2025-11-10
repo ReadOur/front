@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isEmail } from '@/utils/validation';
 import logo from '@/assets/logo.png';
 
 export default function LOG_02() {
@@ -10,9 +11,57 @@ export default function LOG_02() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState({ username: '', password: '' });
+
+  const validateUsername = (value: string) => {
+    if (!value.trim()) {
+      return '아이디 또는 이메일을 입력해주세요.';
+    }
+    // 이메일 형식이면 이메일 검증
+    if (value.includes('@') && !isEmail(value)) {
+      return '올바른 이메일 형식이 아닙니다.';
+    }
+    return '';
+  };
+
+  const validatePassword = (value: string) => {
+    if (!value) {
+      return '비밀번호를 입력해주세요.';
+    }
+    if (value.length < 6) {
+      return '비밀번호는 최소 6자 이상이어야 합니다.';
+    }
+    return '';
+  };
+
+  const handleUsernameChange = (value: string) => {
+    setUsername(value);
+    setErrors(prev => ({ ...prev, username: validateUsername(value) }));
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    setErrors(prev => ({ ...prev, password: validatePassword(value) }));
+  };
+
+  const isFormValid = () => {
+    const usernameError = validateUsername(username);
+    const passwordError = validatePassword(password);
+    return !usernameError && !passwordError;
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // 최종 유효성 검증
+    const usernameError = validateUsername(username);
+    const passwordError = validatePassword(password);
+
+    if (usernameError || passwordError) {
+      setErrors({ username: usernameError, password: passwordError });
+      return;
+    }
+
     // TODO: 백엔드 인증 로직 연동 시 이 부분을 API 호출로 대체하세요.
     console.log('로그인 시도', { username, password, rememberMe });
 
@@ -36,17 +85,20 @@ export default function LOG_02() {
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
           <div className="flex flex-col gap-2">
             <label htmlFor="username" className="text-sm font-medium text-slate-800">
-              아이디
+              아이디 또는 이메일
             </label>
             <input
               id="username"
               type="text"
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="아이디를 입력하세요"
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              onChange={(event) => handleUsernameChange(event.target.value)}
+              placeholder="아이디 또는 이메일을 입력하세요"
+              className={`w-full rounded-xl border ${errors.username ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
               autoComplete="username"
             />
+            {errors.username && (
+              <p className="text-sm text-red-600">{errors.username}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -57,16 +109,20 @@ export default function LOG_02() {
               id="password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => handlePasswordChange(event.target.value)}
               placeholder="비밀번호를 입력하세요"
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className={`w-full rounded-xl border ${errors.password ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
               autoComplete="current-password"
             />
+            {errors.password && (
+              <p className="text-sm text-red-600">{errors.password}</p>
+            )}
           </div>
 
           <button
             type="submit"
-            className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90"
+            disabled={!isFormValid()}
+            className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             로그인
           </button>
