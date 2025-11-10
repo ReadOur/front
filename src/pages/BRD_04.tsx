@@ -189,13 +189,13 @@ export const BRD_List: React.FC = () => {
         <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
           {/* 검색/액션 섹션 */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            {/* 검색 입력 */}
-            <div className="flex-1 flex flex-col sm:flex-row gap-2">
-              {/* 검색 타입 선택 */}
+            {/* 검색 입력 - 한 줄로 배치 */}
+            <div className="flex-1 flex flex-row gap-2">
+              {/* 검색 타입 선택 - 왼쪽 */}
               <select
                 value={searchType}
                 onChange={(e) => setSearchType(e.target.value as SearchType)}
-                className="w-full sm:w-[120px] md:w-[150px] h-[36px] sm:h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                className="w-[120px] md:w-[150px] h-[36px] sm:h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
                 aria-label="검색 타입 선택"
               >
                 {SEARCH_TYPES.map((type) => (
@@ -205,30 +205,30 @@ export const BRD_List: React.FC = () => {
                 ))}
               </select>
 
-              {/* 검색어 입력 */}
-              <div className="flex gap-2 flex-1">
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearch();
-                    }
-                  }}
-                  placeholder="게시글 검색..."
-                  className="flex-1 h-[36px] sm:h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
-                  aria-label="검색어 입력"
-                />
-                <button
-                  onClick={handleSearch}
-                  className="h-[36px] sm:h-[40px] px-3 sm:px-4 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
-                  aria-label="검색"
-                >
-                  <span className="hidden sm:inline">🔍 검색</span>
-                  <span className="sm:hidden">🔍</span>
-                </button>
-              </div>
+              {/* 검색어 입력 - 오른쪽 */}
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearch();
+                  }
+                }}
+                placeholder="게시글 검색..."
+                className="flex-1 h-[36px] sm:h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                aria-label="검색어 입력"
+              />
+
+              {/* 검색 버튼 */}
+              <button
+                onClick={handleSearch}
+                className="h-[36px] sm:h-[40px] px-3 sm:px-4 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
+                aria-label="검색"
+              >
+                <span className="hidden sm:inline">🔍 검색</span>
+                <span className="sm:hidden">🔍</span>
+              </button>
             </div>
 
             {/* 액션 버튼 그룹 */}
