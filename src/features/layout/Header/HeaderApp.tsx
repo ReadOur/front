@@ -65,7 +65,7 @@ export default function HeaderApp({
                   <button
                     onClick={item.onClick}
                     className={[
-                      "relative h-full flex items-center pb-4 cursor-pointer transition-all duration-200 whitespace-nowrap",
+                      "relative h-full flex items-center cursor-pointer transition-all duration-200 whitespace-nowrap",
                       item.active
                         ? "text-[color:var(--color-fg-primary)] font-semibold"
                         : "hover:text-[color:var(--color-fg-primary)] hover:scale-105",
@@ -73,7 +73,7 @@ export default function HeaderApp({
                   >
                     {item.label}
                     {item.active && (
-                      <span className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-[color:var(--color-fg-primary)]" />
+                      <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[color:var(--color-fg-primary)]" />
                     )}
                   </button>
                   {idx < navItems.length - 1 && (
@@ -85,7 +85,7 @@ export default function HeaderApp({
           </nav>
 
           {/* RIGHT: 유틸리티 버튼 */}
-          <div className="shrink-0 flex items-center gap-2 sm:gap-3 md:gap-[15px] justify-end md:pb-4" style={{ position: 'relative', top: '0', marginTop: '-0.5rem' }}>
+          <div className="shrink-0 flex items-center gap-2 sm:gap-3 md:gap-[15px] justify-end">
             {/* 채팅 버튼 */}
             <button
               onClick={onClickChat}
