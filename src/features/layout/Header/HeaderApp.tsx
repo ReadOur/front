@@ -116,17 +116,15 @@ export default function HeaderApp({
 
             {/* 유저 드롭다운 또는 로그인 버튼 */}
             {user ? (
-              <div className="hidden sm:block">
-                <UserDropdown
-                  userName={user.name}
-                  onLogout={onLogout || (() => console.log("로그아웃"))}
-                  onProfile={onProfile || (() => console.log("프로필"))}
-                />
-              </div>
+              <UserDropdown
+                userName={user.name}
+                onLogout={onLogout || (() => console.log("로그아웃"))}
+                onProfile={onProfile || (() => console.log("프로필"))}
+              />
             ) : (
               <button
                 onClick={onLogin}
-                className="hidden sm:inline-flex items-center gap-2 h-10 px-3 sm:h-12 sm:px-5 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-sm sm:text-base md:text-lg lg:text-xl font-medium transition-opacity cursor-pointer"
+                className="inline-flex items-center gap-2 h-10 px-3 sm:h-12 sm:px-5 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-sm sm:text-base md:text-lg lg:text-xl font-medium transition-opacity cursor-pointer"
               >
                 로그인
               </button>
