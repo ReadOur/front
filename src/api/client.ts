@@ -81,6 +81,24 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   async (error) => {
+    // 네트워크 연결 오류 처리
+    if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      console.error('❌ 백엔드 서버 연결 실패:', {
+        message: '백엔드 서버가 실행되지 않았거나 연결할 수 없습니다.',
+        expectedURL: `${error.config?.baseURL}${error.config?.url}`,
+        solution: '백엔드 서버가 http://localhost:8080 에서 실행 중인지 확인하세요.',
+      });
+    }
+
+    // Connection refused 오류 처리
+    if (error.code === 'ECONNREFUSED' || error.message.includes('Connection refused')) {
+      console.error('❌ 백엔드 서버 연결 거부:', {
+        message: '백엔드 서버에 연결할 수 없습니다.',
+        expectedURL: 'http://localhost:8080',
+        solution: '1. 백엔드 서버를 시작하세요.\n2. 백엔드 서버가 다른 포트에서 실행 중이라면 vite.config.ts의 프록시 설정을 업데이트하세요.',
+      });
+    }
+
     // 에러 상세 로그
     console.error('❌ API Error:', {
       message: error.message,
