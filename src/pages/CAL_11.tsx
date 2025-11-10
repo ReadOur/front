@@ -1,16 +1,18 @@
 // CAL_11.tsx - 캘린더 페이지
 import React, { useState, useMemo, useEffect } from "react";
 import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
+import { useAuth } from "@/contexts/AuthContext";
+import { GUEST_USER_ID } from "@/utils/auth";
 
 export default function CAL_11() {
+  const { user, isAuthenticated } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 조회 설정
-  const [viewType, setViewType] = useState<ViewType>('MONTH');
+  // 조회 설정 (월별 고정)
   const [scope, setScope] = useState<Scope>('USER');
 
   // 날짜 클릭 시 일정 목록 표시
@@ -57,14 +59,19 @@ export default function CAL_11() {
 
         const data = await getEvents({
           viewDate,
-          viewType,
+          viewType: 'MONTH',
           scope,
         });
         setEvents(data);
       } catch (error: any) {
         console.error("일정을 가져오는데 실패했습니다:", error);
         if (error.response?.status === 404) {
-          console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+          // userId가 -1(게스트)일 때만 로그인 요구
+          if (user?.id === GUEST_USER_ID || !user) {
+            console.warn("로그인이 필요합니다.");
+          } else {
+            console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+          }
         }
         setEvents([]);
       } finally {
@@ -73,7 +80,7 @@ export default function CAL_11() {
     };
 
     fetchEvents();
-  }, [year, month, viewType, scope]);
+  }, [year, month, scope, user]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -99,8 +106,8 @@ export default function CAL_11() {
   const getEventCount = (day: number): number => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return events.filter(event => {
-      const eventStart = event.startDate.split('T')[0];
-      const eventEnd = event.endDate.split('T')[0];
+      const eventStart = event.startsAt.split('T')[0];
+      const eventEnd = event.endsAt.split('T')[0];
       return dateStr >= eventStart && dateStr <= eventEnd;
     }).length;
   };
@@ -161,7 +168,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 추가 실패:", error);
       if (error.response?.status === 404) {
-        alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 추가하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
+        }
       } else {
         alert("일정 추가에 실패했습니다.");
       }
@@ -171,8 +183,8 @@ export default function CAL_11() {
   // 특정 날짜의 일정 가져오기
   const getEventsForDate = (dateStr: string): CalendarEvent[] => {
     return events.filter(event => {
-      const eventStart = event.startDate.split('T')[0];
-      const eventEnd = event.endDate.split('T')[0];
+      const eventStart = event.startsAt.split('T')[0];
+      const eventEnd = event.endsAt.split('T')[0];
       return dateStr >= eventStart && dateStr <= eventEnd;
     });
   };
@@ -196,7 +208,7 @@ export default function CAL_11() {
     setEditingEvent(event);
 
     // CalendarEvent를 CreateEventData 형식으로 변환
-    // startDate/endDate를 startsAt/endsAt로 변환하고, datetime-local 형식으로 맞춤
+    // startsAt/endsAt을 datetime-local 형식으로 맞춤
     const formatDateTimeLocal = (dateStr: string) => {
       // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)을 datetime-local 형식 (YYYY-MM-DDTHH:mm)으로 변환
       if (dateStr.length >= 16) {
@@ -208,10 +220,10 @@ export default function CAL_11() {
     setEditEventData({
       title: event.title,
       description: event.description || "",
-      location: "", // API response에 location이 없으면 빈 문자열
-      startsAt: formatDateTimeLocal(event.startDate),
-      endsAt: formatDateTimeLocal(event.endDate),
-      allDay: false, // API response에 allDay가 없으면 기본값
+      location: event.location || "",
+      startsAt: formatDateTimeLocal(event.startsAt),
+      endsAt: formatDateTimeLocal(event.endsAt),
+      allDay: event.allDay,
     });
 
     setIsEditModalOpen(true);
@@ -243,7 +255,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 수정 실패:", error);
       if (error.response?.status === 404) {
-        alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 수정하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
+        }
       } else {
         alert("일정 수정에 실패했습니다.");
       }
@@ -270,7 +287,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 삭제 실패:", error);
       if (error.response?.status === 404) {
-        alert("권한이 없습니다. 일정을 삭제할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 삭제하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 삭제할 수 없습니다.");
+        }
       } else {
         alert("일정 삭제에 실패했습니다.");
       }
@@ -283,14 +305,19 @@ export default function CAL_11() {
       const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
       const data = await getEvents({
         viewDate,
-        viewType,
+        viewType: 'MONTH',
         scope,
       });
       setEvents(data);
     } catch (error: any) {
       console.error("일정을 가져오는데 실패했습니다:", error);
       if (error.response?.status === 404) {
-        console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          console.warn("로그인이 필요합니다.");
+        } else {
+          console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+        }
       }
       setEvents([]);
     }
@@ -362,37 +389,8 @@ export default function CAL_11() {
           <div style={{ width: "120px" }} />
         </div>
 
-        {/* 조회 설정: ViewType & Scope */}
+        {/* 조회 설정: Scope (월별 고정) */}
         <div className="flex items-center justify-center gap-4 mb-6">
-          {/* ViewType 선택 */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
-              단위:
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewType('WEEK')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: viewType === 'WEEK' ? "#90BE6D" : "#E9E5DC",
-                  color: viewType === 'WEEK' ? "white" : "#6B4F3F",
-                }}
-              >
-                주별
-              </button>
-              <button
-                onClick={() => setViewType('MONTH')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: viewType === 'MONTH' ? "#90BE6D" : "#E9E5DC",
-                  color: viewType === 'MONTH' ? "white" : "#6B4F3F",
-                }}
-              >
-                월별
-              </button>
-            </div>
-          </div>
-
           {/* Scope 선택 */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
@@ -783,13 +781,14 @@ export default function CAL_11() {
                         </h4>
 
                         {event.description && (
-                          <p className="text-sm mb-2 line-clamp-2" style={{ color: "#888" }}>
+                          <p className="text-sm mb-2" style={{ color: "#888" }}>
                             {event.description}
                           </p>
                         )}
 
-                        <div className="text-xs" style={{ color: "#999" }}>
-                          {event.startDate.split('T')[1]?.substring(0, 5)} - {event.endDate.split('T')[1]?.substring(0, 5)}
+                        <div className="text-sm space-y-1 mt-2" style={{ color: "#999" }}>
+                          <div>시작: {event.startsAt.replace('T', ' ')}</div>
+                          <div>종료: {event.endsAt.replace('T', ' ')}</div>
                         </div>
                       </div>
                     ))
@@ -847,13 +846,25 @@ export default function CAL_11() {
                   </div>
                 )}
 
+                {/* 장소 */}
+                {selectedEvent.location && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                      장소
+                    </label>
+                    <p style={{ color: "#6B4F3F" }}>
+                      {selectedEvent.location}
+                    </p>
+                  </div>
+                )}
+
                 {/* 시작 시간 */}
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
                     시작 시간
                   </label>
                   <p style={{ color: "#6B4F3F" }}>
-                    {selectedEvent.startDate}
+                    {selectedEvent.startsAt}
                   </p>
                 </div>
 
@@ -863,21 +874,9 @@ export default function CAL_11() {
                     종료 시간
                   </label>
                   <p style={{ color: "#6B4F3F" }}>
-                    {selectedEvent.endDate}
+                    {selectedEvent.endsAt}
                   </p>
                 </div>
-
-                {/* 카테고리 */}
-                {selectedEvent.category && (
-                  <div>
-                    <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
-                      카테고리
-                    </label>
-                    <p style={{ color: "#6B4F3F" }}>
-                      {selectedEvent.category}
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* 수정/삭제 버튼 */}
