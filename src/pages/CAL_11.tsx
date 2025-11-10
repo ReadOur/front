@@ -1,8 +1,11 @@
 // CAL_11.tsx - 캘린더 페이지
 import React, { useState, useMemo, useEffect } from "react";
 import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
+import { useAuth } from "@/contexts/AuthContext";
+import { GUEST_USER_ID } from "@/utils/auth";
 
 export default function CAL_11() {
+  const { user, isAuthenticated } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -64,7 +67,12 @@ export default function CAL_11() {
       } catch (error: any) {
         console.error("일정을 가져오는데 실패했습니다:", error);
         if (error.response?.status === 404) {
-          console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+          // userId가 -1(게스트)일 때만 로그인 요구
+          if (user?.id === GUEST_USER_ID || !user) {
+            console.warn("로그인이 필요합니다.");
+          } else {
+            console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+          }
         }
         setEvents([]);
       } finally {
@@ -73,7 +81,7 @@ export default function CAL_11() {
     };
 
     fetchEvents();
-  }, [year, month, viewType, scope]);
+  }, [year, month, viewType, scope, user]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -161,7 +169,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 추가 실패:", error);
       if (error.response?.status === 404) {
-        alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 추가하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
+        }
       } else {
         alert("일정 추가에 실패했습니다.");
       }
@@ -243,7 +256,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 수정 실패:", error);
       if (error.response?.status === 404) {
-        alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 수정하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
+        }
       } else {
         alert("일정 수정에 실패했습니다.");
       }
@@ -270,7 +288,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 삭제 실패:", error);
       if (error.response?.status === 404) {
-        alert("권한이 없습니다. 일정을 삭제할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 삭제하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 삭제할 수 없습니다.");
+        }
       } else {
         alert("일정 삭제에 실패했습니다.");
       }
@@ -290,7 +313,12 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정을 가져오는데 실패했습니다:", error);
       if (error.response?.status === 404) {
-        console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          console.warn("로그인이 필요합니다.");
+        } else {
+          console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+        }
       }
       setEvents([]);
     }

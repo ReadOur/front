@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 // import { io, Socket } from "socket.io-client";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
@@ -613,6 +614,7 @@ function ChatWindow({
 export default function ChatDock() {
   const navigate = useNavigate();
   const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
+  const { user } = useAuth();
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
@@ -625,8 +627,8 @@ export default function ChatDock() {
   // User data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
 
-  // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
-  const userId = 1; // 테스트용 userId
+  // localStorage에서 userId 가져오기
+  const userId = user?.id || 1;
 
   // React Query client
   const queryClient = useQueryClient();
