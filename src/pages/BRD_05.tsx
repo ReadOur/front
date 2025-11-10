@@ -15,7 +15,6 @@ import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
 import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
-import { useAuth } from "@/contexts/AuthContext";
 
 import { useQueryClient } from "@tanstack/react-query";
 /**
@@ -51,7 +50,6 @@ export default function PostShow() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
-  const { isAuthenticated } = useAuth();
 
   // 댓글 입력 필드의 상태 관리
   const [commentText, setCommentText] = useState("");
@@ -161,13 +159,6 @@ export default function PostShow() {
    * - 성공 시 댓글 목록이 자동 갱신되고 입력 필드가 초기화됨
    */
   function handleCommentSubmit() {
-    // 로그인 체크
-    if (!isAuthenticated) {
-      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-      return;
-    }
-
     const trimmed = commentText.trim();
     if (!trimmed || !postId) return;  // 빈 댓글은 전송하지 않음
 
@@ -539,46 +530,34 @@ export default function PostShow() {
         {/* 댓글 입력 폼 */}
         {/* - 텍스트 입력 필드 + 등록 버튼 */}
         {/* - Enter 키로도 제출 가능 (Shift+Enter는 제외) */}
-        {isAuthenticated ? (
-          <div className="grid grid-cols-[1fr_auto] gap-2 mt-3 py-6">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
-                // Enter 키 눌렀을 때 댓글 제출 (Shift+Enter는 제외)
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleCommentSubmit();
-                }
-              }}
-              placeholder="댓글을 입력하세요"
-              aria-label="댓글 입력"
-              disabled={createCommentMutation.isPending}  // 제출 중에는 비활성화
-              className="px-4 py-[8px] rounded-lg border
-               border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]
-                text-[color:var(--color-fg-primary)] outline-none focus:ring-2
-                 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
-            />
-            <button
-              onClick={handleCommentSubmit}
-              disabled={createCommentMutation.isPending || !commentText.trim()}  // 제출 중이거나 빈 텍스트면 비활성화
-              className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {createCommentMutation.isPending ? "등록 중..." : "등록"}
-            </button>
-          </div>
-        ) : (
-          <div className="mt-3 py-6 px-4 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg text-center">
-            <p className="text-[color:var(--color-fg-muted)] mb-3">댓글을 작성하려면 로그인이 필요합니다.</p>
-            <button
-              onClick={() => navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } })}
-              className="px-6 py-2 rounded-lg bg-[color:var(--color-accent)] text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              로그인
-            </button>
-          </div>
-        )}
+        <div className="grid grid-cols-[1fr_auto] gap-2 mt-3 py-6">
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter 키 눌렀을 때 댓글 제출 (Shift+Enter는 제외)
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCommentSubmit();
+              }
+            }}
+            placeholder="댓글을 입력하세요"
+            aria-label="댓글 입력"
+            disabled={createCommentMutation.isPending}  // 제출 중에는 비활성화
+            className="px-4 py-[8px] rounded-lg border
+             border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]
+              text-[color:var(--color-fg-primary)] outline-none focus:ring-2
+               focus:ring-[color:var(--color-accent)] disabled:opacity-50"
+          />
+          <button
+            onClick={handleCommentSubmit}
+            disabled={createCommentMutation.isPending || !commentText.trim()}  // 제출 중이거나 빈 텍스트면 비활성화
+            className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {createCommentMutation.isPending ? "등록 중..." : "등록"}
+          </button>
+        </div>
 
         {/* 댓글 목록 렌더링 */}
         {/* 게시글 데이터에 포함된 comments 배열을 표시 */}
