@@ -6,6 +6,9 @@
 // 배열 관련
 export * from './array';
 
+// 인증 관련
+export * from './auth';
+
 // 클래스명 관련
 export * from './classnames';
 

@@ -15,6 +15,7 @@ import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
 import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
+import { isLoggedIn } from "@/utils/auth";
 
 import { useQueryClient } from "@tanstack/react-query";
 /**
@@ -146,6 +147,13 @@ export default function PostShow() {
    * - 성공 시 React Query가 자동으로 데이터를 갱신하여 UI 업데이트
    */
   function handleLike() {
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
     if (!postId || !post) return;
     likeMutation.mutate({
       postId,
@@ -159,6 +167,13 @@ export default function PostShow() {
    * - 성공 시 댓글 목록이 자동 갱신되고 입력 필드가 초기화됨
    */
   function handleCommentSubmit() {
+    // 로그인 체크 (userId가 -1(게스트)이면 경고)
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
     const trimmed = commentText.trim();
     if (!trimmed || !postId) return;  // 빈 댓글은 전송하지 않음
 
@@ -177,7 +192,14 @@ export default function PostShow() {
    * - 댓글 수정 모드로 전환하고 현재 내용을 편집 필드에 설정
    */
   function handleCommentEdit(commentId: number, content: string) {
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     setEditingCommentId(commentId);
     setEditingCommentText(content);
   }
@@ -212,7 +234,15 @@ export default function PostShow() {
    */
   function handleCommentDelete(commentId: string) {
     if (!postId) return;
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     setDeletingCommentId(commentId);
     setDeleteCommentModalOpen(true);
   }
@@ -233,9 +263,17 @@ export default function PostShow() {
    */
   function handleEdit() {
     if (!postId) return;
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     // if (post.authorId !== currentUser.id) {
-    //   alert("작성자만 수정할 수 있습니다.");
+    //   toast.show({ title: "작성자만 수정할 수 있습니다.", variant: "warning" });
     //   return;
     // }
     navigate(`/boards/${postId}/edit`);
@@ -247,7 +285,15 @@ export default function PostShow() {
    */
   function handleDelete() {
     if (!postId) return;
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     // if (post.authorId !== currentUser.id) {
     //   toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
     //   return;
