@@ -680,9 +680,6 @@ export default function ChatDock() {
 
   const openThread = (t: ChatThread) => {
     openThreadInContext(t.id);
-    setThreads((prev) =>
-      prev.map((x) => (x.id === t.id ? { ...x, unreadCount: 0 } : x))
-    );
 
     // ✨ 기본 위치 설정 (창이 처음 열릴 때만)
     setPositions((prev) => {
