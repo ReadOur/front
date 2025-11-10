@@ -27,6 +27,20 @@ export default defineConfig({
           });
         },
       },
+      '/chat': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure(proxy) {
+          proxy.on('proxyReq', (_req, req) => {
+            console.log('➡️ [ProxyReq] Chat', req.method, req.url);
+          });
+          proxy.on('proxyRes', (res, req) => {
+            console.log('✅ [ProxyRes] Chat', req.method, req.url, res.statusCode);
+          });
+        },
+      },
     },
     // 강제 캐시 비활성화 (더 강력하게)
     headers: {
