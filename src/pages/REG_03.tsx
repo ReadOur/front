@@ -1,5 +1,7 @@
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
+import { isEmail, isStrongPassword } from '@/utils/validation';
 
 import { signup } from '@/services/authService';
 
@@ -20,23 +22,85 @@ const defaultFormState: RegisterFormState = {
 };
 
 export default function REG_03() {
+  const navigate = useNavigate();
   const [formState, setFormState] = useState<RegisterFormState>(defaultFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState({
+    email: '',
+    userId: '',
+    nickname: '',
+    password: '',
+    passwordConfirm: '',
+  });
+
+  const validateEmail = (email: string) => {
+    if (!email.trim()) return '이메일을 입력해주세요.';
+    if (!isEmail(email)) return '올바른 이메일 형식이 아닙니다.';
+    return '';
+  };
+
+  const validateNickname = (nickname: string) => {
+    if (!nickname.trim()) return '닉네임을 입력해주세요.';
+    if (nickname.length < 2) return '닉네임은 최소 2자 이상이어야 합니다.';
+    if (nickname.length > 20) return '닉네임은 최대 20자까지 가능합니다.';
+    return '';
+  };
+
+  const validatePassword = (password: string) => {
+    if (!password) return '비밀번호를 입력해주세요.';
+    if (password.length < 8) return '비밀번호는 최소 8자 이상이어야 합니다.';
+    if (!isStrongPassword(password)) {
+      return '비밀번호는 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.';
+    }
+    return '';
+  };
+
+  const validatePasswordConfirm = (password: string, passwordConfirm: string) => {
+    if (!passwordConfirm) return '비밀번호 확인을 입력해주세요.';
+    if (password !== passwordConfirm) return '비밀번호가 일치하지 않습니다.';
+    return '';
+  };
 
   const isFormValid = useMemo(() => {
-    return (
-      formState.email.trim() !== '' &&
-      formState.nickname.trim() !== '' &&
-      formState.password.length >= 8 &&
-      formState.password === formState.passwordConfirm
-    );
+    const emailError = validateEmail(formState.email);
+    const nicknameError = validateNickname(formState.nickname);
+    const passwordError = validatePassword(formState.password);
+    const passwordConfirmError = validatePasswordConfirm(formState.password, formState.passwordConfirm);
+
+    return !emailError && !nicknameError && !passwordError && !passwordConfirmError;
   }, [formState]);
 
   const handleChange = (field: keyof RegisterFormState) =>
     (event: ChangeEvent<HTMLInputElement>) => {
-      setFormState((prev) => ({ ...prev, [field]: event.target.value }));
+      const value = event.target.value;
+      setFormState((prev) => ({ ...prev, [field]: value }));
+
+      // 실시간 유효성 검증
+      let error = '';
+      switch (field) {
+        case 'email':
+          error = validateEmail(value);
+          break;
+        case 'nickname':
+          error = validateNickname(value);
+          break;
+        case 'password':
+          error = validatePassword(value);
+          // 비밀번호 변경 시 비밀번호 확인도 재검증
+          if (formState.passwordConfirm) {
+            setFieldErrors(prev => ({
+              ...prev,
+              passwordConfirm: validatePasswordConfirm(value, formState.passwordConfirm)
+            }));
+          }
+          break;
+        case 'passwordConfirm':
+          error = validatePasswordConfirm(formState.password, value);
+          break;
+      }
+      setFieldErrors(prev => ({ ...prev, [field]: error }));
     };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -106,10 +170,13 @@ export default function REG_03() {
                 value={formState.email}
                 onChange={handleChange('email')}
                 placeholder="example@email.com"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className={`w-full rounded-xl border ${fieldErrors.email ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
                 autoComplete="email"
                 required
               />
+              {fieldErrors.email && (
+                <p className="text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -137,10 +204,13 @@ export default function REG_03() {
                 value={formState.nickname}
                 onChange={handleChange('nickname')}
                 placeholder="표시할 닉네임"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className={`w-full rounded-xl border ${fieldErrors.nickname ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
                 autoComplete="nickname"
                 required
               />
+              {fieldErrors.nickname && (
+                <p className="text-sm text-red-600">{fieldErrors.nickname}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
@@ -153,11 +223,14 @@ export default function REG_03() {
                 value={formState.password}
                 onChange={handleChange('password')}
                 placeholder="비밀번호를 입력하세요"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className={`w-full rounded-xl border ${fieldErrors.password ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
                 autoComplete="new-password"
                 minLength={8}
                 required
               />
+              {fieldErrors.password && (
+                <p className="text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-2 sm:col-span-2">
@@ -170,11 +243,14 @@ export default function REG_03() {
                 value={formState.passwordConfirm}
                 onChange={handleChange('passwordConfirm')}
                 placeholder="비밀번호를 다시 입력하세요"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className={`w-full rounded-xl border ${fieldErrors.passwordConfirm ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
                 autoComplete="new-password"
                 minLength={8}
                 required
               />
+              {fieldErrors.passwordConfirm && (
+                <p className="text-sm text-red-600">{fieldErrors.passwordConfirm}</p>
+              )}
             </div>
           </div>
 
@@ -197,6 +273,17 @@ export default function REG_03() {
           >
             {isSubmitting ? '가입 중...' : '회원가입하기'}
           </button>
+
+          <div className="mt-4 text-center text-sm text-slate-700">
+            이미 계정이 있으신가요?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-blue-600 transition-colors hover:text-blue-700 hover:underline font-medium"
+            >
+              로그인
+            </button>
+          </div>
         </form>
       </div>
     </div>
