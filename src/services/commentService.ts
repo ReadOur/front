@@ -35,7 +35,7 @@ export async function getComment(commentId: string): Promise<Comment> {
  */
 export async function createComment(data: CreateCommentRequest): Promise<Comment> {
   return apiClient.post<Comment, CreateCommentRequest>(
-    COMMENT_ENDPOINTS.CREATE(data.postId),
+    COMMENT_ENDPOINTS.CREATE(String(data.postId)),
     data
   );
 }
