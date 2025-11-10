@@ -280,7 +280,7 @@ export default function CHT_17() {
   return (
     <div className="flex h-[calc(100vh-200px)] bg-[color:var(--color-bg)] rounded-[var(--radius-xl)] overflow-hidden border border-[color:var(--color-border-subtle)]">
       {/* 왼쪽: 채팅방 목록 */}
-      <div className="w-full md:w-96 flex flex-col border-r border-[color:var(--color-border-subtle)]">
+      <div className="w-96 flex flex-col border-r border-[color:var(--color-border-subtle)]">
         {/* 헤더 */}
         <div className="p-4 border-b border-[color:var(--color-border-subtle)]">
           <h1 className="text-xl font-bold text-[color:var(--color-fg-primary)] mb-3 flex items-center gap-2">
@@ -357,7 +357,7 @@ export default function CHT_17() {
       </div>
 
       {/* 오른쪽: 안내 메시지 */}
-      <div className="hidden md:flex flex-1 items-center justify-center bg-[color:var(--color-bg-subtle)]">
+      <div className="flex flex-1 items-center justify-center bg-[color:var(--color-bg-subtle)]">
         <div className="text-center max-w-md p-8">
           <MessageCircle className="w-16 h-16 mx-auto mb-4 text-[color:var(--color-fg-muted)]" />
           <h2 className="text-xl font-bold text-[color:var(--color-fg-primary)] mb-2">

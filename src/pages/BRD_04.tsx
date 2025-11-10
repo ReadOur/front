@@ -146,10 +146,8 @@ export const BRD_List: React.FC = () => {
     );
   }
 
-  // 공용 폭 컨테이너 (헤더 선과 리스트가 정확히 맞물리도록)
-  // grid 정의: 헤더와 행 모두 동일하게 사용
-  // 데스크톱: 7열, 태블릿: 4열, 모바일: 2열
-  const gridCols = "grid-cols-2 sm:grid-cols-[1fr_auto_auto_auto] lg:grid-cols-[115px_115px_minmax(0,1fr)_80px_140px_145px_80px]";
+  // 데스크톱 전용 7열 그리드
+  const gridCols = "grid-cols-[115px_115px_minmax(0,1fr)_80px_140px_145px_80px]";
 
   return (
     <div
@@ -157,12 +155,12 @@ export const BRD_List: React.FC = () => {
       bg-[color:var(--color-bg-canvas)] text-[color:var(--color-fg-primary)]"
       style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
     >
-      <div className="mx-auto px-3 sm:px-4 md:px-6 mt-[70px] sm:mt-[80px] md:mt-[90px] lg:mt-[100px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
+      <div className="mx-auto px-6 mt-[100px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
         {/* 카테고리 탭 네비게이션 */}
-        <nav className="flex justify-center border-b border-[color:var(--color-border-subtle)] mb-4 sm:mb-6 overflow-x-auto">
-          <ul className="flex items-stretch h-12 sm:h-14 md:h-16 font-medium text-[color:var(--color-fg-muted)] text-sm sm:text-base md:text-lg whitespace-nowrap">
+        <nav className="flex justify-center border-b border-[color:var(--color-border-subtle)] mb-6">
+          <ul className="flex items-stretch h-16 font-medium text-[color:var(--color-fg-muted)] text-lg">
             {CATEGORIES.map((cat, idx) => (
-              <li key={cat.key} className="relative flex items-center px-3 sm:px-4 md:px-6">
+              <li key={cat.key} className="relative flex items-center px-6">
                 <button
                   onClick={() => handleCategoryChange(cat.key)}
                   className={[
@@ -186,16 +184,16 @@ export const BRD_List: React.FC = () => {
         </nav>
 
         {/* 검색 및 액션바 */}
-        <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">
+        <div className="py-4 space-y-4">
           {/* 검색/액션 섹션 */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-3">
             {/* 검색 입력 */}
-            <div className="flex-1 flex flex-col sm:flex-row gap-2">
+            <div className="flex-1 flex gap-2">
               {/* 검색 타입 선택 */}
               <select
                 value={searchType}
                 onChange={(e) => setSearchType(e.target.value as SearchType)}
-                className="w-full sm:w-[120px] md:w-[150px] h-[36px] sm:h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                className="w-[150px] h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
                 aria-label="검색 타입 선택"
               >
                 {SEARCH_TYPES.map((type) => (
@@ -217,16 +215,15 @@ export const BRD_List: React.FC = () => {
                     }
                   }}
                   placeholder="게시글 검색..."
-                  className="flex-1 h-[36px] sm:h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  className="flex-1 h-[40px] px-3 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
                   aria-label="검색어 입력"
                 />
                 <button
                   onClick={handleSearch}
-                  className="h-[36px] sm:h-[40px] px-3 sm:px-4 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
+                  className="h-[40px] px-4 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
                   aria-label="검색"
                 >
-                  <span className="hidden sm:inline">🔍 검색</span>
-                  <span className="sm:hidden">🔍</span>
+                  🔍 검색
                 </button>
               </div>
             </div>
@@ -237,29 +234,27 @@ export const BRD_List: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={handleResetFilters}
-                  className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-3 sm:px-4 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm hover:bg-[color:var(--color-bg-elev-1)] whitespace-nowrap"
+                  className="h-[40px] px-4 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-sm hover:bg-[color:var(--color-bg-elev-1)] whitespace-nowrap"
                   aria-label="검색 초기화"
                 >
-                  <span className="hidden sm:inline">검색 초기화</span>
-                  <span className="sm:hidden">초기화</span>
+                  검색 초기화
                 </button>
               )}
 
               {/* 글 쓰기 버튼 */}
               <button
-                className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
+                className="h-[40px] px-5 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
                 onClick={() => navigate("/boards/write")}
                 aria-label="글 쓰기"
               >
-                <span className="hidden sm:inline">✏️ 글 쓰기</span>
-                <span className="sm:hidden">✏️ 글쓰기</span>
+                ✏️ 글 쓰기
               </button>
             </div>
           </div>
 
           {/* 현재 검색어 표시 */}
           {searchQuery && (
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-[color:var(--color-fg-muted)]">
+            <div className="flex items-center gap-2 text-sm text-[color:var(--color-fg-muted)]">
               <span>검색:</span>
               <span className="px-2 py-1 rounded bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] truncate">
                 [{SEARCH_TYPES.find((t) => t.key === searchType)?.label}] "{searchQuery}"
@@ -268,9 +263,9 @@ export const BRD_List: React.FC = () => {
           )}
         </div>
 
-        {/* 컬럼 헤더 (데스크톱에서만 표시) */}
+        {/* 컬럼 헤더 */}
         <div
-          className={`hidden lg:grid ${gridCols} items-center bg-[color:var(--color-bg-elev-2)]
+          className={`grid ${gridCols} items-center bg-[color:var(--color-bg-elev-2)]
                       rounded-t-[var(--radius-md)] py-3 px-4 text-[15px]`}
         >
           <div className="text-center">번호</div>
@@ -282,13 +277,13 @@ export const BRD_List: React.FC = () => {
           <div className="text-center whitespace-nowrap">조회수</div>
         </div>
 
-        {/* 헤더 아래 선: 리스트 폭과 정확히 일치 (데스크톱에서만) */}
-        <div className="hidden lg:block border-b border-[color:var(--color-border-default)]" />
+        {/* 헤더 아래 선 */}
+        <div className="border-b border-[color:var(--color-border-default)]" />
 
-        {/* 목록 박스 (콘텐츠 높이에 맞게 auto) */}
+        {/* 목록 박스 */}
         <div
           className="bg-[color:var(--color-bg-elev-1)]
-                     rounded-[var(--radius-md)] lg:rounded-b-[var(--radius-md)] lg:rounded-t-none px-2 sm:px-3 md:px-4 py-3"
+                     rounded-b-[var(--radius-md)] px-4 py-3"
         >
           {/* 에러 */}
           {error && (
@@ -312,7 +307,7 @@ export const BRD_List: React.FC = () => {
           )}
 
           {/* 게시글 목록 */}
-          <div className="flex flex-col gap-2 sm:gap-1.5">
+          <div className="flex flex-col gap-1.5">
             {(data?.items ?? []).map((post, idx) => {
               const badges = calculateBadges(post);
               const rowIndex = (data?.page ?? page) - 1;
@@ -328,10 +323,10 @@ export const BRD_List: React.FC = () => {
                               border border-[color:var(--color-border-default)]
                               rounded-[var(--radius-md)]
                               hover:bg-[color:var(--color-bg-elev-2-hover, var(--color-bg-elev-2)))]
-                              cursor-pointer transition px-3 py-3 sm:py-0 sm:h-[56px]"
+                              cursor-pointer transition px-3 h-[56px]"
                 >
-                  {/* 데스크톱: 그리드 레이아웃 */}
-                  <div className={`hidden lg:grid ${gridCols} items-center h-full`}>
+                  {/* 데스크톱 그리드 레이아웃 */}
+                  <div className={`grid ${gridCols} items-center h-full`}>
                     {/* 번호 */}
                     <div className="text-center">{no}</div>
 
@@ -369,51 +364,16 @@ export const BRD_List: React.FC = () => {
                     {/* 조회수 */}
                     <div className="text-center">{post.hit}</div>
                   </div>
-
-                  {/* 모바일/태블릿: 카드 레이아웃 */}
-                  <div className="lg:hidden flex flex-col gap-2">
-                    {/* 제목 + 뱃지 */}
-                    <div className="flex items-start gap-2">
-                      <h3 className="flex-1 font-medium text-sm sm:text-base line-clamp-2">{post.title}</h3>
-                      <div className="flex gap-1 shrink-0">
-                        {badges.find((b) => b.type === "count") && (
-                          <span className="text-[color:var(--color-fg-danger)] text-xs">
-                            [{badges.find((b) => b.type === "count")?.value}]
-                          </span>
-                        )}
-                        {badges.find((b) => b.type === "hot") && (
-                          <span className="text-[color:var(--color-fg-muted)] text-xs">[H]</span>
-                        )}
-                        {badges.find((b) => b.type === "new") && (
-                          <span className="text-[color:var(--color-accent)] text-xs">[NEW]</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 메타 정보 */}
-                    <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[color:var(--color-fg-muted)]">
-                      <span className="px-2 py-0.5 rounded bg-[color:var(--color-bg-elev-1)] text-xs">
-                        {getCategoryLabel(post.category)}
-                      </span>
-                      <span>{post.authorNickname}</span>
-                      <span>·</span>
-                      <span>{formatDate(post.createdAt)}</span>
-                      <span className="ml-auto flex items-center gap-2">
-                        <span>❤️ {post.likeCount}</span>
-                        <span>👁 {post.hit}</span>
-                      </span>
-                    </div>
-                  </div>
                 </div>
               );
             })}
           </div>
 
-          {/* 페이지네이션: 목록 아래, 항상 중앙 */}
-          <div className="mt-4 sm:mt-[20px] mb-4 sm:mb-[30px] flex justify-center items-center gap-1 sm:gap-2 flex-wrap">
+          {/* 페이지네이션 */}
+          <div className="mt-[20px] mb-[30px] flex justify-center items-center gap-2">
             <button
               onClick={() => goPage(1)}
-              className="w-[28px] h-[28px] sm:w-[30px] sm:h-[30px] rounded-[var(--radius-md)]
+              className="w-[30px] h-[30px] rounded-[var(--radius-md)]
                          bg-[color:var(--color-bg-elev-1)]
                          border border-[color:var(--color-border-default)] text-sm"
               aria-label="첫 페이지"
@@ -422,7 +382,7 @@ export const BRD_List: React.FC = () => {
             </button>
             <button
               onClick={() => goPage(page - 1)}
-              className="w-[28px] h-[28px] sm:w-[30px] sm:h-[30px] rounded-[var(--radius-md)]
+              className="w-[30px] h-[30px] rounded-[var(--radius-md)]
                          bg-[color:var(--color-bg-elev-1)]
                          border border-[color:var(--color-border-default)] text-sm"
               aria-label="이전 페이지"
@@ -438,7 +398,7 @@ export const BRD_List: React.FC = () => {
                 key={n}
                 onClick={() => goPage(n)}
                 className={
-                  "w-[32px] h-[32px] sm:w-[40px] sm:h-[40px] rounded-[var(--radius-md)] border text-sm sm:text-base " +
+                  "w-[40px] h-[40px] rounded-[var(--radius-md)] border text-base " +
                   (n === page
                     ? "bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] border-transparent font-medium"
                     : "bg-[color:var(--color-bg-elev-1)] border-[color:var(--color-border-default)]")
@@ -452,7 +412,7 @@ export const BRD_List: React.FC = () => {
 
             <button
               onClick={() => goPage(page + 1)}
-              className="w-[28px] h-[28px] sm:w-[30px] sm:h-[30px] rounded-[var(--radius-md)]
+              className="w-[30px] h-[30px] rounded-[var(--radius-md)]
                          bg-[color:var(--color-bg-elev-1)]
                          border border-[color:var(--color-border-default)] text-sm"
               aria-label="다음 페이지"
@@ -461,7 +421,7 @@ export const BRD_List: React.FC = () => {
             </button>
             <button
               onClick={() => goPage(totalPages)}
-              className="w-[28px] h-[28px] sm:w-[30px] sm:h-[30px] rounded-[var(--radius-md)]
+              className="w-[30px] h-[30px] rounded-[var(--radius-md)]
                          bg-[color:var(--color-bg-elev-1)]
                          border border-[color:var(--color-border-default)] text-sm"
               aria-label="마지막 페이지"
