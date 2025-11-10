@@ -18,6 +18,9 @@ export default function CAL_11() {
   // 날짜 클릭 시 일정 목록 표시
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isDateEventsModalOpen, setIsDateEventsModalOpen] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // 일정 상세 모달
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -196,8 +199,45 @@ export default function CAL_11() {
     console.log('📋 해당 날짜 일정:', getEventsForDate(dateStr));
     console.log('📊 전체 일정:', events);
     setSelectedDate(dateStr);
+    // 팝오버 초기 위치 설정 (화면 우측 중앙)
+    setPopoverPosition({ x: window.innerWidth - 420, y: window.innerHeight / 2 - 300 });
     setIsDateEventsModalOpen(true);
   };
+
+  // 팝오버 드래그 시작
+  const handlePopoverDragStart = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - popoverPosition.x,
+      y: e.clientY - popoverPosition.y,
+    });
+  };
+
+  // 팝오버 드래그 중
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPopoverPosition({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
 
   // 일정 클릭 핸들러 (상세 모달 열기)
   const handleEventClick = (event: CalendarEvent) => {
@@ -747,23 +787,31 @@ export default function CAL_11() {
 
             {/* 일정 카드 */}
             <div
-              className="fixed right-8 top-1/2 -translate-y-1/2 w-96 max-h-[600px] overflow-y-auto rounded-xl shadow-2xl border-2 z-50"
+              className="fixed w-96 max-h-[600px] overflow-y-auto rounded-xl shadow-2xl border-2 z-50"
               style={{
+                left: `${popoverPosition.x}px`,
+                top: `${popoverPosition.y}px`,
                 background: "#FFF9F2",
-                borderColor: "#6B4F3F"
+                borderColor: "#6B4F3F",
+                cursor: isDragging ? 'grabbing' : 'default'
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-5">
-                {/* 헤더 */}
-                <div className="flex items-center justify-between mb-4 pb-3 border-b-2" style={{ borderColor: "#E9E5DC" }}>
-                  <h3 className="text-xl font-bold" style={{ color: "#6B4F3F" }}>
+                {/* 헤더 (드래그 가능) */}
+                <div
+                  className="flex items-center justify-between mb-4 pb-3 border-b-2"
+                  style={{ borderColor: "#E9E5DC", cursor: 'grab' }}
+                  onMouseDown={handlePopoverDragStart}
+                >
+                  <h3 className="text-xl font-bold select-none" style={{ color: "#6B4F3F" }}>
                     {selectedDate}
                   </h3>
                   <button
                     onClick={() => setIsDateEventsModalOpen(false)}
+                    onMouseDown={(e) => e.stopPropagation()}
                     className="w-8 h-8 rounded-full hover:bg-black/5 flex items-center justify-center transition"
-                    style={{ color: "#6B4F3F" }}
+                    style={{ color: "#6B4F3F", cursor: 'pointer' }}
                   >
                     ✕
                   </button>
@@ -779,14 +827,43 @@ export default function CAL_11() {
                     getEventsForDate(selectedDate).map((event) => (
                       <div
                         key={event.eventId}
-                        onClick={() => handleEventClick(event)}
-                        className="p-3 rounded-lg border cursor-pointer hover:shadow-md transition"
+                        className="p-3 rounded-lg border hover:shadow-md transition relative group"
                         style={{
                           background: "white",
                           borderColor: "#E9E5DC",
                         }}
                       >
-                        <h4 className="font-bold mb-1" style={{ color: "#6B4F3F", fontSize: "15px" }}>
+                        {/* 수정/삭제 버튼 */}
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(event);
+                              setIsDateEventsModalOpen(false);
+                            }}
+                            className="w-7 h-7 rounded-md hover:bg-[#90BE6D] hover:text-white flex items-center justify-center transition"
+                            style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                            title="수정"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) {
+                                handleDeleteEvent(event.eventId);
+                                setIsDateEventsModalOpen(false);
+                              }
+                            }}
+                            className="w-7 h-7 rounded-md hover:bg-[#FF6B6B] hover:text-white flex items-center justify-center transition"
+                            style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                            title="삭제"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+
+                        <h4 className="font-bold mb-1 pr-16" style={{ color: "#6B4F3F", fontSize: "15px" }}>
                           {event.title}
                         </h4>
 
