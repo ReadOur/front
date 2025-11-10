@@ -22,6 +22,17 @@ export default function CAL_11() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+  // 팝오버 내 인라인 수정
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [inlineEditData, setInlineEditData] = useState<CreateEventData>({
+    title: "",
+    description: "",
+    location: "",
+    startsAt: "",
+    endsAt: "",
+    allDay: false,
+  });
+
   // 일정 상세 모달
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
@@ -246,19 +257,80 @@ export default function CAL_11() {
     setIsDateEventsModalOpen(false); // 목록 모달 닫기
   };
 
+  // datetime-local 형식 변환 헬퍼
+  const formatDateTimeLocal = (dateStr: string) => {
+    // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)을 datetime-local 형식 (YYYY-MM-DDTHH:mm)으로 변환
+    if (dateStr.length >= 16) {
+      return dateStr.substring(0, 16);
+    }
+    return dateStr;
+  };
+
+  // 팝오버 내 인라인 수정 시작
+  const handleStartInlineEdit = (event: CalendarEvent) => {
+    setEditingEventId(event.eventId);
+    setInlineEditData({
+      title: event.title,
+      description: event.description || "",
+      location: event.location || "",
+      startsAt: formatDateTimeLocal(event.startsAt),
+      endsAt: formatDateTimeLocal(event.endsAt),
+      allDay: event.allDay,
+    });
+  };
+
+  // 팝오버 내 인라인 수정 취소
+  const handleCancelInlineEdit = () => {
+    setEditingEventId(null);
+    setInlineEditData({
+      title: "",
+      description: "",
+      location: "",
+      startsAt: "",
+      endsAt: "",
+      allDay: false,
+    });
+  };
+
+  // 팝오버 내 인라인 수정 저장
+  const handleSaveInlineEdit = async () => {
+    if (!editingEventId || !inlineEditData.title || !inlineEditData.startsAt || !inlineEditData.endsAt) {
+      alert("제목, 시작 시간, 종료 시간은 필수입니다.");
+      return;
+    }
+
+    try {
+      // datetime-local 값에 초 추가 (백엔드 요구사항)
+      const eventData = {
+        ...inlineEditData,
+        startsAt: inlineEditData.startsAt.length === 16 ? `${inlineEditData.startsAt}:00` : inlineEditData.startsAt,
+        endsAt: inlineEditData.endsAt.length === 16 ? `${inlineEditData.endsAt}:00` : inlineEditData.endsAt,
+      };
+
+      await updateEvent(editingEventId, eventData);
+      alert("일정이 수정되었습니다.");
+      handleCancelInlineEdit();
+
+      // 일정 목록 새로고침
+      await refreshEvents();
+    } catch (error: any) {
+      console.error("일정 수정 실패:", error);
+      if (error.response?.status === 404) {
+        // userId가 -1(게스트)일 때만 로그인 요구
+        if (user?.id === GUEST_USER_ID || !user) {
+          alert("로그인이 필요합니다. 일정을 수정하려면 로그인하세요.");
+        } else {
+          alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
+        }
+      } else {
+        alert("일정 수정에 실패했습니다.");
+      }
+    }
+  };
+
   // 일정 수정 모달 열기
   const handleOpenEditModal = (event: CalendarEvent) => {
     setEditingEvent(event);
-
-    // CalendarEvent를 CreateEventData 형식으로 변환
-    // startsAt/endsAt을 datetime-local 형식으로 맞춤
-    const formatDateTimeLocal = (dateStr: string) => {
-      // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)을 datetime-local 형식 (YYYY-MM-DDTHH:mm)으로 변환
-      if (dateStr.length >= 16) {
-        return dateStr.substring(0, 16);
-      }
-      return dateStr;
-    };
 
     setEditEventData({
       title: event.title,
@@ -823,60 +895,138 @@ export default function CAL_11() {
                       이 날짜에 일정이 없습니다.
                     </p>
                   ) : (
-                    getEventsForDate(selectedDate).map((event) => (
-                      <div
-                        key={event.eventId}
-                        className="p-3 rounded-lg border hover:shadow-md transition relative group"
-                        style={{
-                          background: "white",
-                          borderColor: "#E9E5DC",
-                        }}
-                      >
-                        {/* 수정/삭제 버튼 */}
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEditModal(event);
-                              setIsDateEventsModalOpen(false);
-                            }}
-                            className="w-7 h-7 rounded-md hover:bg-[#90BE6D] hover:text-white flex items-center justify-center transition"
-                            style={{ background: "#E9E5DC", color: "#6B4F3F" }}
-                            title="수정"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) {
-                                await handleDeleteEvent(event.eventId);
-                              }
-                            }}
-                            className="w-7 h-7 rounded-md hover:bg-[#FF6B6B] hover:text-white flex items-center justify-center transition"
-                            style={{ background: "#E9E5DC", color: "#6B4F3F" }}
-                            title="삭제"
-                          >
-                            🗑️
-                          </button>
+                    getEventsForDate(selectedDate).map((event) => {
+                      const isEditing = editingEventId === event.eventId;
+
+                      return (
+                        <div
+                          key={event.eventId}
+                          className="p-3 rounded-lg border transition relative"
+                          style={{
+                            background: "white",
+                            borderColor: isEditing ? "#90BE6D" : "#E9E5DC",
+                            borderWidth: isEditing ? "2px" : "1px",
+                          }}
+                        >
+                          {isEditing ? (
+                            // 편집 모드
+                            <div className="space-y-2">
+                              {/* 제목 */}
+                              <input
+                                type="text"
+                                value={inlineEditData.title}
+                                onChange={(e) => setInlineEditData({ ...inlineEditData, title: e.target.value })}
+                                className="w-full px-2 py-1 rounded border text-sm font-semibold"
+                                style={{ background: "white", borderColor: "#E9E5DC", color: "#6B4F3F" }}
+                                placeholder="제목"
+                              />
+
+                              {/* 설명 */}
+                              <textarea
+                                value={inlineEditData.description}
+                                onChange={(e) => setInlineEditData({ ...inlineEditData, description: e.target.value })}
+                                className="w-full px-2 py-1 rounded border text-xs resize-none"
+                                style={{ background: "white", borderColor: "#E9E5DC", color: "#888" }}
+                                placeholder="설명"
+                                rows={2}
+                              />
+
+                              {/* 시작 시간 */}
+                              <div>
+                                <label className="text-xs font-semibold block mb-1" style={{ color: "#6B4F3F" }}>
+                                  시작
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={inlineEditData.startsAt}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, startsAt: e.target.value })}
+                                  className="w-full px-2 py-1 rounded border text-xs"
+                                  style={{ background: "white", borderColor: "#E9E5DC" }}
+                                />
+                              </div>
+
+                              {/* 종료 시간 */}
+                              <div>
+                                <label className="text-xs font-semibold block mb-1" style={{ color: "#6B4F3F" }}>
+                                  종료
+                                </label>
+                                <input
+                                  type="datetime-local"
+                                  value={inlineEditData.endsAt}
+                                  onChange={(e) => setInlineEditData({ ...inlineEditData, endsAt: e.target.value })}
+                                  className="w-full px-2 py-1 rounded border text-xs"
+                                  style={{ background: "white", borderColor: "#E9E5DC" }}
+                                />
+                              </div>
+
+                              {/* 저장/취소 버튼 */}
+                              <div className="flex gap-2 mt-3">
+                                <button
+                                  onClick={handleCancelInlineEdit}
+                                  className="flex-1 px-3 py-1.5 rounded text-xs font-semibold hover:opacity-80 transition"
+                                  style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                                >
+                                  취소
+                                </button>
+                                <button
+                                  onClick={handleSaveInlineEdit}
+                                  className="flex-1 px-3 py-1.5 rounded text-xs font-semibold hover:opacity-80 transition"
+                                  style={{ background: "#90BE6D", color: "white" }}
+                                >
+                                  저장
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            // 일반 모드
+                            <>
+                              {/* 수정/삭제 버튼 */}
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartInlineEdit(event);
+                                  }}
+                                  className="w-7 h-7 rounded-md hover:bg-[#90BE6D] hover:text-white flex items-center justify-center transition"
+                                  style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                                  title="수정"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) {
+                                      await handleDeleteEvent(event.eventId);
+                                    }
+                                  }}
+                                  className="w-7 h-7 rounded-md hover:bg-[#FF6B6B] hover:text-white flex items-center justify-center transition"
+                                  style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                                  title="삭제"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+
+                              <h4 className="font-bold mb-1 pr-16" style={{ color: "#6B4F3F", fontSize: "15px" }}>
+                                {event.title}
+                              </h4>
+
+                              {event.description && (
+                                <p className="text-xs mb-2 line-clamp-2" style={{ color: "#888" }}>
+                                  {event.description}
+                                </p>
+                              )}
+
+                              <div className="text-xs space-y-0.5" style={{ color: "#999" }}>
+                                <div>🕐 {event.startsAt.replace('T', ' ')}</div>
+                                <div>🕐 {event.endsAt.replace('T', ' ')}</div>
+                              </div>
+                            </>
+                          )}
                         </div>
-
-                        <h4 className="font-bold mb-1 pr-16" style={{ color: "#6B4F3F", fontSize: "15px" }}>
-                          {event.title}
-                        </h4>
-
-                        {event.description && (
-                          <p className="text-xs mb-2 line-clamp-2" style={{ color: "#888" }}>
-                            {event.description}
-                          </p>
-                        )}
-
-                        <div className="text-xs space-y-0.5" style={{ color: "#999" }}>
-                          <div>🕐 {event.startsAt.replace('T', ' ')}</div>
-                          <div>🕐 {event.endsAt.replace('T', ' ')}</div>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
