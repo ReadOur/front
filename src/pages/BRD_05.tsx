@@ -309,22 +309,22 @@ export default function PostShow() {
   // ===== UI 렌더링 =====
   return (
     <main
-      className="w-full min-w-[1100px] min-h-[800px] mx-auto px-6 py-8 bg-[color:var(--color-bg-elev-1)]"
+      className="w-full min-h-screen sm:min-h-[800px] mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 bg-[color:var(--color-bg-elev-1)] mt-[70px] sm:mt-[80px] md:mt-[100px]"
       data-model-id="post:show"
     >
 
       {/* ========== 상단 헤더 바 ========== */}
       {/* 게시글 메타 정보 표시: 작성일, 조회수, 작성자 */}
-      <section className="rounded-xl overflow-hidden border border-[color:var(--color-border-subtle)] shadow-sm mb-4">
-        <div className="h-[68px] bg-[color:var(--color-accent)] flex items-center justify-between px-5">
-          <h2 className="text-[color:var(--color-fg-secondary)] text-xl font-semibold">게시글</h2>
-          <div className="flex items-center gap-4 text-[color:var(--color-fg-secondary)] text-sm">
+      <section className="rounded-lg sm:rounded-xl overflow-hidden border border-[color:var(--color-border-subtle)] shadow-sm mb-3 sm:mb-4">
+        <div className="h-[56px] sm:h-[68px] bg-[color:var(--color-accent)] flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-5 py-2 sm:py-0 gap-2 sm:gap-0">
+          <h2 className="text-[color:var(--color-fg-secondary)] text-base sm:text-lg md:text-xl font-semibold">게시글</h2>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-[color:var(--color-fg-secondary)] text-xs sm:text-sm">
             {/* API에서 받아온 createdAt 필드를 한국 시간 형식으로 표시 */}
-            <span>작성: {new Date(post.createdAt).toLocaleString("ko-KR")}</span>
+            <span className="whitespace-nowrap">작성: {new Date(post.createdAt).toLocaleString("ko-KR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             {/* API에서 받아온 hit(조회수) 필드를 천 단위 구분자와 함께 표시 */}
-            <span>조회: {post.hit.toLocaleString()}</span>
+            <span className="whitespace-nowrap">조회: {post.hit.toLocaleString()}</span>
             {/* API에서 받아온 authorNickname 필드 표시 */}
-            <span>작성자: {post.authorNickname}</span>
+            <span className="whitespace-nowrap truncate max-w-[120px] sm:max-w-none">작성자: {post.authorNickname}</span>
           </div>
         </div>
       </section>
@@ -333,7 +333,7 @@ export default function PostShow() {
       {/* 제목, 내용, 좋아요 버튼, 첨부파일을 표시하는 메인 영역 */}
       <article
         aria-labelledby="title"
-        className="relative bg-[color:var(--color-bg-elev-1)] pl-[10px] border border-[color:var(--color-border-subtle)] rounded-xl p-5 shadow-sm"
+        className="relative bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 shadow-sm"
       >
         {post.isSpoiler && !isSpoilerRevealed && (
           <button
@@ -367,32 +367,34 @@ export default function PostShow() {
           }`}
           aria-hidden={post.isSpoiler && !isSpoilerRevealed}
         >
-          <header className="flex items-center justify-between gap-4">
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* 게시글 제목 (API의 title 필드) */}
-          <h1 id="title" className="flex-1 text-2xl font-extrabold text-[color:var(--color-fg-primary)]">
+          <h1 id="title" className="flex-1 text-lg sm:text-xl md:text-2xl font-extrabold text-[color:var(--color-fg-primary)] break-words">
             {post.title}
           </h1>
 
           {/* 버튼 그룹 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             {/* TODO: 로그인 후 작성자 확인 - post.authorId === currentUser.id 일 때만 표시 */}
             {/* 수정 버튼 */}
             <button
               onClick={handleEdit}
-              className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 text-sm hover:bg-[color:var(--color-bg-elev-1)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+              className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[color:var(--color-bg-elev-1)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
               aria-label="게시글 수정"
             >
-              ✏️ 수정
+              <span className="hidden sm:inline">✏️ 수정</span>
+              <span className="sm:hidden">✏️</span>
             </button>
 
             {/* 삭제 버튼 */}
             <button
               onClick={handleDelete}
               disabled={deletePostMutation.isPending}
-              className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 text-sm hover:bg-[color:var(--color-error)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-error)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[color:var(--color-error)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-error)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="게시글 삭제"
             >
-              🗑️ 삭제
+              <span className="hidden sm:inline">🗑️ 삭제</span>
+              <span className="sm:hidden">🗑️</span>
             </button>
 
             {/* 좋아요 버튼 */}
@@ -404,7 +406,7 @@ export default function PostShow() {
               disabled={likeMutation.isPending}  // 요청 중에는 비활성화
               aria-pressed={post.isLiked}
               aria-label={`좋아요 ${post.likeCount}개`}
-              className="inline-flex items-center gap-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 sm:gap-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
               data-active={post.isLiked}
             >
               <span>{post.isLiked ? "❤️" : "🤍"}</span>
@@ -433,9 +435,9 @@ export default function PostShow() {
         {/* API의 content 필드를 표시 */}
         {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
         {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
-        <div className="relative mt-4">
+        <div className="relative mt-3 sm:mt-4">
           <div
-            className={`text-[color:var(--color-fg-primary)] leading-relaxed ${
+            className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
               post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
             }`}
             aria-hidden={post.isSpoiler && !isSpoilerRevealed}
@@ -446,7 +448,7 @@ export default function PostShow() {
             <button
               type="button"
               onClick={() => setIsSpoilerRevealed(true)}
-              className="absolute inset-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)]"
+              className="absolute inset-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
               aria-label="스포일러 가림막 해제"
             >
               스포일러 방지. 클릭하면 해제합니다.
@@ -458,8 +460,8 @@ export default function PostShow() {
 
       {/* ========== 댓글 섹션 ========== */}
       {/* 댓글 목록 조회, 작성, 삭제 기능을 제공하는 영역 */}
-      <section className="mt-5 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-xl p-4">
-        <h2 className="text-lg font-semibold text-[color:var(--color-fg-primary)] flex items-baseline gap-2">
+      <section className="mt-3 sm:mt-4 md:mt-5 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg sm:rounded-xl p-3 sm:p-4">
+        <h2 className="text-base sm:text-lg font-semibold text-[color:var(--color-fg-primary)] flex items-baseline gap-2">
           {/* 댓글 개수 표시 (API의 commentCount 필드 사용) */}
           댓글 <span className="text-[color:#b45309]">[{post.commentCount}]</span>
         </h2>

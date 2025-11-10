@@ -47,7 +47,7 @@ export default function FID_18() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
       <div className="flex w-full max-w-xl flex-col items-center gap-8 rounded-3xl bg-white p-12 shadow-lg">
-        <img src={logo} alt="로고" className="h-28 w-28" />
+        <img src={logo} alt="ReadOur 로고" className="h-28 w-28" loading="lazy" />
 
         <div className="w-full">
           <h1 className="text-2xl font-semibold text-slate-900 text-center mb-6">

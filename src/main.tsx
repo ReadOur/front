@@ -1,53 +1,59 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/components/Toast/ToastProvider";
 import { ChatProvider } from "@/contexts/ChatContext";
+import { Loading } from "@/components/Loading";
 
 import "./index.css";
 
 import App from "./App";
-import { BRD_List } from "@/pages/BRD_04";
-import PostShow from "@/pages/BRD_05";
-import { BRD_06 } from '@/pages/BRD_06';
-import CAL_11 from "@/pages/CAL_11";
-import PRF_10 from "@/pages/PRF_10";
-import SET_13 from "@/pages/SET_13";
-import MYB_14 from "@/pages/MYB_14";
-import LibrarySearch from "@/pages/LibrarySearch";
-import BOD_15 from "@/pages/BOD_15";
-import CHT_17 from "@/pages/CHT_17";
-import LOG_02 from "@/pages/LOG_02";
-import REG_03 from "@/pages/REG_03";
-import FID_18 from "@/pages/FID_18";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
+// 코드 스플리팅: 페이지 컴포넌트들을 lazy loading으로 분리
+const BRD_04 = lazy(() => import("@/pages/BRD_04").then(m => ({ default: m.BRD_List })));
+const BRD_05 = lazy(() => import("@/pages/BRD_05"));
+const BRD_06 = lazy(() => import("@/pages/BRD_06").then(m => ({ default: m.BRD_06 })));
+const CAL_11 = lazy(() => import("@/pages/CAL_11"));
+const PRF_10 = lazy(() => import("@/pages/PRF_10"));
+const SET_13 = lazy(() => import("@/pages/SET_13"));
+const MYB_14 = lazy(() => import("@/pages/MYB_14"));
+const LibrarySearch = lazy(() => import("@/pages/LibrarySearch"));
+const BOD_15 = lazy(() => import("@/pages/BOD_15"));
+const CHT_17 = lazy(() => import("@/pages/CHT_17"));
+const LOG_02 = lazy(() => import("@/pages/LOG_02"));
+const REG_03 = lazy(() => import("@/pages/REG_03"));
+const FID_18 = lazy(() => import("@/pages/FID_18"));
+
+// Suspense Fallback 컴포넌트
+const PageLoader = () => <Loading message="페이지를 불러오는 중..." />;
+
 const router = createBrowserRouter([
   // 로그인/회원가입/찾기 페이지 (헤더 없음)
-  { path: "/login", element: <LOG_02 /> },
-  { path: "/register", element: <REG_03 /> },
-  { path: "/find", element: <FID_18 /> },
+  { path: "/login", element: <Suspense fallback={<PageLoader />}><LOG_02 /></Suspense> },
+  { path: "/register", element: <Suspense fallback={<PageLoader />}><REG_03 /></Suspense> },
+  { path: "/find", element: <Suspense fallback={<PageLoader />}><FID_18 /></Suspense> },
 
   // 메인 앱 레이아웃 (헤더 있음)
   {
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <BRD_List /> },
-      { path: "boards", element: <BRD_List /> },
-      { path: "boards/write", element: <ProtectedRoute><BRD_06 /></ProtectedRoute>},
-      { path: "boards/:postId/edit", element: <ProtectedRoute><BRD_06 /></ProtectedRoute>},
-      { path: "boards/:postId", element: <PostShow /> },
-      { path: "calendar", element: <ProtectedRoute><CAL_11 /></ProtectedRoute> },
-      { path: "mypage", element: <ProtectedRoute><PRF_10 /></ProtectedRoute> },
-      { path: "settings", element: <ProtectedRoute><SET_13 /></ProtectedRoute> },
-      { path: "library", element: <ProtectedRoute><MYB_14 /></ProtectedRoute> },
-      { path: "library/search", element: <ProtectedRoute><LibrarySearch /></ProtectedRoute> },
-      { path: "books/:bookId", element: <BOD_15 /> },
-      { path: "chat", element: <ProtectedRoute><CHT_17 /></ProtectedRoute> },
+      { index: true, element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
+      { path: "boards", element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
+      { path: "boards/write", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
+      { path: "boards/:postId/edit", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
+      { path: "boards/:postId", element: <Suspense fallback={<PageLoader />}><BRD_05 /></Suspense> },
+      { path: "calendar", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><CAL_11 /></Suspense></ProtectedRoute> },
+      { path: "mypage", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><PRF_10 /></Suspense></ProtectedRoute> },
+      { path: "settings", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><SET_13 /></Suspense></ProtectedRoute> },
+      { path: "library", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MYB_14 /></Suspense></ProtectedRoute> },
+      { path: "library/search", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><LibrarySearch /></Suspense></ProtectedRoute> },
+      { path: "books/:bookId", element: <Suspense fallback={<PageLoader />}><BOD_15 /></Suspense> },
+      { path: "chat", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><CHT_17 /></Suspense></ProtectedRoute> },
     ],
   },
 ]);
