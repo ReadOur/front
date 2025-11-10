@@ -13,8 +13,12 @@ export default function CAL_11() {
   const [viewType, setViewType] = useState<ViewType>('MONTH');
   const [scope, setScope] = useState<Scope>('USER');
 
-  // 날짜 클릭 시 상세 일정 표시
+  // 날짜 클릭 시 일정 목록 표시
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isDateEventsModalOpen, setIsDateEventsModalOpen] = useState(false);
+
+  // 일정 상세 모달
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isEventDetailModalOpen, setIsEventDetailModalOpen] = useState(false);
 
   // 일정 수정 모달
@@ -166,11 +170,18 @@ export default function CAL_11() {
     });
   };
 
-  // 날짜 클릭 핸들러
+  // 날짜 클릭 핸들러 (일정 목록 모달 열기)
   const handleDateClick = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setSelectedDate(dateStr);
+    setIsDateEventsModalOpen(true);
+  };
+
+  // 일정 클릭 핸들러 (상세 모달 열기)
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
     setIsEventDetailModalOpen(true);
+    setIsDateEventsModalOpen(false); // 목록 모달 닫기
   };
 
   // 일정 수정 모달 열기
@@ -237,7 +248,11 @@ export default function CAL_11() {
     try {
       await deleteEvent(eventId);
       alert("일정이 삭제되었습니다.");
+
+      // 모든 모달 닫기
       setIsEventDetailModalOpen(false);
+      setIsDateEventsModalOpen(false);
+      setSelectedEvent(null);
 
       // 일정 목록 새로고침
       await refreshEvents();
@@ -702,11 +717,11 @@ export default function CAL_11() {
           </div>
         )}
 
-        {/* 날짜별 일정 상세 모달 (오른쪽 사이드) */}
-        {isEventDetailModalOpen && selectedDate && (
+        {/* 날짜별 일정 목록 모달 (오른쪽 사이드) */}
+        {isDateEventsModalOpen && selectedDate && (
           <div
             className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-end"
-            onClick={() => setIsEventDetailModalOpen(false)}
+            onClick={() => setIsDateEventsModalOpen(false)}
           >
             <div
               className="w-full max-w-md h-full overflow-y-auto shadow-2xl"
@@ -720,7 +735,7 @@ export default function CAL_11() {
                     {selectedDate} 일정
                   </h3>
                   <button
-                    onClick={() => setIsEventDetailModalOpen(false)}
+                    onClick={() => setIsDateEventsModalOpen(false)}
                     className="text-2xl hover:opacity-70 transition"
                     style={{ color: "#6B4F3F" }}
                   >
@@ -729,7 +744,7 @@ export default function CAL_11() {
                 </div>
 
                 {/* 일정 목록 */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {getEventsForDate(selectedDate).length === 0 ? (
                     <p className="text-center py-8" style={{ color: "#6B4F3F" }}>
                       이 날짜에 일정이 없습니다.
@@ -738,7 +753,8 @@ export default function CAL_11() {
                     getEventsForDate(selectedDate).map((event) => (
                       <div
                         key={event.eventId}
-                        className="p-4 rounded-lg border"
+                        onClick={() => handleEventClick(event)}
+                        className="p-4 rounded-lg border cursor-pointer hover:opacity-80 transition"
                         style={{
                           background: "white",
                           borderColor: "#E9E5DC",
@@ -749,37 +765,119 @@ export default function CAL_11() {
                         </h4>
 
                         {event.description && (
-                          <p className="text-sm mb-2" style={{ color: "#6B4F3F" }}>
+                          <p className="text-sm mb-2 line-clamp-2" style={{ color: "#888" }}>
                             {event.description}
                           </p>
                         )}
 
-                        <div className="text-sm mb-3" style={{ color: "#888" }}>
-                          <div>시작: {event.startDate}</div>
-                          <div>종료: {event.endDate}</div>
-                        </div>
-
-                        {/* 수정/삭제 버튼 */}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleOpenEditModal(event)}
-                            className="flex-1 px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                            style={{ background: "#90BE6D", color: "white" }}
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEvent(event.eventId)}
-                            className="flex-1 px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                            style={{ background: "#FF6B6B", color: "white" }}
-                          >
-                            삭제
-                          </button>
+                        <div className="text-xs" style={{ color: "#999" }}>
+                          {event.startDate.split('T')[1]?.substring(0, 5)} - {event.endDate.split('T')[1]?.substring(0, 5)}
                         </div>
                       </div>
                     ))
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 일정 상세 모달 */}
+        {isEventDetailModalOpen && selectedEvent && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setIsEventDetailModalOpen(false)}
+          >
+            <div
+              className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#FFF9F2" }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold" style={{ color: "#6B4F3F" }}>
+                  일정 상세
+                </h3>
+                <button
+                  onClick={() => setIsEventDetailModalOpen(false)}
+                  className="text-2xl hover:opacity-70 transition"
+                  style={{ color: "#6B4F3F" }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                {/* 제목 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                    제목
+                  </label>
+                  <p className="text-lg font-bold" style={{ color: "#6B4F3F" }}>
+                    {selectedEvent.title}
+                  </p>
+                </div>
+
+                {/* 설명 */}
+                {selectedEvent.description && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                      설명
+                    </label>
+                    <p style={{ color: "#6B4F3F" }}>
+                      {selectedEvent.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* 시작 시간 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                    시작 시간
+                  </label>
+                  <p style={{ color: "#6B4F3F" }}>
+                    {selectedEvent.startDate}
+                  </p>
+                </div>
+
+                {/* 종료 시간 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                    종료 시간
+                  </label>
+                  <p style={{ color: "#6B4F3F" }}>
+                    {selectedEvent.endDate}
+                  </p>
+                </div>
+
+                {/* 카테고리 */}
+                {selectedEvent.category && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                      카테고리
+                    </label>
+                    <p style={{ color: "#6B4F3F" }}>
+                      {selectedEvent.category}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* 수정/삭제 버튼 */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleOpenEditModal(selectedEvent)}
+                  className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#90BE6D", color: "white" }}
+                >
+                  수정
+                </button>
+                <button
+                  onClick={() => handleDeleteEvent(selectedEvent.eventId)}
+                  className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#FF6B6B", color: "white" }}
+                >
+                  삭제
+                </button>
               </div>
             </div>
           </div>
