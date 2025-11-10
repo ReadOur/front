@@ -80,7 +80,7 @@ export default function App() {
         onProfile={() => navigate("/mypage")}
       />
 
-      <main className="mx-auto px-4 py-8 mt-16 sm:mt-20 md:mt-28 lg:mt-32" style={{ maxWidth: "var(--layout-max)" }}>
+      <main className="mx-auto px-4 py-8 mt-24" style={{ maxWidth: "var(--layout-max)" }}>
         <Outlet />
       </main>
       <ChatDock />

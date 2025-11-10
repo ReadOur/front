@@ -35,14 +35,14 @@ export default function HeaderApp({
   return (
     <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50 backdrop-blur-sm" style={{ backgroundColor: '#F5EFE9' }}>
       {/* 가운데 정렬 컨테이너 */}
-      <div className="mx-auto px-4 h-16 sm:h-20 md:h-28 lg:h-32" style={{ maxWidth: "var(--layout-max)" }}>
+      <div className="mx-auto px-4 h-24" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드 */}
-        <div className="grid grid-cols-[auto,1fr,auto] items-center gap-2 sm:gap-4 h-full">
+        <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4 h-full">
           {/* LEFT: 로고 */}
           <button onClick={onLogoClick} className="shrink-0 flex items-center">
             <div
-              className="flex items-center scale-75 sm:scale-90 md:scale-110 lg:scale-[1.32]"
-              style={{ width: "calc(var(--brand-logo-w) * 1.32)", height: "calc(var(--brand-logo-h) * 1.32)", transform: "translateY(var(--brand-logo-offset-y))", transformOrigin: "left center" }}
+              className="flex items-center"
+              style={{ width: "var(--brand-logo-w)", height: "var(--brand-logo-h)", transform: "translateY(var(--brand-logo-offset-y))", transformOrigin: "left center" }}
             >
               <img
                 src={logo}
@@ -59,9 +59,9 @@ export default function HeaderApp({
 
           {/* CENTER: 네비게이션 (모든 화면 크기에서 표시) */}
           <nav className="flex justify-center overflow-x-auto scrollbar-hide">
-            <ul className="flex items-stretch h-full font-medium text-[color:var(--color-fg-muted)] text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl">
+            <ul className="flex items-stretch h-full font-medium text-[color:var(--color-fg-muted)] text-base">
               {navItems.map((item, idx) => (
-                <li key={item.key} className="relative flex items-center px-2 sm:px-3 lg:px-8 xl:px-16">
+                <li key={item.key} className="relative flex items-center px-6">
                   <button
                     onClick={item.onClick}
                     className={[
@@ -85,16 +85,16 @@ export default function HeaderApp({
           </nav>
 
           {/* RIGHT: 유틸리티 버튼 */}
-          <div className="shrink-0 flex items-center gap-2 sm:gap-3 md:gap-[15px] justify-end">
+          <div className="shrink-0 flex items-center gap-3 justify-end">
             {/* 채팅 버튼 */}
             <button
               onClick={onClickChat}
-              className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] transition-colors cursor-pointer"
+              className="relative w-12 h-12 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] transition-colors cursor-pointer"
               aria-label="채팅"
             >
-              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-[color:var(--color-fg-primary)]" />
+              <MessageCircle className="w-5 h-5 text-[color:var(--color-fg-primary)]" />
               {chatUnreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 sm:min-w-6 sm:h-6 px-1 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
                   {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
                 </span>
               )}
@@ -103,12 +103,12 @@ export default function HeaderApp({
             {/* 알림 버튼 */}
             <button
               onClick={onClickNotifications}
-              className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] transition-colors cursor-pointer"
+              className="relative w-12 h-12 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] transition-colors cursor-pointer"
               aria-label="알림"
             >
-              <span role="img" aria-hidden="true" className="text-lg sm:text-xl md:text-2xl">🔔</span>
+              <span role="img" aria-hidden="true" className="text-xl">🔔</span>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 sm:min-w-6 sm:h-6 px-1 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
@@ -116,7 +116,7 @@ export default function HeaderApp({
 
             {/* 유저 드롭다운 또는 로그인 버튼 */}
             {user ? (
-              <div className="hidden sm:block">
+              <div>
                 <UserDropdown
                   userName={user.name}
                   onLogout={onLogout || (() => console.log("로그아웃"))}
@@ -126,7 +126,7 @@ export default function HeaderApp({
             ) : (
               <button
                 onClick={onLogin}
-                className="hidden sm:inline-flex items-center gap-2 h-10 px-3 sm:h-12 sm:px-5 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-sm sm:text-base md:text-lg lg:text-xl font-medium transition-opacity cursor-pointer"
+                className="inline-flex items-center gap-2 h-12 px-5 rounded-full border border-[color:var(--btn-primary-border)] bg-[color:var(--btn-primary-bg)] text-[color:var(--btn-primary-fg)] hover:opacity-90 text-base font-medium transition-opacity cursor-pointer"
               >
                 로그인
               </button>
