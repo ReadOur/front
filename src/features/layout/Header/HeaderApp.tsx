@@ -33,7 +33,7 @@ export default function HeaderApp({
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#F5EFE9', opacity: 1 }}>
+    <header className="fixed left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#F5EFE9', opacity: 1, top: '-50px' }}>
       {/* 가운데 정렬 컨테이너 */}
       <div className="mx-auto px-4 h-16 sm:h-20 md:h-28 lg:h-32" style={{ maxWidth: "var(--layout-max)" }}>
         {/* 3열 그리드: 로고 - 네비게이션 - 유틸리티 */}
