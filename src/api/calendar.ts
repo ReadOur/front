@@ -7,18 +7,20 @@ import { apiClient } from './client';
 import { CALENDAR_ENDPOINTS } from './endpoints';
 
 /**
- * 캘린더 이벤트 타입
+ * 캘린더 이벤트 타입 (백엔드 응답 형식)
  */
 export interface CalendarEvent {
   eventId: number;
+  calendarId: number;
   title: string;
   description?: string;
-  startDate: string; // ISO 8601 format
-  endDate: string;   // ISO 8601 format
-  category?: string;
-  userId: number;
+  location?: string;
+  startsAt: string;  // ISO 8601 format (YYYY-MM-DDTHH:mm:ss)
+  endsAt: string;    // ISO 8601 format (YYYY-MM-DDTHH:mm:ss)
+  allDay: boolean;
+  createdBy: number;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 /**

@@ -106,8 +106,8 @@ export default function CAL_11() {
   const getEventCount = (day: number): number => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return events.filter(event => {
-      const eventStart = event.startDate.split('T')[0];
-      const eventEnd = event.endDate.split('T')[0];
+      const eventStart = event.startsAt.split('T')[0];
+      const eventEnd = event.endsAt.split('T')[0];
       return dateStr >= eventStart && dateStr <= eventEnd;
     }).length;
   };
@@ -183,8 +183,8 @@ export default function CAL_11() {
   // 특정 날짜의 일정 가져오기
   const getEventsForDate = (dateStr: string): CalendarEvent[] => {
     return events.filter(event => {
-      const eventStart = event.startDate.split('T')[0];
-      const eventEnd = event.endDate.split('T')[0];
+      const eventStart = event.startsAt.split('T')[0];
+      const eventEnd = event.endsAt.split('T')[0];
       return dateStr >= eventStart && dateStr <= eventEnd;
     });
   };
@@ -208,7 +208,7 @@ export default function CAL_11() {
     setEditingEvent(event);
 
     // CalendarEvent를 CreateEventData 형식으로 변환
-    // startDate/endDate를 startsAt/endsAt로 변환하고, datetime-local 형식으로 맞춤
+    // startsAt/endsAt을 datetime-local 형식으로 맞춤
     const formatDateTimeLocal = (dateStr: string) => {
       // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)을 datetime-local 형식 (YYYY-MM-DDTHH:mm)으로 변환
       if (dateStr.length >= 16) {
@@ -220,10 +220,10 @@ export default function CAL_11() {
     setEditEventData({
       title: event.title,
       description: event.description || "",
-      location: "", // API response에 location이 없으면 빈 문자열
-      startsAt: formatDateTimeLocal(event.startDate),
-      endsAt: formatDateTimeLocal(event.endDate),
-      allDay: false, // API response에 allDay가 없으면 기본값
+      location: event.location || "",
+      startsAt: formatDateTimeLocal(event.startsAt),
+      endsAt: formatDateTimeLocal(event.endsAt),
+      allDay: event.allDay,
     });
 
     setIsEditModalOpen(true);
@@ -781,13 +781,14 @@ export default function CAL_11() {
                         </h4>
 
                         {event.description && (
-                          <p className="text-sm mb-2 line-clamp-2" style={{ color: "#888" }}>
+                          <p className="text-sm mb-2" style={{ color: "#888" }}>
                             {event.description}
                           </p>
                         )}
 
-                        <div className="text-xs" style={{ color: "#999" }}>
-                          {event.startDate.split('T')[1]?.substring(0, 5)} - {event.endDate.split('T')[1]?.substring(0, 5)}
+                        <div className="text-sm space-y-1 mt-2" style={{ color: "#999" }}>
+                          <div>시작: {event.startsAt.replace('T', ' ')}</div>
+                          <div>종료: {event.endsAt.replace('T', ' ')}</div>
                         </div>
                       </div>
                     ))
@@ -845,13 +846,25 @@ export default function CAL_11() {
                   </div>
                 )}
 
+                {/* 장소 */}
+                {selectedEvent.location && (
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
+                      장소
+                    </label>
+                    <p style={{ color: "#6B4F3F" }}>
+                      {selectedEvent.location}
+                    </p>
+                  </div>
+                )}
+
                 {/* 시작 시간 */}
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
                     시작 시간
                   </label>
                   <p style={{ color: "#6B4F3F" }}>
-                    {selectedEvent.startDate}
+                    {selectedEvent.startsAt}
                   </p>
                 </div>
 
@@ -861,21 +874,9 @@ export default function CAL_11() {
                     종료 시간
                   </label>
                   <p style={{ color: "#6B4F3F" }}>
-                    {selectedEvent.endDate}
+                    {selectedEvent.endsAt}
                   </p>
                 </div>
-
-                {/* 카테고리 */}
-                {selectedEvent.category && (
-                  <div>
-                    <label className="block text-sm font-semibold mb-2" style={{ color: "#888" }}>
-                      카테고리
-                    </label>
-                    <p style={{ color: "#6B4F3F" }}>
-                      {selectedEvent.category}
-                    </p>
-                  </div>
-                )}
               </div>
 
               {/* 수정/삭제 버튼 */}
