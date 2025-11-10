@@ -779,10 +779,9 @@ export default function CAL_11() {
         {/* 날짜별 일정 목록 (작은 팝오버) */}
         {isDateEventsModalOpen && selectedDate && (
           <>
-            {/* 반투명 배경 */}
+            {/* 반투명 배경 (클릭해도 닫히지 않음) */}
             <div
               className="fixed inset-0 bg-black bg-opacity-20 z-40"
-              onClick={() => setIsDateEventsModalOpen(false)}
             />
 
             {/* 일정 카드 */}
@@ -810,8 +809,8 @@ export default function CAL_11() {
                   <button
                     onClick={() => setIsDateEventsModalOpen(false)}
                     onMouseDown={(e) => e.stopPropagation()}
-                    className="w-8 h-8 rounded-full hover:bg-black/5 flex items-center justify-center transition"
-                    style={{ color: "#6B4F3F", cursor: 'pointer' }}
+                    className="p-2 rounded-full hover:bg-black/5 flex items-center justify-center transition"
+                    style={{ color: "#6B4F3F", cursor: 'pointer', fontSize: '20px' }}
                   >
                     ✕
                   </button>
@@ -839,7 +838,6 @@ export default function CAL_11() {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenEditModal(event);
-                              setIsDateEventsModalOpen(false);
                             }}
                             className="w-7 h-7 rounded-md hover:bg-[#90BE6D] hover:text-white flex items-center justify-center transition"
                             style={{ background: "#E9E5DC", color: "#6B4F3F" }}
@@ -848,11 +846,10 @@ export default function CAL_11() {
                             ✏️
                           </button>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
                               if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) {
-                                handleDeleteEvent(event.eventId);
-                                setIsDateEventsModalOpen(false);
+                                await handleDeleteEvent(event.eventId);
                               }
                             }}
                             className="w-7 h-7 rounded-md hover:bg-[#FF6B6B] hover:text-white flex items-center justify-center transition"
