@@ -838,6 +838,7 @@ export default function CAL_11() {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenEditModal(event);
+                              setIsDateEventsModalOpen(false);
                             }}
                             className="w-7 h-7 rounded-md hover:bg-[#90BE6D] hover:text-white flex items-center justify-center transition"
                             style={{ background: "#E9E5DC", color: "#6B4F3F" }}
@@ -987,7 +988,7 @@ export default function CAL_11() {
         {/* 일정 수정 모달 */}
         {isEditModalOpen && editingEvent && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
             onClick={() => setIsEditModalOpen(false)}
           >
             <div
