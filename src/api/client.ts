@@ -168,6 +168,12 @@ axiosInstance.interceptors.response.use(
       // TODO: 권한 없음 페이지로 리다이렉트
     }
 
+    // 404 Not Found - 권한 없음 (백엔드 정책)
+    if (error.response?.status === 404) {
+      console.error("권한이 없거나 존재하지 않는 리소스입니다.");
+      // 에러 메시지를 확장하여 컴포넌트에서 처리할 수 있도록 함
+    }
+
     // 500 Internal Server Error
     if (error.response?.status === 500) {
       console.error("서버 에러가 발생했습니다.");

@@ -61,8 +61,11 @@ export default function CAL_11() {
           scope,
         });
         setEvents(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("일정을 가져오는데 실패했습니다:", error);
+        if (error.response?.status === 404) {
+          console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+        }
         setEvents([]);
       } finally {
         setIsLoading(false);
@@ -155,9 +158,13 @@ export default function CAL_11() {
 
       // 일정 목록 새로고침
       await refreshEvents();
-    } catch (error) {
+    } catch (error: any) {
       console.error("일정 추가 실패:", error);
-      alert("일정 추가에 실패했습니다.");
+      if (error.response?.status === 404) {
+        alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
+      } else {
+        alert("일정 추가에 실패했습니다.");
+      }
     }
   };
 
@@ -233,9 +240,13 @@ export default function CAL_11() {
 
       // 일정 목록 새로고침
       await refreshEvents();
-    } catch (error) {
+    } catch (error: any) {
       console.error("일정 수정 실패:", error);
-      alert("일정 수정에 실패했습니다.");
+      if (error.response?.status === 404) {
+        alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
+      } else {
+        alert("일정 수정에 실패했습니다.");
+      }
     }
   };
 
@@ -256,9 +267,13 @@ export default function CAL_11() {
 
       // 일정 목록 새로고침
       await refreshEvents();
-    } catch (error) {
+    } catch (error: any) {
       console.error("일정 삭제 실패:", error);
-      alert("일정 삭제에 실패했습니다.");
+      if (error.response?.status === 404) {
+        alert("권한이 없습니다. 일정을 삭제할 수 없습니다.");
+      } else {
+        alert("일정 삭제에 실패했습니다.");
+      }
     }
   };
 
@@ -272,8 +287,11 @@ export default function CAL_11() {
         scope,
       });
       setEvents(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("일정을 가져오는데 실패했습니다:", error);
+      if (error.response?.status === 404) {
+        console.warn("권한이 없어 일정을 조회할 수 없습니다.");
+      }
       setEvents([]);
     }
   };
