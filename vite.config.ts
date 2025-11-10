@@ -13,6 +13,23 @@ export default defineConfig({
   server: {
     // 프록시 설정: CORS 문제 해결
     proxy: {
+      // Chat API만 /api 제거
+      '/api/chat': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/api/, ''), // /api/chat -> /chat
+        configure(proxy) {
+          proxy.on('proxyReq', (_req, req) => {
+            console.log('➡️ [ProxyReq] Chat', req.method, req.url);
+          });
+          proxy.on('proxyRes', (res, req) => {
+            console.log('✅ [ProxyRes] Chat', req.method, req.url, res.statusCode);
+          });
+        },
+      },
+      // 나머지 API는 그대로 유지
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
@@ -24,20 +41,6 @@ export default defineConfig({
           });
           proxy.on('proxyRes', (res, req) => {
             console.log('✅ [ProxyRes]', req.method, req.url, res.statusCode);
-          });
-        },
-      },
-      '/chat': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-        ws: true,
-        configure(proxy) {
-          proxy.on('proxyReq', (_req, req) => {
-            console.log('➡️ [ProxyReq] Chat', req.method, req.url);
-          });
-          proxy.on('proxyRes', (res, req) => {
-            console.log('✅ [ProxyRes] Chat', req.method, req.url, res.statusCode);
           });
         },
       },
