@@ -12,8 +12,7 @@ export default function CAL_11() {
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 조회 설정
-  const [viewType, setViewType] = useState<ViewType>('MONTH');
+  // 조회 설정 (월별 고정)
   const [scope, setScope] = useState<Scope>('USER');
 
   // 날짜 클릭 시 일정 목록 표시
@@ -60,7 +59,7 @@ export default function CAL_11() {
 
         const data = await getEvents({
           viewDate,
-          viewType,
+          viewType: 'MONTH',
           scope,
         });
         setEvents(data);
@@ -81,7 +80,7 @@ export default function CAL_11() {
     };
 
     fetchEvents();
-  }, [year, month, viewType, scope, user]);
+  }, [year, month, scope, user]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -306,7 +305,7 @@ export default function CAL_11() {
       const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
       const data = await getEvents({
         viewDate,
-        viewType,
+        viewType: 'MONTH',
         scope,
       });
       setEvents(data);
@@ -390,37 +389,8 @@ export default function CAL_11() {
           <div style={{ width: "120px" }} />
         </div>
 
-        {/* 조회 설정: ViewType & Scope */}
+        {/* 조회 설정: Scope (월별 고정) */}
         <div className="flex items-center justify-center gap-4 mb-6">
-          {/* ViewType 선택 */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
-              단위:
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewType('WEEK')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: viewType === 'WEEK' ? "#90BE6D" : "#E9E5DC",
-                  color: viewType === 'WEEK' ? "white" : "#6B4F3F",
-                }}
-              >
-                주별
-              </button>
-              <button
-                onClick={() => setViewType('MONTH')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: viewType === 'MONTH' ? "#90BE6D" : "#E9E5DC",
-                  color: viewType === 'MONTH' ? "white" : "#6B4F3F",
-                }}
-              >
-                월별
-              </button>
-            </div>
-          </div>
-
           {/* Scope 선택 */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
