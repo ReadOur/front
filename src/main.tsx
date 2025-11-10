@@ -23,6 +23,7 @@ import REG_03 from "@/pages/REG_03";
 import FID_18 from "@/pages/FID_18";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const router = createBrowserRouter([
   // 로그인/회원가입/찾기 페이지 (헤더 없음)
@@ -37,16 +38,16 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <BRD_List /> },
       { path: "boards", element: <BRD_List /> },
-      { path: "boards/write", element: <BRD_06 />},
-      { path: "boards/:postId/edit", element: <BRD_06 />},
+      { path: "boards/write", element: <ProtectedRoute><BRD_06 /></ProtectedRoute>},
+      { path: "boards/:postId/edit", element: <ProtectedRoute><BRD_06 /></ProtectedRoute>},
       { path: "boards/:postId", element: <PostShow /> },
-      { path: "calendar", element: <CAL_11 /> },
-      { path: "mypage", element: <PRF_10 /> },
-      { path: "settings", element: <SET_13 /> },
-      { path: "library", element: <MYB_14 /> },
-      { path: "library/search", element: <LibrarySearch /> },
+      { path: "calendar", element: <ProtectedRoute><CAL_11 /></ProtectedRoute> },
+      { path: "mypage", element: <ProtectedRoute><PRF_10 /></ProtectedRoute> },
+      { path: "settings", element: <ProtectedRoute><SET_13 /></ProtectedRoute> },
+      { path: "library", element: <ProtectedRoute><MYB_14 /></ProtectedRoute> },
+      { path: "library/search", element: <ProtectedRoute><LibrarySearch /></ProtectedRoute> },
       { path: "books/:bookId", element: <BOD_15 /> },
-      { path: "chat", element: <CHT_17 /> },
+      { path: "chat", element: <ProtectedRoute><CHT_17 /></ProtectedRoute> },
     ],
   },
 ]);

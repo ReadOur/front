@@ -1,10 +1,11 @@
 import { FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 
 export default function LOG_02() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,8 +23,9 @@ export default function LOG_02() {
       email: `${username}@example.com`,
     });
 
-    // 로그인 후 메인 페이지로 이동
-    navigate('/boards');
+    // 로그인 후 원래 가려던 페이지로 이동 (없으면 게시판으로)
+    const from = (location.state as any)?.from?.pathname || '/boards';
+    navigate(from, { replace: true });
   };
 
   return (
