@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
-import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin } from "lucide-react";
+import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useNavigate } from "react-router-dom";
 import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
+import { createEvent, CreateEventData } from "@/api/calendar";
 import "./ChatDock.css";
 
 /**
@@ -224,10 +225,82 @@ function ChatWindow({
   height?: number;
 }) {
   const [text, setText] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const [newEvent, setNewEvent] = useState<CreateEventData>({
+    title: "",
+    description: "",
+    location: "",
+    startsAt: "",
+    endsAt: "",
+    allDay: false,
+  });
+
   const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight });
   }, [messages]);
+
+  // 메뉴 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const handleOpenEventModal = () => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}T09:00`;
+
+    setNewEvent({
+      title: "",
+      description: "",
+      location: "",
+      startsAt: todayStr,
+      endsAt: todayStr,
+      allDay: false,
+    });
+    setIsEventModalOpen(true);
+    setIsMenuOpen(false);
+  };
+
+  const handleAddEvent = async () => {
+    if (!newEvent.title || !newEvent.startsAt || !newEvent.endsAt) {
+      alert("제목, 시작 시간, 종료 시간은 필수입니다.");
+      return;
+    }
+
+    try {
+      const eventData = {
+        ...newEvent,
+        startsAt: newEvent.startsAt.length === 16 ? `${newEvent.startsAt}:00` : newEvent.startsAt,
+        endsAt: newEvent.endsAt.length === 16 ? `${newEvent.endsAt}:00` : newEvent.endsAt,
+      };
+
+      await createEvent(eventData);
+      alert("일정이 추가되었습니다.");
+      setIsEventModalOpen(false);
+    } catch (error: any) {
+      console.error("일정 추가 실패:", error);
+      if (error.response?.status === 404) {
+        alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
+      } else {
+        alert("일정 추가에 실패했습니다.");
+      }
+    }
+  };
 
   const title = thread.users.map((u) => u.name).join(", ");
 
@@ -250,6 +323,51 @@ function ChatWindow({
           <div className="text-[10px] text-[color:var(--chatdock-fg-muted)] truncate">
             {typingUserIds.length > 0 ? "입력 중…" : "대화 중"}
           </div>
+        </div>
+        {/* 메뉴 버튼 */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)]"
+            title="메뉴"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {/* 메뉴 드롭다운 */}
+          {isMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+              <button
+                onClick={handleOpenEventModal}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+              >
+                <Calendar className="w-4 h-4" />
+                일정 추가
+              </button>
+              <button
+                onClick={() => {
+                  alert("AI 기능창은 추후 구현 예정입니다.");
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+              >
+                <MessageCircle className="w-4 h-4" />
+                AI 기능창 열기
+              </button>
+              <button
+                onClick={() => {
+                  alert("공지 목록 조회는 추후 구현 예정입니다.");
+                  setIsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+              >
+                <Bell className="w-4 h-4" />
+                공지 목록 조회
+              </button>
+            </div>
+          )}
         </div>
         <button onClick={onMinimize} className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)]" title="최소화">
           <Minus className="w-4 h-4" />
@@ -349,6 +467,124 @@ function ChatWindow({
             style={{ touchAction: 'none' }}
           />
         </>
+      )}
+
+      {/* 일정 추가 모달 */}
+      {isEventModalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+          onClick={() => setIsEventModalOpen(false)}
+        >
+          <div
+            className="bg-[color:var(--chatdock-bg-elev-1)] p-6 rounded-[var(--radius-lg)] shadow-lg max-w-md w-full mx-4 border border-[color:var(--chatdock-border-subtle)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold mb-4 text-[color:var(--chatdock-fg-primary)]">
+              새 일정 추가
+            </h3>
+
+            <div className="space-y-3">
+              {/* 제목 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-[color:var(--chatdock-fg-primary)]">
+                  제목 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  placeholder="일정 제목을 입력하세요"
+                />
+              </div>
+
+              {/* 설명 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-[color:var(--chatdock-fg-primary)]">
+                  설명
+                </label>
+                <textarea
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] resize-none focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  placeholder="일정 설명을 입력하세요"
+                  rows={3}
+                />
+              </div>
+
+              {/* 장소 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-[color:var(--chatdock-fg-primary)]">
+                  장소
+                </label>
+                <input
+                  type="text"
+                  value={newEvent.location}
+                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  placeholder="예: 집 앞 카페"
+                />
+              </div>
+
+              {/* 종일 일정 */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newEvent.allDay}
+                  onChange={(e) => setNewEvent({ ...newEvent, allDay: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm font-semibold text-[color:var(--chatdock-fg-primary)]">
+                  종일 일정
+                </label>
+              </div>
+
+              {/* 시작 시간 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-[color:var(--chatdock-fg-primary)]">
+                  시작 시간 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={newEvent.startsAt}
+                  onChange={(e) => setNewEvent({ ...newEvent, startsAt: e.target.value })}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  disabled={newEvent.allDay}
+                />
+              </div>
+
+              {/* 종료 시간 */}
+              <div>
+                <label className="block text-sm font-semibold mb-1 text-[color:var(--chatdock-fg-primary)]">
+                  종료 시간 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={newEvent.endsAt}
+                  onChange={(e) => setNewEvent({ ...newEvent, endsAt: e.target.value })}
+                  className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  disabled={newEvent.allDay}
+                />
+              </div>
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setIsEventModalOpen(false)}
+                className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-hover)] hover:opacity-80 transition font-semibold text-[color:var(--chatdock-fg-primary)]"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleAddEvent}
+                className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] hover:opacity-80 transition font-semibold"
+              >
+                추가
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
