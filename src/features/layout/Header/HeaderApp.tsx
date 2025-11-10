@@ -35,7 +35,7 @@ export default function HeaderApp({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50" style={{ backgroundColor: '#F5EFE9', opacity: 1 }}>
+    <header className="fixed top-0 left-0 right-0 w-full border-b border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] z-50 backdrop-blur-sm" style={{ backgroundColor: '#F5EFE9' }}>
       {/* 가운데 정렬 컨테이너 */}
       <div className="mx-auto px-4 h-16 sm:h-20 md:h-28 lg:h-32" style={{ maxWidth: "var(--layout-max)" }}>
         {/* Desktop: 3열 그리드 / Mobile: 2열 그리드 */}
