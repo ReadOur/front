@@ -736,26 +736,33 @@ export default function CAL_11() {
           </div>
         )}
 
-        {/* 날짜별 일정 목록 모달 (오른쪽 사이드) */}
+        {/* 날짜별 일정 목록 (작은 팝오버) */}
         {isDateEventsModalOpen && selectedDate && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-30 z-50 flex justify-end"
-            onClick={() => setIsDateEventsModalOpen(false)}
-          >
+          <>
+            {/* 반투명 배경 */}
             <div
-              className="w-full max-w-md h-full overflow-y-auto shadow-2xl"
-              style={{ background: "#FFF9F2" }}
+              className="fixed inset-0 bg-black bg-opacity-20 z-40"
+              onClick={() => setIsDateEventsModalOpen(false)}
+            />
+
+            {/* 일정 카드 */}
+            <div
+              className="fixed right-8 top-1/2 -translate-y-1/2 w-96 max-h-[600px] overflow-y-auto rounded-xl shadow-2xl border-2 z-50"
+              style={{
+                background: "#FFF9F2",
+                borderColor: "#6B4F3F"
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-6">
+              <div className="p-5">
                 {/* 헤더 */}
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold" style={{ color: "#6B4F3F" }}>
-                    {selectedDate} 일정
+                <div className="flex items-center justify-between mb-4 pb-3 border-b-2" style={{ borderColor: "#E9E5DC" }}>
+                  <h3 className="text-xl font-bold" style={{ color: "#6B4F3F" }}>
+                    {selectedDate}
                   </h3>
                   <button
                     onClick={() => setIsDateEventsModalOpen(false)}
-                    className="text-2xl hover:opacity-70 transition"
+                    className="w-8 h-8 rounded-full hover:bg-black/5 flex items-center justify-center transition"
                     style={{ color: "#6B4F3F" }}
                   >
                     ✕
@@ -763,9 +770,9 @@ export default function CAL_11() {
                 </div>
 
                 {/* 일정 목록 */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {getEventsForDate(selectedDate).length === 0 ? (
-                    <p className="text-center py-8" style={{ color: "#6B4F3F" }}>
+                    <p className="text-center py-6 text-sm" style={{ color: "#888" }}>
                       이 날짜에 일정이 없습니다.
                     </p>
                   ) : (
@@ -773,25 +780,25 @@ export default function CAL_11() {
                       <div
                         key={event.eventId}
                         onClick={() => handleEventClick(event)}
-                        className="p-4 rounded-lg border cursor-pointer hover:opacity-80 transition"
+                        className="p-3 rounded-lg border cursor-pointer hover:shadow-md transition"
                         style={{
                           background: "white",
                           borderColor: "#E9E5DC",
                         }}
                       >
-                        <h4 className="text-lg font-bold mb-2" style={{ color: "#6B4F3F" }}>
+                        <h4 className="font-bold mb-1" style={{ color: "#6B4F3F", fontSize: "15px" }}>
                           {event.title}
                         </h4>
 
                         {event.description && (
-                          <p className="text-sm mb-2" style={{ color: "#888" }}>
+                          <p className="text-xs mb-2 line-clamp-2" style={{ color: "#888" }}>
                             {event.description}
                           </p>
                         )}
 
-                        <div className="text-sm space-y-1 mt-2" style={{ color: "#999" }}>
-                          <div>시작: {event.startsAt.replace('T', ' ')}</div>
-                          <div>종료: {event.endsAt.replace('T', ' ')}</div>
+                        <div className="text-xs space-y-0.5" style={{ color: "#999" }}>
+                          <div>🕐 {event.startsAt.replace('T', ' ')}</div>
+                          <div>🕐 {event.endsAt.replace('T', ' ')}</div>
                         </div>
                       </div>
                     ))
@@ -799,7 +806,7 @@ export default function CAL_11() {
                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* 일정 상세 모달 */}
