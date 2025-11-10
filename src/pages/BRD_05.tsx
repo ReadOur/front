@@ -380,7 +380,7 @@ export default function PostShow() {
           <button
             type="button"
             onClick={() => setIsSpoilerRevealed(true)}
-            className="absolute inset-x-0 top-[10px] bottom-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-[color:var(--color-bg-elev-2)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)] backdrop-blur"
+            className="absolute inset-x-0 top-[60px] bottom-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-[color:var(--color-bg-elev-2)]/95 text-center text-base font-semibold text-[color:var(--color-fg-primary)] backdrop-blur"
             aria-label="스포일러 가림막 해제"
           >
             <span className="text-lg">스포일러 방지</span>
@@ -555,7 +555,7 @@ export default function PostShow() {
             <button
               type="button"
               onClick={() => setIsSpoilerRevealed(true)}
-              className="absolute inset-x-0 top-[10px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
+              className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
               aria-label="스포일러 가림막 해제"
             >
               스포일러 방지. 클릭하면 해제합니다.
