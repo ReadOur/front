@@ -6,7 +6,7 @@
 export { apiClient, axiosInstance } from "./client";
 
 // 엔드포인트
-export { ENDPOINTS, POST_ENDPOINTS, COMMENT_ENDPOINTS, CHAT_ENDPOINTS } from "./endpoints";
+export { ENDPOINTS, POST_ENDPOINTS, COMMENT_ENDPOINTS, CHAT_ENDPOINTS, CALENDAR_ENDPOINTS } from "./endpoints";
 
 // 쿼리 빌더
 export {

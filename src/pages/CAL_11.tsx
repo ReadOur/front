@@ -1,21 +1,44 @@
 // CAL_11.tsx - 캘린더 페이지
-import React, { useState, useMemo } from "react";
-
-// 목업 일정 데이터 (날짜별 일정 개수)
-const mockEvents: Record<string, number> = {
-  "2025-11-05": 2, // 오늘
-  "2025-11-10": 1,
-  "2025-11-15": 3,
-  "2025-11-20": 2,
-  "2025-11-25": 1,
-};
+import React, { useState, useMemo, useEffect } from "react";
+import { getEvents, createEvent, CalendarEvent, CreateEventData } from "@/api/calendar";
 
 export default function CAL_11() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 새 일정 입력 폼 상태
+  const [newEvent, setNewEvent] = useState<CreateEventData>({
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    category: "",
+  });
 
   // 현재 연도, 월
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
+
+  // 일정 데이터 가져오기
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getEvents({ year, month: month + 1 });
+        setEvents(data);
+      } catch (error) {
+        console.error("일정을 가져오는데 실패했습니다:", error);
+        setEvents([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [year, month]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -37,10 +60,14 @@ export default function CAL_11() {
     );
   };
 
-  // 특정 날짜에 일정이 있는지 확인
+  // 특정 날짜에 일정이 있는지 확인 (API 데이터 기반)
   const getEventCount = (day: number): number => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return mockEvents[dateStr] || 0;
+    return events.filter(event => {
+      const eventStart = event.startDate.split('T')[0];
+      const eventEnd = event.endDate.split('T')[0];
+      return dateStr >= eventStart && dateStr <= eventEnd;
+    }).length;
   };
 
   // 이전 달로 이동
@@ -51,6 +78,48 @@ export default function CAL_11() {
   // 다음 달로 이동
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  // 년도/월 선택
+  const handleYearMonthChange = (newYear: number, newMonth: number) => {
+    setCurrentDate(new Date(newYear, newMonth - 1, 1));
+    setIsYearMonthSelectorOpen(false);
+  };
+
+  // 일정 추가 모달 열기
+  const handleOpenAddModal = () => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    setNewEvent({
+      title: "",
+      description: "",
+      startDate: todayStr,
+      endDate: todayStr,
+      category: "",
+    });
+    setIsAddModalOpen(true);
+  };
+
+  // 일정 추가
+  const handleAddEvent = async () => {
+    if (!newEvent.title || !newEvent.startDate || !newEvent.endDate) {
+      alert("제목, 시작일, 종료일은 필수입니다.");
+      return;
+    }
+
+    try {
+      await createEvent(newEvent);
+      alert("일정이 추가되었습니다.");
+      setIsAddModalOpen(false);
+
+      // 일정 목록 새로고침
+      const data = await getEvents({ year, month: month + 1 });
+      setEvents(data);
+    } catch (error) {
+      console.error("일정 추가 실패:", error);
+      alert("일정 추가에 실패했습니다.");
+    }
   };
 
   // 달력 날짜 배열 생성
@@ -76,31 +145,47 @@ export default function CAL_11() {
       style={{ background: "#FFF9F2" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        {/* 월 네비게이션 */}
-        <div
-          className="flex items-center justify-center mb-6 py-3 rounded"
-          style={{ background: "#E9E5DC", maxWidth: "271px", margin: "0 auto 24px" }}
-        >
+        {/* 상단 헤더: 일정 추가 버튼 + 월 네비게이션 */}
+        <div className="flex items-center justify-between mb-6">
+          {/* 일정 추가 버튼 */}
           <button
-            onClick={handlePrevMonth}
-            className="px-4 text-2xl hover:opacity-70 transition"
-            style={{ color: "black" }}
+            onClick={handleOpenAddModal}
+            className="px-6 py-2 rounded hover:opacity-80 transition font-semibold"
+            style={{ background: "#90BE6D", color: "white" }}
           >
-            ‹
+            + 일정 추가
           </button>
-          <h2
-            className="text-2xl mx-6"
-            style={{ color: "black" }}
+
+          {/* 월 네비게이션 */}
+          <div
+            className="flex items-center py-3 px-4 rounded"
+            style={{ background: "#E9E5DC" }}
           >
-            {month + 1}월
-          </h2>
-          <button
-            onClick={handleNextMonth}
-            className="px-4 text-2xl hover:opacity-70 transition"
-            style={{ color: "black" }}
-          >
-            ›
-          </button>
+            <button
+              onClick={handlePrevMonth}
+              className="px-4 text-2xl hover:opacity-70 transition"
+              style={{ color: "black" }}
+            >
+              ‹
+            </button>
+            <button
+              onClick={() => setIsYearMonthSelectorOpen(true)}
+              className="text-2xl mx-6 hover:opacity-70 transition cursor-pointer"
+              style={{ color: "black" }}
+            >
+              {year}년 {month + 1}월
+            </button>
+            <button
+              onClick={handleNextMonth}
+              className="px-4 text-2xl hover:opacity-70 transition"
+              style={{ color: "black" }}
+            >
+              ›
+            </button>
+          </div>
+
+          {/* 빈 공간 (레이아웃 균형) */}
+          <div style={{ width: "120px" }} />
         </div>
 
         {/* 캘린더 */}
@@ -196,6 +281,188 @@ export default function CAL_11() {
             <span style={{ color: "#6B4F3F" }}>일정 있음</span>
           </div>
         </div>
+
+        {/* 일정 추가 모달 */}
+        {isAddModalOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setIsAddModalOpen(false)}
+          >
+            <div
+              className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#FFF9F2" }}
+            >
+              <h3 className="text-2xl font-bold mb-6" style={{ color: "#6B4F3F" }}>
+                새 일정 추가
+              </h3>
+
+              <div className="space-y-4">
+                {/* 제목 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    제목 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.title}
+                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    placeholder="일정 제목을 입력하세요"
+                  />
+                </div>
+
+                {/* 설명 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    설명
+                  </label>
+                  <textarea
+                    value={newEvent.description}
+                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                    className="w-full px-4 py-2 rounded border resize-none"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    placeholder="일정 설명을 입력하세요"
+                    rows={3}
+                  />
+                </div>
+
+                {/* 시작일 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    시작일 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={newEvent.startDate}
+                    onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                  />
+                </div>
+
+                {/* 종료일 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    종료일 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={newEvent.endDate}
+                    onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                  />
+                </div>
+
+                {/* 카테고리 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    카테고리
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.category}
+                    onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    placeholder="예: 독서, 모임, 행사 등"
+                  />
+                </div>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleAddEvent}
+                  className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#90BE6D", color: "white" }}
+                >
+                  추가
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 년도/월 선택 모달 */}
+        {isYearMonthSelectorOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setIsYearMonthSelectorOpen(false)}
+          >
+            <div
+              className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#FFF9F2" }}
+            >
+              <h3 className="text-2xl font-bold mb-6" style={{ color: "#6B4F3F" }}>
+                년도/월 선택
+              </h3>
+
+              <div className="space-y-4">
+                {/* 년도 선택 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    년도
+                  </label>
+                  <select
+                    value={year}
+                    onChange={(e) => handleYearMonthChange(Number(e.target.value), month + 1)}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                  >
+                    {Array.from({ length: 10 }, (_, i) => year - 5 + i).map((y) => (
+                      <option key={y} value={y}>
+                        {y}년
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 월 선택 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    월
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => handleYearMonthChange(year, m)}
+                        className="px-4 py-3 rounded hover:opacity-80 transition font-semibold"
+                        style={{
+                          background: m === month + 1 ? "#90BE6D" : "#E9E5DC",
+                          color: m === month + 1 ? "white" : "#6B4F3F",
+                        }}
+                      >
+                        {m}월
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setIsYearMonthSelectorOpen(false)}
+                  className="w-full px-6 py-3 rounded hover:opacity-80 transition font-semibold"
+                  style={{ background: "#E9E5DC", color: "#6B4F3F" }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
