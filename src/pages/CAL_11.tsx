@@ -192,6 +192,9 @@ export default function CAL_11() {
   // 날짜 클릭 핸들러 (일정 목록 모달 열기)
   const handleDateClick = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    console.log('📅 날짜 클릭:', dateStr);
+    console.log('📋 해당 날짜 일정:', getEventsForDate(dateStr));
+    console.log('📊 전체 일정:', events);
     setSelectedDate(dateStr);
     setIsDateEventsModalOpen(true);
   };
@@ -498,7 +501,7 @@ export default function CAL_11() {
 
                   {/* 일정 표시 점들 */}
                   {eventCount > 0 && (
-                    <div className="absolute bottom-2 flex gap-1">
+                    <div className="absolute bottom-[25px] flex gap-1">
                       {Array.from({ length: Math.min(eventCount, 3) }).map((_, i) => (
                         <div
                           key={i}
