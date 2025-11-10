@@ -46,9 +46,10 @@ export interface GetEventsParams {
 export interface CreateEventData {
   title: string;
   description?: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
-  category?: string;
+  location?: string;
+  startsAt: string;  // ISO 8601 format (YYYY-MM-DDTHH:mm:ss)
+  endsAt: string;    // ISO 8601 format (YYYY-MM-DDTHH:mm:ss)
+  allDay: boolean;
 }
 
 /**

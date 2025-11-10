@@ -17,9 +17,10 @@ export default function CAL_11() {
   const [newEvent, setNewEvent] = useState<CreateEventData>({
     title: "",
     description: "",
-    startDate: "",
-    endDate: "",
-    category: "",
+    location: "",
+    startsAt: "",
+    endsAt: "",
+    allDay: false,
   });
 
   // 현재 연도, 월
@@ -100,27 +101,35 @@ export default function CAL_11() {
   // 일정 추가 모달 열기
   const handleOpenAddModal = () => {
     const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}T09:00:00`;
 
     setNewEvent({
       title: "",
       description: "",
-      startDate: todayStr,
-      endDate: todayStr,
-      category: "",
+      location: "",
+      startsAt: todayStr,
+      endsAt: todayStr,
+      allDay: false,
     });
     setIsAddModalOpen(true);
   };
 
   // 일정 추가
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.startDate || !newEvent.endDate) {
-      alert("제목, 시작일, 종료일은 필수입니다.");
+    if (!newEvent.title || !newEvent.startsAt || !newEvent.endsAt) {
+      alert("제목, 시작 시간, 종료 시간은 필수입니다.");
       return;
     }
 
     try {
-      await createEvent(newEvent);
+      // datetime-local 값에 초 추가 (백엔드 요구사항)
+      const eventData = {
+        ...newEvent,
+        startsAt: newEvent.startsAt.length === 16 ? `${newEvent.startsAt}:00` : newEvent.startsAt,
+        endsAt: newEvent.endsAt.length === 16 ? `${newEvent.endsAt}:00` : newEvent.endsAt,
+      };
+
+      await createEvent(eventData);
       alert("일정이 추가되었습니다.");
       setIsAddModalOpen(false);
 
@@ -425,46 +434,61 @@ export default function CAL_11() {
                   />
                 </div>
 
-                {/* 시작일 */}
+                {/* 장소 */}
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
-                    시작일 <span style={{ color: "#FF6B6B" }}>*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={newEvent.startDate}
-                    onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
-                    className="w-full px-4 py-2 rounded border"
-                    style={{ background: "white", borderColor: "#E9E5DC" }}
-                  />
-                </div>
-
-                {/* 종료일 */}
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
-                    종료일 <span style={{ color: "#FF6B6B" }}>*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={newEvent.endDate}
-                    onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
-                    className="w-full px-4 py-2 rounded border"
-                    style={{ background: "white", borderColor: "#E9E5DC" }}
-                  />
-                </div>
-
-                {/* 카테고리 */}
-                <div>
-                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
-                    카테고리
+                    장소
                   </label>
                   <input
                     type="text"
-                    value={newEvent.category}
-                    onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })}
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
                     className="w-full px-4 py-2 rounded border"
                     style={{ background: "white", borderColor: "#E9E5DC" }}
-                    placeholder="예: 독서, 모임, 행사 등"
+                    placeholder="예: 집 앞 카페"
+                  />
+                </div>
+
+                {/* 종일 일정 */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newEvent.allDay}
+                    onChange={(e) => setNewEvent({ ...newEvent, allDay: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <label className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
+                    종일 일정
+                  </label>
+                </div>
+
+                {/* 시작 시간 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    시작 시간 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={newEvent.startsAt}
+                    onChange={(e) => setNewEvent({ ...newEvent, startsAt: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    disabled={newEvent.allDay}
+                  />
+                </div>
+
+                {/* 종료 시간 */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                    종료 시간 <span style={{ color: "#FF6B6B" }}>*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={newEvent.endsAt}
+                    onChange={(e) => setNewEvent({ ...newEvent, endsAt: e.target.value })}
+                    className="w-full px-4 py-2 rounded border"
+                    style={{ background: "white", borderColor: "#E9E5DC" }}
+                    disabled={newEvent.allDay}
                   />
                 </div>
               </div>
