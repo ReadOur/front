@@ -15,6 +15,7 @@ import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
 import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
+import { isLoggedIn } from "@/utils/auth";
 
 import { useQueryClient } from "@tanstack/react-query";
 /**
@@ -50,7 +51,6 @@ export default function PostShow() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
-  const { isAuthenticated } = useAuth();
 
   // 댓글 입력 필드의 상태 관리
   const [commentText, setCommentText] = useState("");
@@ -147,6 +147,13 @@ export default function PostShow() {
    * - 성공 시 React Query가 자동으로 데이터를 갱신하여 UI 업데이트
    */
   function handleLike() {
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
     if (!postId || !post) return;
     likeMutation.mutate({
       postId,
@@ -160,8 +167,8 @@ export default function PostShow() {
    * - 성공 시 댓글 목록이 자동 갱신되고 입력 필드가 초기화됨
    */
   function handleCommentSubmit() {
-    // 로그인 체크
-    if (!isAuthenticated) {
+    // 로그인 체크 (userId가 -1(게스트)이면 경고)
+    if (!isLoggedIn()) {
       toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
       navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
       return;
@@ -185,7 +192,14 @@ export default function PostShow() {
    * - 댓글 수정 모드로 전환하고 현재 내용을 편집 필드에 설정
    */
   function handleCommentEdit(commentId: number, content: string) {
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     setEditingCommentId(commentId);
     setEditingCommentText(content);
   }
@@ -220,7 +234,15 @@ export default function PostShow() {
    */
   function handleCommentDelete(commentId: string) {
     if (!postId) return;
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     setDeletingCommentId(commentId);
     setDeleteCommentModalOpen(true);
   }
@@ -241,9 +263,17 @@ export default function PostShow() {
    */
   function handleEdit() {
     if (!postId) return;
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     // if (post.authorId !== currentUser.id) {
-    //   alert("작성자만 수정할 수 있습니다.");
+    //   toast.show({ title: "작성자만 수정할 수 있습니다.", variant: "warning" });
     //   return;
     // }
     navigate(`/boards/${postId}/edit`);
@@ -255,7 +285,15 @@ export default function PostShow() {
    */
   function handleDelete() {
     if (!postId) return;
-    // TODO: 로그인 기능 구현 후 작성자 권한 체크
+
+    // 로그인 체크
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    // TODO: 작성자 권한 체크
     // if (post.authorId !== currentUser.id) {
     //   toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
     //   return;
@@ -538,46 +576,34 @@ export default function PostShow() {
         {/* 댓글 입력 폼 */}
         {/* - 텍스트 입력 필드 + 등록 버튼 */}
         {/* - Enter 키로도 제출 가능 (Shift+Enter는 제외) */}
-        {isAuthenticated ? (
-          <div className="grid grid-cols-[1fr_auto] gap-2 mt-3 py-6">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
-                // Enter 키 눌렀을 때 댓글 제출 (Shift+Enter는 제외)
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleCommentSubmit();
-                }
-              }}
-              placeholder="댓글을 입력하세요"
-              aria-label="댓글 입력"
-              disabled={createCommentMutation.isPending}  // 제출 중에는 비활성화
-              className="px-4 py-[8px] rounded-lg border
-               border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]
-                text-[color:var(--color-fg-primary)] outline-none focus:ring-2
-                 focus:ring-[color:var(--color-accent)] disabled:opacity-50"
-            />
-            <button
-              onClick={handleCommentSubmit}
-              disabled={createCommentMutation.isPending || !commentText.trim()}  // 제출 중이거나 빈 텍스트면 비활성화
-              className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {createCommentMutation.isPending ? "등록 중..." : "등록"}
-            </button>
-          </div>
-        ) : (
-          <div className="mt-3 py-6 px-4 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg text-center">
-            <p className="text-[color:var(--color-fg-muted)] mb-3">댓글을 작성하려면 로그인이 필요합니다.</p>
-            <button
-              onClick={() => navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } })}
-              className="px-6 py-2 rounded-lg bg-[color:var(--color-accent)] text-white font-semibold hover:opacity-90 transition-opacity"
-            >
-              로그인
-            </button>
-          </div>
-        )}
+        <div className="grid grid-cols-[1fr_auto] gap-2 mt-3 py-6">
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter 키 눌렀을 때 댓글 제출 (Shift+Enter는 제외)
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleCommentSubmit();
+              }
+            }}
+            placeholder="댓글을 입력하세요"
+            aria-label="댓글 입력"
+            disabled={createCommentMutation.isPending}  // 제출 중에는 비활성화
+            className="px-4 py-[8px] rounded-lg border
+             border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)]
+              text-[color:var(--color-fg-primary)] outline-none focus:ring-2
+               focus:ring-[color:var(--color-accent)] disabled:opacity-50"
+          />
+          <button
+            onClick={handleCommentSubmit}
+            disabled={createCommentMutation.isPending || !commentText.trim()}  // 제출 중이거나 빈 텍스트면 비활성화
+            className="px-4 py-2 rounded-lg border border-[color:var(--color-border-subtle)] bg-[color:var(--color-accent)] font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {createCommentMutation.isPending ? "등록 중..." : "등록"}
+          </button>
+        </div>
 
         {/* 댓글 목록 렌더링 */}
         {/* 게시글 데이터에 포함된 comments 배열을 표시 */}
