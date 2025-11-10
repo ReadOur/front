@@ -80,7 +80,13 @@ export default function LOG_02() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
       <div className="flex w-full max-w-xl flex-col items-center gap-10 rounded-3xl bg-white p-12 shadow-lg">
-        <img src={logo} alt="ReadOur 로고" className="h-28 w-28" loading="lazy" />
+        <button
+          onClick={() => navigate('/login')}
+          className="hover:opacity-80 transition-opacity"
+          aria-label="로그인 페이지로 이동"
+        >
+          <img src={logo} alt="ReadOur 로고" className="h-12 w-auto" loading="lazy" />
+        </button>
 
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
           <div className="flex flex-col gap-2">
