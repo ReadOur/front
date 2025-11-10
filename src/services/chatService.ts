@@ -32,14 +32,18 @@ import {
  * 채팅방 Overview 조회 (myRooms + publicRooms)
  */
 export async function getRoomsOverview(params: GetRoomsOverviewParams): Promise<RoomsOverviewResponse> {
-  return apiClient.get<RoomsOverviewResponse>(CHAT_ENDPOINTS.ROOMS_OVERVIEW, { params });
+  // userId는 queryKey용이므로 API 요청에서 제외
+  const { userId, ...restParams } = params;
+  return apiClient.get<RoomsOverviewResponse>(CHAT_ENDPOINTS.ROOMS_OVERVIEW, { params: restParams });
 }
 
 /**
  * 내 채팅방 목록 조회
  */
 export async function getMyRooms(params: GetMyRoomsParams): Promise<MyRoomsResponse> {
-  return apiClient.get<MyRoomsResponse>(CHAT_ENDPOINTS.MY_ROOMS, { params });
+  // userId는 queryKey용이므로 API 요청에서 제외
+  const { userId, ...restParams } = params;
+  return apiClient.get<MyRoomsResponse>(CHAT_ENDPOINTS.MY_ROOMS, { params: restParams });
 }
 
 /**
