@@ -18,13 +18,22 @@ import MYB_14 from "@/pages/MYB_14";
 import LibrarySearch from "@/pages/LibrarySearch";
 import BOD_15 from "@/pages/BOD_15";
 import CHT_17 from "@/pages/CHT_17";
+import LOG_02 from "@/pages/LOG_02";
+import REG_03 from "@/pages/REG_03";
+import FID_18 from "@/pages/FID_18";
 import { queryClient } from "@/lib/queryClient";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const router = createBrowserRouter([
+  // 로그인/회원가입/찾기 페이지 (헤더 없음)
+  { path: "/login", element: <LOG_02 /> },
+  { path: "/register", element: <REG_03 /> },
+  { path: "/find", element: <FID_18 /> },
+
+  // 메인 앱 레이아웃 (헤더 있음)
   {
     path: "/",
-    element: <App />, // 전역 레이아웃
-
+    element: <App />,
     children: [
       { index: true, element: <BRD_List /> },
       { path: "boards", element: <BRD_List /> },
@@ -45,11 +54,13 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <ChatProvider>
-          <RouterProvider router={router} />
-        </ChatProvider>
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <ChatProvider>
+            <RouterProvider router={router} />
+          </ChatProvider>
+        </ToastProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );

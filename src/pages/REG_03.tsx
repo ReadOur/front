@@ -1,4 +1,5 @@
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 
 import { signup } from '@/services/authService';
@@ -20,6 +21,7 @@ const defaultFormState: RegisterFormState = {
 };
 
 export default function REG_03() {
+  const navigate = useNavigate();
   const [formState, setFormState] = useState<RegisterFormState>(defaultFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -197,6 +199,17 @@ export default function REG_03() {
           >
             {isSubmitting ? '가입 중...' : '회원가입하기'}
           </button>
+
+          <div className="mt-4 text-center text-sm text-slate-700">
+            이미 계정이 있으신가요?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="text-blue-600 transition-colors hover:text-blue-700 hover:underline font-medium"
+            >
+              로그인
+            </button>
+          </div>
         </form>
       </div>
     </div>

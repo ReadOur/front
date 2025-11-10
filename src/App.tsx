@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderApp from "@/features/layout/Header/HeaderApp";
 import ChatDock from "@/features/message/ChatDock";
+import { useAuth } from "@/contexts/AuthContext";
 // import { useUnreadCount } from "@/hooks/api/useChat"; // TODO: 백엔드 API 준비되면 활성화
 import "@/style/tokens.css"
 import "@/style/globals.css"
@@ -9,6 +10,7 @@ import "@/style/globals.css"
 export default function App() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user, logout } = useAuth();
 
   // 채팅 읽지 않은 메시지 수 조회
   // const { data: chatUnreadData } = useUnreadCount(); // TODO: 백엔드 API 준비되면 활성화
@@ -56,6 +58,11 @@ export default function App() {
 
   console.log("[App] rendered:", window.location.pathname);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)]">
       <HeaderApp
@@ -67,12 +74,10 @@ export default function App() {
           console.log("알림 버튼 클릭");
         }}
         onClickChat={() => navigate("/chat")}
-        user={{
-          name: "user",
-        }}
-        onLogin={() => {
-          console.log("로그인");
-        }}
+        user={user}
+        onLogin={() => navigate("/login")}
+        onLogout={handleLogout}
+        onProfile={() => navigate("/mypage")}
       />
 
       <main className="mx-auto px-4 py-8 mt-[140px] md:mt-[128px]" style={{ maxWidth: "var(--layout-max)" }}>

@@ -1,7 +1,11 @@
 import { FormEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/assets/logo.png';
 
 export default function LOG_02() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -10,6 +14,16 @@ export default function LOG_02() {
     event.preventDefault();
     // TODO: 백엔드 인증 로직 연동 시 이 부분을 API 호출로 대체하세요.
     console.log('로그인 시도', { username, password, rememberMe });
+
+    // 임시로 로그인 처리 (실제로는 백엔드 API 응답을 받아야 함)
+    login({
+      id: 1,
+      name: username || 'user',
+      email: `${username}@example.com`,
+    });
+
+    // 로그인 후 메인 페이지로 이동
+    navigate('/boards');
   };
 
   return (
@@ -68,12 +82,20 @@ export default function LOG_02() {
             </label>
 
             <nav className="flex gap-4">
-              <a href="#find-id-pw" className="transition-colors hover:text-blue-600 hover:underline">
+              <button
+                type="button"
+                onClick={() => navigate('/find')}
+                className="transition-colors hover:text-blue-600 hover:underline"
+              >
                 ID/PW 찾기
-              </a>
-              <a href="#register" className="transition-colors hover:text-blue-600 hover:underline">
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="transition-colors hover:text-blue-600 hover:underline"
+              >
                 회원가입
-              </a>
+              </button>
             </nav>
           </div>
         </form>

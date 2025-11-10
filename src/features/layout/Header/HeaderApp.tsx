@@ -2,6 +2,7 @@
 import React from "react";
 import logo from "@/assets/logo.png";
 import { MessageCircle } from "lucide-react";
+import UserDropdown from "./UserDropdown";
 
 type NavItem = { key: string; label: string; active?: boolean; onClick: () => void };
 type User = { name: string; } | null;
@@ -14,6 +15,8 @@ interface HeaderAppProps {
   onClickChat?: () => void;
   user: User;
   onLogin?: () => void;
+  onLogout?: () => void;
+  onProfile?: () => void;
   onLogoClick: () => void;
 }
 
@@ -25,6 +28,8 @@ export default function HeaderApp({
                                     onClickChat,
                                     user,
                                     onLogin,
+                                    onLogout,
+                                    onProfile,
                                     onLogoClick,
                                   }: HeaderAppProps) {
   return (
@@ -106,9 +111,11 @@ export default function HeaderApp({
             </button>
 
             {user ? (
-              <span className="font-medium text-[color:var(--color-fg-primary)] pointer-events-auto" style={{ fontSize: '1.25rem' }}>
-                {user.name}
-              </span>
+              <UserDropdown
+                userName={user.name}
+                onLogout={onLogout || (() => console.log("로그아웃"))}
+                onProfile={onProfile || (() => console.log("프로필"))}
+              />
             ) : (
               <button
                 onClick={onLogin}
