@@ -96,3 +96,37 @@ export interface UpdateProfileRequest {
   bio?: string;
   avatarUrl?: string;
 }
+
+// ===== 계정 관리 =====
+
+/**
+ * 아이디(이메일) 찾기 요청
+ */
+export interface FindIdRequest {
+  nickname: string;
+  birthDate: string; // YYYY-MM-DD 형식
+}
+
+/**
+ * 아이디(이메일) 찾기 응답
+ */
+export interface FindIdResponse {
+  email: string;
+}
+
+/**
+ * 비밀번호 재설정(임시 비밀번호 발급) 요청
+ */
+export interface ResetPasswordRequest {
+  email: string;
+  nickname: string;
+  birthDate: string; // YYYY-MM-DD 형식
+}
+
+/**
+ * 비밀번호 변경 요청
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
