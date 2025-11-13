@@ -22,7 +22,7 @@ export default function App() {
       key: "board",
       label: "게시판",
       onClick: () => navigate("/boards"),
-      active: pathname === "/" || pathname.startsWith("/boards"),
+      active: pathname.startsWith("/boards"),
     },
     {
       key: "calendar",
@@ -66,7 +66,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[color:var(--color-bg)] text-[color:var(--color-fg-primary)]">
       <HeaderApp
-        onLogoClick={() => navigate("/boards")}
+        onLogoClick={() => navigate("/")}
         navItems={navItems}
         unreadCount={0}
         chatUnreadCount={chatUnreadCount}
