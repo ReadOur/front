@@ -62,6 +62,30 @@ export default function SET_13() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+  // 로딩 상태
+  const [isLoadingLibraries, setIsLoadingLibraries] = useState(false);
+
+  // 컴포넌트 마운트 시 선호 도서관 목록 가져오기
+  useEffect(() => {
+    const fetchFavoriteLibraries = async () => {
+      setIsLoadingLibraries(true);
+      try {
+        const response = await apiClient.get<string[]>(LIBRARY_ENDPOINTS.FAVORITE_LIBRARIES);
+        setUserData(prevData => ({
+          ...prevData,
+          favoriteLibraries: response || [],
+        }));
+      } catch (error) {
+        console.error("선호 도서관 목록 조회 실패:", error);
+        // 에러 발생 시 목업 데이터 유지
+      } finally {
+        setIsLoadingLibraries(false);
+      }
+    };
+
+    fetchFavoriteLibraries();
+  }, []);
+
   // 닉네임 수정 핸들러
   const handleEditNickname = () => {
     setTempNickname(userData.nickname);
