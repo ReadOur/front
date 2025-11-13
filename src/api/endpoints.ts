@@ -117,6 +117,17 @@ export const LIBRARY_ENDPOINTS = {
   FAVORITE_LIBRARIES: "/users/me/favorite-libraries",
   ADD_FAVORITE_LIBRARY: "/users/me/favorite-libraries",
   REMOVE_FAVORITE_LIBRARY: (libraryName: string) => `/users/me/favorite-libraries/${encodeURIComponent(libraryName)}`,
+  // 도서관 검색
+  SEARCH_LIBRARIES: "/user/libraries/search",
+} as const;
+
+/**
+ * 지역 관련 엔드포인트
+ */
+export const REGION_ENDPOINTS = {
+  PROVINCES: "/regions", // 광역시/도 목록
+  CITIES: (regionId: number) => `/regions/${regionId}/details`, // 시/군/구 목록
+  SEARCH: "/regions/search", // 지역 이름 검색
 } as const;
 
 /**
@@ -131,4 +142,5 @@ export const ENDPOINTS = {
   CHAT: CHAT_ENDPOINTS,
   CALENDAR: CALENDAR_ENDPOINTS,
   LIBRARY: LIBRARY_ENDPOINTS,
+  REGION: REGION_ENDPOINTS,
 } as const;

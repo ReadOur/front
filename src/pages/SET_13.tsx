@@ -4,6 +4,8 @@ import { apiClient } from "@/api/client";
 import { LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import { changePassword } from "@/services/authService";
 import { isAxiosError } from "axios";
+import { LibrarySearchModal } from "@/components/LibrarySearchModal/LibrarySearchModal";
+import type { Library } from "@/types/library";
 
 // TODO: API 연동 시 아래 서비스를 import 하세요
 // import { updateUserNickname, updateUserEmail, updateUserPersonalInfo } from "@/services/userService";
@@ -46,14 +48,13 @@ export default function SET_13() {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
-  const [isAddingLibrary, setIsAddingLibrary] = useState(false);
+  const [isLibrarySearchModalOpen, setIsLibrarySearchModalOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // 임시 값 상태
   const [tempNickname, setTempNickname] = useState(userData.nickname);
   const [tempEmail, setTempEmail] = useState(userData.email);
   const [tempPersonalInfo, setTempPersonalInfo] = useState(userData.personalInfo);
-  const [tempLibraryName, setTempLibraryName] = useState("");
 
   // 비밀번호 변경 상태
   const [currentPassword, setCurrentPassword] = useState("");
@@ -251,41 +252,29 @@ export default function SET_13() {
     // TODO: 모달 열기 또는 인라인 편집
   };
 
-  // 도서관 추가 핸들러
+  // 도서관 검색 모달 열기
   const handleAddLibrary = () => {
-    setTempLibraryName("");
-    setIsAddingLibrary(true);
+    setIsLibrarySearchModalOpen(true);
   };
 
-  const handleSaveLibrary = async () => {
-    if (!tempLibraryName.trim()) {
-      alert("도서관 이름을 입력해주세요.");
-      return;
-    }
-
+  // 도서관 선택 시 (모달에서 선택)
+  const handleSelectLibrary = async (library: Library) => {
     try {
       // API 호출: 관심 도서관 추가
       await apiClient.post(LIBRARY_ENDPOINTS.ADD_FAVORITE_LIBRARY, {
-        libraryName: tempLibraryName.trim(),
+        libraryName: library.libraryName,
       });
 
       // 로컬 상태 업데이트
       setUserData({
         ...userData,
-        favoriteLibraries: [...userData.favoriteLibraries, tempLibraryName.trim()],
+        favoriteLibraries: [...userData.favoriteLibraries, library.libraryName],
       });
-      setIsAddingLibrary(false);
-      setTempLibraryName("");
-      console.log("관심 도서관 추가:", tempLibraryName);
+      console.log("관심 도서관 추가:", library.libraryName);
     } catch (error) {
       console.error("관심 도서관 추가 실패:", error);
       alert("관심 도서관 추가에 실패했습니다. 다시 시도해주세요.");
     }
-  };
-
-  const handleCancelAddLibrary = () => {
-    setTempLibraryName("");
-    setIsAddingLibrary(false);
   };
 
   // 도서관 삭제 핸들러
@@ -681,76 +670,23 @@ export default function SET_13() {
                     >
                       관심 도서관
                     </span>
-                    {!isAddingLibrary ? (
-                      <button
-                        onClick={handleAddLibrary}
-                        className="px-6 py-3 rounded hover:opacity-90 transition ml-auto"
+                    <button
+                      onClick={handleAddLibrary}
+                      className="px-6 py-3 rounded hover:opacity-90 transition ml-auto"
+                      style={{
+                        background: "#6B4F3F",
+                        color: "white",
+                      }}
+                    >
+                      <span
                         style={{
-                          background: "#6B4F3F",
-                          color: "white",
+                          fontSize: "28px",
+                          lineHeight: "36px",
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          추가
-                        </span>
-                      </button>
-                    ) : (
-                      <>
-                        <input
-                          type="text"
-                          value={tempLibraryName}
-                          onChange={(e) => setTempLibraryName(e.target.value)}
-                          placeholder="도서관 이름을 입력하세요"
-                          className="flex-1 px-4 py-2 rounded"
-                          style={{
-                            background: "#FFF9F2",
-                            color: "black",
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                            border: "2px solid #6B4F3F",
-                          }}
-                        />
-                        <button
-                          onClick={handleSaveLibrary}
-                          className="px-6 py-3 rounded hover:opacity-90 transition"
-                          style={{
-                            background: "#6B4F3F",
-                            color: "white",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "28px",
-                              lineHeight: "36px",
-                            }}
-                          >
-                            저장
-                          </span>
-                        </button>
-                        <button
-                          onClick={handleCancelAddLibrary}
-                          className="px-6 py-3 rounded hover:opacity-90 transition"
-                          style={{
-                            background: "#D9D9D9",
-                            color: "black",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "28px",
-                              lineHeight: "36px",
-                            }}
-                          >
-                            취소
-                          </span>
-                        </button>
-                      </>
-                    )}
+                        추가
+                      </span>
+                    </button>
                   </div>
 
                   {/* 도서관 태그들 */}
@@ -1042,6 +978,13 @@ export default function SET_13() {
           </div>
         </div>
       </div>
+
+      {/* 도서관 검색 모달 */}
+      <LibrarySearchModal
+        isOpen={isLibrarySearchModalOpen}
+        onClose={() => setIsLibrarySearchModalOpen(false)}
+        onSelectLibrary={handleSelectLibrary}
+      />
     </div>
   );
 }
