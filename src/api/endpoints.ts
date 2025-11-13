@@ -102,6 +102,25 @@ export const CALENDAR_ENDPOINTS = {
 } as const;
 
 /**
+ * 책 관련 엔드포인트
+ */
+export const BOOK_ENDPOINTS = {
+  // 위시리스트
+  TOGGLE_WISHLIST: (bookId: string) => `/books/${bookId}/wishlist`,
+  WISHLIST: "/books/wishlist", // 위시리스트 목록 조회
+  // 리뷰
+  REVIEWS: (bookId: string) => `/books/${bookId}/reviews`,
+  CREATE_REVIEW: (bookId: string) => `/books/${bookId}/reviews`,
+  UPDATE_REVIEW: (bookId: string, reviewId: string) => `/books/${bookId}/reviews/${reviewId}`,
+  DELETE_REVIEW: (bookId: string, reviewId: string) => `/books/${bookId}/reviews/${reviewId}`,
+  // 하이라이트
+  HIGHLIGHTS: (bookId: string) => `/books/${bookId}/highlights`,
+  CREATE_HIGHLIGHT: (bookId: string) => `/books/${bookId}/highlights`,
+  UPDATE_HIGHLIGHT: (bookId: string, highlightId: string) => `/books/${bookId}/highlights/${highlightId}`,
+  DELETE_HIGHLIGHT: (bookId: string, highlightId: string) => `/books/${bookId}/highlights/${highlightId}`,
+} as const;
+
+/**
  * 내서재 관련 엔드포인트
  */
 export const LIBRARY_ENDPOINTS = {
@@ -126,5 +145,6 @@ export const ENDPOINTS = {
   ATTACHMENT: ATTACHMENT_ENDPOINTS,
   CHAT: CHAT_ENDPOINTS,
   CALENDAR: CALENDAR_ENDPOINTS,
+  BOOK: BOOK_ENDPOINTS,
   LIBRARY: LIBRARY_ENDPOINTS,
 } as const;

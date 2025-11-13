@@ -1,6 +1,7 @@
 // BOD_15.tsx - 책 상세 페이지
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useToggleWishlist } from "@/hooks/api";
 
 // 책 타입 정의
 interface Book {
@@ -60,6 +61,12 @@ export default function BOD_15() {
   const [newHighlight, setNewHighlight] = useState("");
   const [activeTab, setActiveTab] = useState<"summary" | "reviews" | "highlights">("summary");
 
+  // 위시리스트 상태 (나중에 API에서 받아오기)
+  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  // 위시리스트 토글 mutation
+  const wishlistMutation = useToggleWishlist();
+
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
     navigate(`/library/search?q=${encodeURIComponent(searchQuery)}`);
@@ -94,6 +101,32 @@ export default function BOD_15() {
   const handleRemoveHighlight = (index: number) => {
     setHighlights(highlights.filter((_, i) => i !== index));
     // TODO: API 호출하여 서버에서 삭제
+  };
+
+  // 위시리스트 토글 핸들러
+  const handleToggleWishlist = () => {
+    if (!bookId) return;
+
+    // 낙관적 업데이트
+    setIsWishlisted((prev) => !prev);
+
+    wishlistMutation.mutate(
+      {
+        bookId,
+        isWishlisted,
+      },
+      {
+        onSuccess: (data) => {
+          // 서버 응답으로 최종 상태 업데이트
+          setIsWishlisted(data.isWishlisted);
+        },
+        onError: () => {
+          // 에러 시 롤백
+          setIsWishlisted((prev) => !prev);
+          alert("위시리스트 추가/제거에 실패했습니다.");
+        },
+      }
+    );
   };
 
   return (
@@ -153,12 +186,25 @@ export default function BOD_15() {
 
           {/* 책 정보 */}
           <div className="flex-1">
-            <h1
-              className="text-3xl font-bold mb-4"
-              style={{ color: "black" }}
-            >
-              {mockBook.title}
-            </h1>
+            <div className="flex items-center gap-4 mb-4">
+              <h1
+                className="text-3xl font-bold"
+                style={{ color: "black" }}
+              >
+                {mockBook.title}
+              </h1>
+              {/* 위시리스트 하트 버튼 */}
+              <button
+                onClick={handleToggleWishlist}
+                disabled={wishlistMutation.isPending}
+                className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                aria-label={isWishlisted ? "위시리스트에서 제거" : "위시리스트에 추가"}
+              >
+                <span className="text-3xl">
+                  {isWishlisted ? "❤️" : "🤍"}
+                </span>
+              </button>
+            </div>
 
             {/* 작가 및 출판사 */}
             <div
