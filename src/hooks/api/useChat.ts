@@ -29,9 +29,9 @@ import {
 // ===== Query Keys =====
 export const CHAT_QUERY_KEYS = {
   all: ["chat"] as const,
-  roomsOverview: (userId: number) => [...CHAT_QUERY_KEYS.all, "rooms-overview", userId] as const,
-  myRooms: (userId: number, page: number) => [...CHAT_QUERY_KEYS.all, "my-rooms", userId, page] as const,
-  roomMessages: (roomId: number, userId: number) => [...CHAT_QUERY_KEYS.all, "room-messages", roomId, userId] as const,
+  roomsOverview: (userId: string) => [...CHAT_QUERY_KEYS.all, "rooms-overview", userId] as const,
+  myRooms: (userId: string, page: number) => [...CHAT_QUERY_KEYS.all, "my-rooms", userId, page] as const,
+  roomMessages: (roomId: number, userId: string) => [...CHAT_QUERY_KEYS.all, "room-messages", roomId, userId] as const,
   threads: () => [...CHAT_QUERY_KEYS.all, "threads"] as const,
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,

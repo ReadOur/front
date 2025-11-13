@@ -628,7 +628,7 @@ export default function ChatDock() {
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
 
   // localStorage에서 userId 가져오기
-  const userId = user?.id || 1;
+  const userId = user?.id || '1';
 
   // React Query client
   const queryClient = useQueryClient();

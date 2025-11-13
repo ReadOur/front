@@ -12,7 +12,7 @@ import {
 } from '@/utils/auth';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email?: string;
 }

@@ -209,7 +209,7 @@ export interface RoomsOverviewResponse {
  * 채팅방 Overview 조회 파라미터
  */
 export interface GetRoomsOverviewParams {
-  userId: number;
+  userId: string;
 }
 
 /**
@@ -224,7 +224,7 @@ export interface MyRoomsResponse {
  * 내 채팅방 목록 조회 파라미터
  */
 export interface GetMyRoomsParams {
-  userId: number;
+  userId: string;
   page?: number;
   size?: number;
 }
@@ -242,7 +242,7 @@ export type RoomMessageType = "TEXT" | "IMAGE" | "FILE" | "POLL";
 export interface RoomMessage {
   id: number;
   roomId: number;
-  senderId: number;
+  senderId: string;
   type: RoomMessageType;
   body: {
     text: string;
@@ -272,7 +272,7 @@ export interface RoomMessagesResponse {
  * 메시지 전송 요청
  */
 export interface SendRoomMessageRequest {
-  senderId: number;
+  senderId: string;
   roomId: number;
   type: RoomMessageType;
   body: {
@@ -287,6 +287,6 @@ export interface SendRoomMessageRequest {
  */
 export interface GetRoomMessagesParams {
   roomId: number;
-  userId: number;
+  userId: string;
   before?: string; // 커서 기반 페이징
 }
