@@ -1,5 +1,5 @@
 // SET_13.tsx - 설정 페이지
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { apiClient } from "@/api/client";
 import { LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import { changePassword } from "@/services/authService";
@@ -755,6 +755,49 @@ export default function SET_13() {
                         </button>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* 다크모드 설정 */}
+                <div
+                  className="flex items-center gap-4 px-6 py-6 rounded"
+                  style={{ background: "#E9E5DC" }}
+                >
+                  <span
+                    style={{
+                      color: "black",
+                      fontSize: "36px",
+                      opacity: 0.6,
+                      lineHeight: "36px",
+                      minWidth: "240px",
+                    }}
+                  >
+                    다크모드
+                  </span>
+                  <div className="flex-1 flex items-center justify-between">
+                    <span
+                      style={{
+                        color: "black",
+                        fontSize: "28px",
+                        lineHeight: "36px",
+                      }}
+                    >
+                      {isDarkMode ? "켜짐" : "꺼짐"}
+                    </span>
+                    <button
+                      onClick={handleToggleDarkMode}
+                      className="relative inline-flex items-center h-[40px] w-[80px] rounded-full transition-colors duration-300"
+                      style={{
+                        background: isDarkMode ? "#6B4F3F" : "#D9D9D9",
+                      }}
+                    >
+                      <span
+                        className="inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-md transition-transform duration-300"
+                        style={{
+                          transform: isDarkMode ? "translateX(44px)" : "translateX(4px)",
+                        }}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>

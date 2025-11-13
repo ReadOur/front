@@ -14,6 +14,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 // 코드 스플리팅: 페이지 컴포넌트들을 lazy loading으로 분리
+const HOM_01 = lazy(() => import("@/pages/HOM_01"));
 const BRD_04 = lazy(() => import("@/pages/BRD_04").then(m => ({ default: m.BRD_List })));
 const BRD_05 = lazy(() => import("@/pages/BRD_05"));
 const BRD_06 = lazy(() => import("@/pages/BRD_06").then(m => ({ default: m.BRD_06 })));
@@ -42,7 +43,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
+      { index: true, element: <Suspense fallback={<PageLoader />}><HOM_01 /></Suspense> },
       { path: "boards", element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
       { path: "boards/write", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
       { path: "boards/:postId/edit", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},

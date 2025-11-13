@@ -165,7 +165,15 @@ axiosInstance.interceptors.response.use(
     // 403 Forbidden - 권한 없음
     if (error.response?.status === 403) {
       console.error("접근 권한이 없습니다.");
-      // TODO: 권한 없음 페이지로 리다이렉트
+
+      // 에러 메시지 표시
+      const errorMessage = error.response?.data?.message || "접근 권한이 없습니다.";
+      alert(errorMessage);
+
+      // 메인 페이지로 리다이렉트 (권한 없음 페이지가 없는 경우)
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
 
     // 404 Not Found - 권한 없음 (백엔드 정책)
@@ -177,7 +185,10 @@ axiosInstance.interceptors.response.use(
     // 500 Internal Server Error
     if (error.response?.status === 500) {
       console.error("서버 에러가 발생했습니다.");
-      // TODO: 에러 페이지로 리다이렉트 또는 토스트 표시
+
+      // 에러 메시지 표시
+      const errorMessage = error.response?.data?.message || "서버 에러가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      alert(errorMessage);
     }
 
     return Promise.reject(error);
@@ -191,10 +202,14 @@ function handleLogout() {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
+  localStorage.removeItem("userId");
 
-  // TODO: 로그인 페이지로 리다이렉트
-  // window.location.href = "/login";
-  console.warn("로그아웃 처리됨 - 로그인 페이지로 이동 필요");
+  console.warn("로그아웃 처리됨 - 로그인 페이지로 이동");
+
+  // 로그인 페이지로 리다이렉트
+  if (typeof window !== "undefined") {
+    window.location.href = "/login";
+  }
 }
 
 // ===== API 클라이언트 헬퍼 함수 =====
