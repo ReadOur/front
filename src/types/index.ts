@@ -10,5 +10,6 @@ export type * from "./user";
 export type * from "./post";
 export type * from "./comment";
 export type * from "./chat";
+export type * from "./book";
 export type * from "./spring";
 export type * from "./library";

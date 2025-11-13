@@ -10,3 +10,6 @@ export * from "./useComment";
 
 // 채팅
 export * from "./useChat";
+
+// 책
+export * from "./useBook";

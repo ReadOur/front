@@ -106,6 +106,30 @@ export const CALENDAR_ENDPOINTS = {
 } as const;
 
 /**
+ * 책 관련 엔드포인트
+ */
+export const BOOK_ENDPOINTS = {
+  // 책 정보
+  DETAIL: (bookId: string) => `/books/${bookId}`, // 책 상세 정보 조회
+  DETAIL_BY_ISBN: (isbn13: string) => `/books/isbn/${isbn13}`, // ISBN으로 책 조회
+  RELATED_POSTS: (bookId: string) => `/books/${bookId}/posts`, // 책 연관 게시글
+  AVAILABILITY: "/books/availability", // 도서관 대출 가능 여부 (쿼리: isbn13)
+  // 위시리스트
+  TOGGLE_WISHLIST: (bookId: string) => `/books/${bookId}/wishlist`,
+  WISHLIST: "/books/wishlist", // 위시리스트 목록 조회
+  // 리뷰
+  REVIEWS: (bookId: string) => `/books/${bookId}/reviews`,
+  CREATE_REVIEW: (bookId: string) => `/books/${bookId}/reviews`,
+  UPDATE_REVIEW: (bookId: string, reviewId: string) => `/books/${bookId}/reviews/${reviewId}`,
+  DELETE_REVIEW: (bookId: string, reviewId: string) => `/books/${bookId}/reviews/${reviewId}`,
+  // 하이라이트
+  HIGHLIGHTS: (bookId: string) => `/books/${bookId}/highlights`,
+  CREATE_HIGHLIGHT: (bookId: string) => `/books/${bookId}/highlights`,
+  UPDATE_HIGHLIGHT: (bookId: string, highlightId: string) => `/books/${bookId}/highlights/${highlightId}`,
+  DELETE_HIGHLIGHT: (bookId: string, highlightId: string) => `/books/${bookId}/highlights/${highlightId}`,
+} as const;
+
+/**
  * 내서재 관련 엔드포인트
  */
 export const LIBRARY_ENDPOINTS = {
@@ -141,6 +165,7 @@ export const ENDPOINTS = {
   ATTACHMENT: ATTACHMENT_ENDPOINTS,
   CHAT: CHAT_ENDPOINTS,
   CALENDAR: CALENDAR_ENDPOINTS,
+  BOOK: BOOK_ENDPOINTS,
   LIBRARY: LIBRARY_ENDPOINTS,
   REGION: REGION_ENDPOINTS,
 } as const;
