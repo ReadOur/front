@@ -1,190 +1,281 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
+import { findId, resetPassword } from '@/services/authService';
 import logo from '@/assets/logo.png';
 
-type TabType = 'id' | 'password';
+type TabType = 'findId' | 'resetPassword';
 
-export default function FID_18() {
+export default function FIND() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('id');
-  const [email, setEmail] = useState('');
-  const [userId, setUserId] = useState('');
-  const [resultMessage, setResultMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('findId');
 
-  const handleFindId = (event: FormEvent<HTMLFormElement>) => {
+  // 아이디 찾기 상태
+  const [findIdForm, setFindIdForm] = useState({
+    nickname: '',
+    birthDate: '',
+  });
+  const [findIdResult, setFindIdResult] = useState<string | null>(null);
+  const [findIdError, setFindIdError] = useState<string | null>(null);
+  const [isFindIdLoading, setIsFindIdLoading] = useState(false);
+
+  // 비밀번호 찾기 상태
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    email: '',
+    nickname: '',
+    birthDate: '',
+  });
+  const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+  const [isResetPasswordLoading, setIsResetPasswordLoading] = useState(false);
+
+  // 아이디 찾기 제출
+  const handleFindIdSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage(null);
-    setResultMessage(null);
+    setFindIdError(null);
+    setFindIdResult(null);
+    setIsFindIdLoading(true);
 
-    // TODO: 백엔드 API 연동 필요
-    if (!email.trim()) {
-      setErrorMessage('이메일을 입력해주세요.');
-      return;
+    try {
+      const response = await findId({
+        nickname: findIdForm.nickname,
+        birthDate: findIdForm.birthDate,
+      });
+
+      setFindIdResult(response.email);
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          setFindIdError('일치하는 회원 정보를 찾을 수 없습니다.');
+        } else if (error.code === 'ERR_NETWORK') {
+          setFindIdError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          const message = error.response?.data?.message || error.message;
+          setFindIdError(message || '아이디 찾기 중 오류가 발생했습니다.');
+        }
+      } else {
+        setFindIdError('알 수 없는 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsFindIdLoading(false);
     }
-
-    // 임시 처리
-    console.log('아이디 찾기:', { email });
-    setResultMessage('입력하신 이메일로 아이디 정보를 전송했습니다.');
   };
 
-  const handleFindPassword = (event: FormEvent<HTMLFormElement>) => {
+  // 비밀번호 찾기 제출
+  const handleResetPasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage(null);
-    setResultMessage(null);
+    setResetPasswordError(null);
+    setResetPasswordSuccess(false);
+    setIsResetPasswordLoading(true);
 
-    // TODO: 백엔드 API 연동 필요
-    if (!email.trim() || !userId.trim()) {
-      setErrorMessage('이메일과 아이디를 모두 입력해주세요.');
-      return;
+    try {
+      await resetPassword({
+        email: resetPasswordForm.email,
+        nickname: resetPasswordForm.nickname,
+        birthDate: resetPasswordForm.birthDate,
+      });
+
+      setResetPasswordSuccess(true);
+      setResetPasswordForm({ email: '', nickname: '', birthDate: '' });
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          setResetPasswordError('일치하는 회원 정보를 찾을 수 없습니다.');
+        } else if (error.code === 'ERR_NETWORK') {
+          setResetPasswordError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          const message = error.response?.data?.message || error.message;
+          setResetPasswordError(message || '비밀번호 재설정 중 오류가 발생했습니다.');
+        }
+      } else {
+        setResetPasswordError('알 수 없는 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsResetPasswordLoading(false);
     }
-
-    // 임시 처리
-    console.log('비밀번호 찾기:', { email, userId });
-    setResultMessage('입력하신 이메일로 임시 비밀번호를 전송했습니다.');
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
-      <div className="flex w-full max-w-xl flex-col items-center gap-8 rounded-3xl bg-white p-12 shadow-lg">
-        <img src={logo} alt="ReadOur 로고" className="h-28 w-28" loading="lazy" />
+      <div className="w-full max-w-xl rounded-3xl bg-white p-12 shadow-lg">
+        {/* 로고 */}
+        <button
+          onClick={() => navigate('/boards')}
+          className="mx-auto mb-8 block hover:opacity-80 transition-opacity"
+          aria-label="메인 페이지로 이동"
+        >
+          <img src={logo} alt="ReadOur 로고" className="h-12 w-auto" loading="lazy" />
+        </button>
 
-        <div className="w-full">
-          <h1 className="text-2xl font-semibold text-slate-900 text-center mb-6">
-            아이디/비밀번호 찾기
-          </h1>
+        {/* 탭 헤더 */}
+        <div className="mb-8 flex gap-2 border-b border-slate-200">
+          <button
+            onClick={() => setActiveTab('findId')}
+            className={`flex-1 py-3 text-base font-semibold transition-colors ${
+              activeTab === 'findId'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            아이디 찾기
+          </button>
+          <button
+            onClick={() => setActiveTab('resetPassword')}
+            className={`flex-1 py-3 text-base font-semibold transition-colors ${
+              activeTab === 'resetPassword'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            비밀번호 찾기
+          </button>
+        </div>
 
-          {/* 탭 메뉴 */}
-          <div className="flex border-b border-slate-200 mb-6">
-            <button
-              onClick={() => {
-                setActiveTab('id');
-                setResultMessage(null);
-                setErrorMessage(null);
-              }}
-              className={`flex-1 py-3 text-base font-medium transition-colors ${
-                activeTab === 'id'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              아이디 찾기
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('password');
-                setResultMessage(null);
-                setErrorMessage(null);
-              }}
-              className={`flex-1 py-3 text-base font-medium transition-colors ${
-                activeTab === 'password'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              비밀번호 찾기
-            </button>
-          </div>
-
-          {/* 아이디 찾기 폼 */}
-          {activeTab === 'id' && (
-            <form onSubmit={handleFindId} className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="email-id" className="text-sm font-medium text-slate-800">
-                  이메일
-                </label>
-                <input
-                  id="email-id"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="가입 시 사용한 이메일을 입력하세요"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  autoComplete="email"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                아이디 찾기
-              </button>
-            </form>
-          )}
-
-          {/* 비밀번호 찾기 폼 */}
-          {activeTab === 'password' && (
-            <form onSubmit={handleFindPassword} className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="userId-pw" className="text-sm font-medium text-slate-800">
-                  아이디
-                </label>
-                <input
-                  id="userId-pw"
-                  type="text"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  placeholder="아이디를 입력하세요"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  autoComplete="username"
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label htmlFor="email-pw" className="text-sm font-medium text-slate-800">
-                  이메일
-                </label>
-                <input
-                  id="email-pw"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="가입 시 사용한 이메일을 입력하세요"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  autoComplete="email"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                비밀번호 찾기
-              </button>
-            </form>
-          )}
-
-          {/* 결과 메시지 */}
-          {resultMessage && (
-            <div className="mt-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-600">
-              {resultMessage}
+        {/* 아이디 찾기 */}
+        {activeTab === 'findId' && (
+          <form onSubmit={handleFindIdSubmit} className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="findId-nickname" className="text-sm font-medium text-slate-800">
+                닉네임
+              </label>
+              <input
+                id="findId-nickname"
+                type="text"
+                value={findIdForm.nickname}
+                onChange={(e) => setFindIdForm({ ...findIdForm, nickname: e.target.value })}
+                placeholder="닉네임을 입력하세요"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                required
+              />
             </div>
-          )}
 
-          {/* 에러 메시지 */}
-          {errorMessage && (
-            <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {errorMessage}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="findId-birthDate" className="text-sm font-medium text-slate-800">
+                생년월일
+              </label>
+              <input
+                id="findId-birthDate"
+                type="date"
+                value={findIdForm.birthDate}
+                onChange={(e) => setFindIdForm({ ...findIdForm, birthDate: e.target.value })}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                required
+              />
             </div>
-          )}
 
-          {/* 하단 링크 */}
-          <div className="mt-6 flex justify-center gap-4 text-sm text-slate-700">
+            {findIdError && (
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+                {findIdError}
+              </div>
+            )}
+
+            {findIdResult && (
+              <div className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-600">
+                <p className="font-semibold mb-1">이메일을 찾았습니다!</p>
+                <p className="text-base font-mono">{findIdResult}</p>
+              </div>
+            )}
+
             <button
-              onClick={() => navigate('/login')}
-              className="transition-colors hover:text-blue-600 hover:underline"
+              type="submit"
+              disabled={isFindIdLoading || !findIdForm.nickname || !findIdForm.birthDate}
+              className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              로그인
+              {isFindIdLoading ? '찾는 중...' : '아이디 찾기'}
             </button>
-            <span className="text-slate-300">|</span>
+          </form>
+        )}
+
+        {/* 비밀번호 찾기 */}
+        {activeTab === 'resetPassword' && (
+          <form onSubmit={handleResetPasswordSubmit} className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="reset-email" className="text-sm font-medium text-slate-800">
+                이메일
+              </label>
+              <input
+                id="reset-email"
+                type="email"
+                value={resetPasswordForm.email}
+                onChange={(e) =>
+                  setResetPasswordForm({ ...resetPasswordForm, email: e.target.value })
+                }
+                placeholder="이메일을 입력하세요"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="reset-nickname" className="text-sm font-medium text-slate-800">
+                닉네임
+              </label>
+              <input
+                id="reset-nickname"
+                type="text"
+                value={resetPasswordForm.nickname}
+                onChange={(e) =>
+                  setResetPasswordForm({ ...resetPasswordForm, nickname: e.target.value })
+                }
+                placeholder="닉네임을 입력하세요"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="reset-birthDate" className="text-sm font-medium text-slate-800">
+                생년월일
+              </label>
+              <input
+                id="reset-birthDate"
+                type="date"
+                value={resetPasswordForm.birthDate}
+                onChange={(e) =>
+                  setResetPasswordForm({ ...resetPasswordForm, birthDate: e.target.value })
+                }
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                required
+              />
+            </div>
+
+            {resetPasswordError && (
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+                {resetPasswordError}
+              </div>
+            )}
+
+            {resetPasswordSuccess && (
+              <div className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-600">
+                <p className="font-semibold mb-1">임시 비밀번호가 발송되었습니다!</p>
+                <p>이메일을 확인해주세요.</p>
+              </div>
+            )}
+
             <button
-              onClick={() => navigate('/register')}
-              className="transition-colors hover:text-blue-600 hover:underline"
+              type="submit"
+              disabled={
+                isResetPasswordLoading ||
+                !resetPasswordForm.email ||
+                !resetPasswordForm.nickname ||
+                !resetPasswordForm.birthDate
+              }
+              className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              회원가입
+              {isResetPasswordLoading ? '발송 중...' : '임시 비밀번호 발급'}
             </button>
-          </div>
+          </form>
+        )}
+
+        {/* 로그인 페이지로 돌아가기 */}
+        <div className="mt-6 text-center text-sm text-slate-700">
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="text-blue-600 transition-colors hover:text-blue-700 hover:underline font-medium"
+          >
+            로그인 페이지로 돌아가기
+          </button>
         </div>
       </div>
     </div>

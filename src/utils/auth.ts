@@ -13,6 +13,7 @@ export const GUEST_USER_ID = 'guest';
  * localStorage 키
  */
 export const USER_ID_KEY = 'userId';
+export const ACCESS_TOKEN_KEY = 'accessToken';
 
 /**
  * 현재 사용자 ID 가져오기
@@ -51,4 +52,67 @@ export function isLoggedIn(): boolean {
  */
 export function isGuest(): boolean {
   return getUserId() === GUEST_USER_ID;
+}
+
+/**
+ * Access Token 가져오기
+ * @returns Access Token (없으면 null)
+ */
+export function getAccessToken(): string | null {
+  return getLocalStorage<string>(ACCESS_TOKEN_KEY);
+}
+
+/**
+ * Access Token 저장
+ */
+export function setAccessToken(token: string): void {
+  setLocalStorage(ACCESS_TOKEN_KEY, token);
+}
+
+/**
+ * Access Token 제거
+ */
+export function removeAccessToken(): void {
+  removeLocalStorage(ACCESS_TOKEN_KEY);
+}
+
+/**
+ * JWT 토큰에서 사용자 ID 추출
+ * @param token JWT Access Token
+ * @returns 사용자 ID (추출 실패 시 null)
+ */
+export function extractUserIdFromToken(token: string): number | null {
+  try {
+    // JWT는 header.payload.signature 형식
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    // payload (base64url 디코딩)
+    const payload = JSON.parse(atob(parts[1]));
+
+    // sub 필드에서 사용자 ID 추출
+    const userId = payload.sub ? parseInt(payload.sub, 10) : null;
+    return userId;
+  } catch (error) {
+    console.error('Failed to extract user ID from token:', error);
+    return null;
+  }
+}
+
+/**
+ * JWT 토큰에서 이메일 추출
+ * @param token JWT Access Token
+ * @returns 이메일 (추출 실패 시 null)
+ */
+export function extractEmailFromToken(token: string): string | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.email || null;
+  } catch (error) {
+    console.error('Failed to extract email from token:', error);
+    return null;
+  }
 }

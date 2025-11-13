@@ -22,6 +22,10 @@ export const USER_ENDPOINTS = {
   PROFILE: (userId: string) => `/users/${userId}`,
   UPDATE_PROFILE: (userId: string) => `/users/${userId}`,
   AVATAR: (userId: string) => `/users/${userId}/avatar`,
+  // 계정 관리
+  FIND_ID: "/users/find-id",
+  RESET_PASSWORD: "/users/reset-password",
+  CHANGE_PASSWORD: "/users/change-password",
 } as const;
 
 /**

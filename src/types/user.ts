@@ -51,9 +51,9 @@ export interface LoginRequest {
  * 로그인 응답
  */
 export interface LoginResponse {
-  user: User;
+  tokenType: string;
   accessToken: string;
-  refreshToken: string;
+  accessTokenExpiresAt: string;
 }
 
 /**
@@ -63,6 +63,8 @@ export interface SignupRequest {
   email: string;
   password: string;
   nickname: string;
+  gender: 'MALE' | 'FEMALE';
+  birthDate: string; // YYYY-MM-DD 형식
   /**
    * 선택 사용자 아이디 (이메일과 별개의 로그인 ID)
    */
@@ -93,4 +95,38 @@ export interface UpdateProfileRequest {
   nickname?: string;
   bio?: string;
   avatarUrl?: string;
+}
+
+// ===== 계정 관리 =====
+
+/**
+ * 아이디(이메일) 찾기 요청
+ */
+export interface FindIdRequest {
+  nickname: string;
+  birthDate: string; // YYYY-MM-DD 형식
+}
+
+/**
+ * 아이디(이메일) 찾기 응답
+ */
+export interface FindIdResponse {
+  email: string;
+}
+
+/**
+ * 비밀번호 재설정(임시 비밀번호 발급) 요청
+ */
+export interface ResetPasswordRequest {
+  email: string;
+  nickname: string;
+  birthDate: string; // YYYY-MM-DD 형식
+}
+
+/**
+ * 비밀번호 변경 요청
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }

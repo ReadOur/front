@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderApp from "@/features/layout/Header/HeaderApp";
 import ChatDock from "@/features/message/ChatDock";
 import { useAuth } from "@/contexts/AuthContext";
+import { logout as logoutApi } from "@/services/authService";
 // import { useUnreadCount } from "@/hooks/api/useChat"; // TODO: 백엔드 API 준비되면 활성화
 import "@/style/tokens.css"
 import "@/style/globals.css"
@@ -58,9 +59,20 @@ export default function App() {
 
   console.log("[App] rendered:", window.location.pathname);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // 백엔드 API 호출 (Access Token 무효화)
+      await logoutApi();
+      console.log("✅ 로그아웃 API 호출 성공");
+    } catch (error) {
+      console.error("❌ 로그아웃 API 호출 실패:", error);
+      // API 실패해도 로컬 토큰은 삭제
+    } finally {
+      // 로컬 스토리지 토큰 삭제
+      logout();
+      // 로그인 페이지로 이동
+      navigate("/login");
+    }
   };
 
   return (
