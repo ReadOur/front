@@ -158,12 +158,12 @@ export default function PostShow() {
    * - 성공 시 React Query가 자동으로 데이터를 갱신하여 UI 업데이트
    */
   function handleLike() {
-    // TODO: 로그인 기능 구현 후 활성화
-    // if (!isLoggedIn()) {
-    //   toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-    //   navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-    //   return;
-    // }
+    // 로그인 확인
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
 
     if (!postId || !post) return;
     likeMutation.mutate({
