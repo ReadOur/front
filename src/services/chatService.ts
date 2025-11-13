@@ -54,7 +54,7 @@ export async function getRoomMessages(params: GetRoomMessagesParams): Promise<Ro
     {
       params: before ? { before } : undefined,
       headers: {
-        'X-User-Id': userId.toString(),
+        'X-User-Id': userId,
       },
     }
   );
