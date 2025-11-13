@@ -29,9 +29,9 @@ import {
 // ===== Query Keys =====
 export const CHAT_QUERY_KEYS = {
   all: ["chat"] as const,
-  roomsOverview: (userId: string) => [...CHAT_QUERY_KEYS.all, "rooms-overview", userId] as const,
-  myRooms: (userId: string, page: number) => [...CHAT_QUERY_KEYS.all, "my-rooms", userId, page] as const,
-  roomMessages: (roomId: number, userId: string) => [...CHAT_QUERY_KEYS.all, "room-messages", roomId, userId] as const,
+  roomsOverview: () => [...CHAT_QUERY_KEYS.all, "rooms-overview"] as const,
+  myRooms: (page: number) => [...CHAT_QUERY_KEYS.all, "my-rooms", page] as const,
+  roomMessages: (roomId: number) => [...CHAT_QUERY_KEYS.all, "room-messages", roomId] as const,
   threads: () => [...CHAT_QUERY_KEYS.all, "threads"] as const,
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,
@@ -44,22 +44,22 @@ export const CHAT_QUERY_KEYS = {
 /**
  * 채팅방 Overview 조회 (myRooms + publicRooms)
  */
-export function useRoomsOverview(params: GetRoomsOverviewParams, options?: { enabled?: boolean }) {
+export function useRoomsOverview(params?: GetRoomsOverviewParams, options?: { enabled?: boolean }) {
   return useQuery<RoomsOverviewResponse>({
-    queryKey: CHAT_QUERY_KEYS.roomsOverview(params.userId),
-    queryFn: () => chatService.getRoomsOverview(params),
-    enabled: options?.enabled !== false && !!params.userId,
+    queryKey: CHAT_QUERY_KEYS.roomsOverview(),
+    queryFn: () => chatService.getRoomsOverview(params || {}),
+    enabled: options?.enabled !== false,
   });
 }
 
 /**
  * 내 채팅방 목록 조회 (ChatDock용)
  */
-export function useMyRooms(params: GetMyRoomsParams, options?: { enabled?: boolean }) {
+export function useMyRooms(params?: GetMyRoomsParams, options?: { enabled?: boolean }) {
   return useQuery<MyRoomsResponse>({
-    queryKey: CHAT_QUERY_KEYS.myRooms(params.userId, params.page || 0),
-    queryFn: () => chatService.getMyRooms(params),
-    enabled: options?.enabled !== false && !!params.userId,
+    queryKey: CHAT_QUERY_KEYS.myRooms(params?.page || 0),
+    queryFn: () => chatService.getMyRooms(params || {}),
+    enabled: options?.enabled !== false,
   });
 }
 
@@ -68,9 +68,9 @@ export function useMyRooms(params: GetMyRoomsParams, options?: { enabled?: boole
  */
 export function useRoomMessages(params: GetRoomMessagesParams, options?: { enabled?: boolean }) {
   return useQuery<RoomMessagesResponse>({
-    queryKey: CHAT_QUERY_KEYS.roomMessages(params.roomId, params.userId),
+    queryKey: CHAT_QUERY_KEYS.roomMessages(params.roomId),
     queryFn: () => chatService.getRoomMessages(params),
-    enabled: options?.enabled !== false && !!params.roomId && !!params.userId,
+    enabled: options?.enabled !== false && !!params.roomId,
   });
 }
 
@@ -158,15 +158,15 @@ export function useSendRoomMessage(
     onSuccess: (data, variables, context) => {
       // 해당 채팅방의 메시지 목록 무효화
       queryClient.invalidateQueries({
-        queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId, variables.senderId)
+        queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId)
       });
 
       // 채팅방 목록 무효화 (lastMessage 업데이트)
       queryClient.invalidateQueries({
-        queryKey: CHAT_QUERY_KEYS.roomsOverview(variables.senderId)
+        queryKey: CHAT_QUERY_KEYS.roomsOverview()
       });
       queryClient.invalidateQueries({
-        queryKey: CHAT_QUERY_KEYS.myRooms(variables.senderId, 0)
+        queryKey: CHAT_QUERY_KEYS.myRooms(0)
       });
 
       // 사용자 정의 onSuccess 실행
