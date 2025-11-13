@@ -48,14 +48,11 @@ export async function getMyRooms(params: GetMyRoomsParams): Promise<MyRoomsRespo
  * 채팅방 메시지 조회
  */
 export async function getRoomMessages(params: GetRoomMessagesParams): Promise<RoomMessagesResponse> {
-  const { roomId, userId, before } = params;
+  const { roomId, before } = params;
   return apiClient.get<RoomMessagesResponse>(
     CHAT_ENDPOINTS.ROOM_MESSAGES(roomId),
     {
       params: before ? { before } : undefined,
-      headers: {
-        'X-User-Id': userId,
-      },
     }
   );
 }

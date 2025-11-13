@@ -209,7 +209,7 @@ export interface RoomsOverviewResponse {
  * 채팅방 Overview 조회 파라미터
  */
 export interface GetRoomsOverviewParams {
-  userId: string;
+  // accessToken으로 사용자 식별
 }
 
 /**
@@ -224,7 +224,6 @@ export interface MyRoomsResponse {
  * 내 채팅방 목록 조회 파라미터
  */
 export interface GetMyRoomsParams {
-  userId: string;
   page?: number;
   size?: number;
 }
@@ -287,6 +286,5 @@ export interface SendRoomMessageRequest {
  */
 export interface GetRoomMessagesParams {
   roomId: number;
-  userId: string;
   before?: string; // 커서 기반 페이징
 }

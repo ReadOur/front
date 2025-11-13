@@ -42,13 +42,6 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    // 로컬스토리지에서 userId 가져오기 (X-User-Id 헤더)
-    const userId = localStorage.getItem("userId");
-
-    if (userId && config.headers) {
-      config.headers["X-User-Id"] = userId;
-    }
-
     // 디버깅: 실제 요청 URL 출력
     const fullUrl = `${config.baseURL}${config.url}`;
     const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
@@ -58,7 +51,6 @@ axiosInstance.interceptors.request.use(
       params: config.params,
       headers: {
         Authorization: accessToken ? 'Bearer ***' : undefined,
-        'X-User-Id': userId,
       },
     });
 
@@ -202,7 +194,6 @@ function handleLogout() {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
-  localStorage.removeItem("userId");
 
   console.warn("로그아웃 처리됨 - 로그인 페이지로 이동");
 

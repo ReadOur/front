@@ -627,14 +627,14 @@ export default function ChatDock() {
   // User data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
 
-  // localStorage에서 userId 가져오기
-  const userId = user?.id || '1';
+  // accessToken이 user.id에 저장되어 있음
+  const accessToken = user?.id || '';
 
   // React Query client
   const queryClient = useQueryClient();
 
   // 채팅방 목록 API 연결
-  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ userId, page: 0, size: 20 });
+  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ page: 0, size: 20 });
 
   // 메시지 전송 mutation
   const sendMessageMutation = useSendRoomMessage({
@@ -884,7 +884,7 @@ export default function ChatDock() {
 
       try {
         const roomId = parseInt(threadId, 10);
-        const response = await chatService.getRoomMessages({ roomId, userId });
+        const response = await chatService.getRoomMessages({ roomId });
 
         // 백엔드 메시지를 UI 형식으로 변환
         const convertedMessages: ChatMessage[] = response.items.map((msg) => ({
@@ -903,7 +903,7 @@ export default function ChatDock() {
         // 메시지 조회 성공 시 백엔드에서 자동으로 읽음 처리되므로
         // 채팅방 목록을 다시 가져와서 unreadCount 업데이트
         queryClient.invalidateQueries({
-          queryKey: CHAT_QUERY_KEYS.myRooms(userId, 0)
+          queryKey: CHAT_QUERY_KEYS.myRooms(0)
         });
       } catch (error) {
         console.error("Failed to load messages for thread:", threadId, error);
@@ -911,7 +911,7 @@ export default function ChatDock() {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     });
-  }, [openThreadIds, userId, queryClient]);
+  }, [openThreadIds, queryClient]);
 
   const socket = useMockSocket();
   useEffect(() => {
@@ -959,7 +959,7 @@ export default function ChatDock() {
 
     // API 호출로 메시지 전송
     sendMessageMutation.mutate({
-      senderId: userId,
+      senderId: accessToken,
       roomId,
       type: "TEXT",
       body: { text },

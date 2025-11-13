@@ -1,14 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
-  getUserId,
-  setUserId,
-  removeUserId,
-  GUEST_USER_ID,
   getAccessToken,
   setAccessToken,
   removeAccessToken,
-  extractUserIdFromToken,
-  extractEmailFromToken,
 } from '@/utils/auth';
 
 interface User {
@@ -35,22 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedToken = getAccessToken();
     if (storedToken) {
-      // 토큰에서 사용자 정보 추출
-      const userId = extractUserIdFromToken(storedToken);
-      const email = extractEmailFromToken(storedToken);
-
-      if (userId) {
-        setUser({
-          id: userId,
-          name: email?.split('@')[0] || 'user',
-          email: email || undefined,
-        });
-        setToken(storedToken);
-        setUserId(userId); // 기존 시스템과의 호환성을 위해 userId도 저장
-      }
-    } else {
-      // 게스트 사용자로 설정
-      setUserId(GUEST_USER_ID);
+      setToken(storedToken);
+      // accessToken이 있으면 로그인된 것으로 간주
+      // 실제 사용자 정보는 필요시 별도 API로 조회
+      setUser({
+        id: storedToken, // accessToken을 id로 사용
+        name: 'user',
+      });
     }
   }, []);
 
@@ -59,29 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(token);
     setToken(token);
 
-    // 토큰에서 사용자 정보 추출
-    const userId = extractUserIdFromToken(token);
-    const email = extractEmailFromToken(token);
-
-    if (userId) {
-      const userData: User = {
-        id: userId,
-        name: email?.split('@')[0] || 'user',
-        email: email || undefined,
-      };
-      setUser(userData);
-      setUserId(userId); // 기존 시스템과의 호환성을 위해 userId도 저장
-    }
+    // accessToken을 사용자 ID로 사용
+    const userData: User = {
+      id: token,
+      name: 'user',
+    };
+    setUser(userData);
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
     removeAccessToken();
-    removeUserId();
   };
 
-  const isAuthenticated = user !== null && user.id !== GUEST_USER_ID && accessToken !== null;
+  const isAuthenticated = accessToken !== null;
 
   return (
     <AuthContext.Provider value={{ user, accessToken, login, logout, isAuthenticated }}>
