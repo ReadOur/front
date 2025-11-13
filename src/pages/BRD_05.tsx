@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   usePost,
@@ -133,6 +133,9 @@ export default function PostShow() {
   // 7. 게시글 조회수 증가 - POST 요청으로 조회수 증가
   const viewPostMutation = useViewPost();
 
+  // 조회수 증가 API 호출 여부를 추적하는 ref
+  const hasCalledViewApi = useRef<string | null>(null);
+
   // 스포일러 게시글이 로드될 때마다 가림막 초기화
   useEffect(() => {
     setIsSpoilerRevealed(false);
@@ -140,8 +143,10 @@ export default function PostShow() {
 
   // 게시글 조회수 증가 - 페이지 진입 시 한 번만 호출
   useEffect(() => {
-    if (postId && !isPostLoading && post) {
+    // 이미 이 게시글에 대해 조회수 증가 API를 호출했으면 스킵
+    if (postId && !isPostLoading && post && hasCalledViewApi.current !== postId) {
       viewPostMutation.mutate(postId);
+      hasCalledViewApi.current = postId; // 호출 완료 표시
     }
   }, [postId, post?.postId]); // post?.postId가 변경될 때만 실행 (게시글이 로드된 직후)
 
