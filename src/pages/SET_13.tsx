@@ -4,6 +4,8 @@ import { apiClient } from "@/api/client";
 import { LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import { changePassword } from "@/services/authService";
 import { isAxiosError } from "axios";
+import { LibrarySearchModal } from "@/components/LibrarySearchModal/LibrarySearchModal";
+import type { Library } from "@/types/library";
 
 // TODO: API 연동 시 아래 서비스를 import 하세요
 // import { updateUserNickname, updateUserEmail, updateUserPersonalInfo } from "@/services/userService";
@@ -36,24 +38,20 @@ const mockUserData = {
  *    - Response: { success: boolean, data: { personalInfo: string } }
  */
 
-type TabType = "profile" | "security";
-
 export default function SET_13() {
-  const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [userData, setUserData] = useState(mockUserData);
 
   // 편집 모드 상태 관리
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
-  const [isAddingLibrary, setIsAddingLibrary] = useState(false);
+  const [isLibrarySearchModalOpen, setIsLibrarySearchModalOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // 임시 값 상태
   const [tempNickname, setTempNickname] = useState(userData.nickname);
   const [tempEmail, setTempEmail] = useState(userData.email);
   const [tempPersonalInfo, setTempPersonalInfo] = useState(userData.personalInfo);
-  const [tempLibraryName, setTempLibraryName] = useState("");
 
   // 비밀번호 변경 상태
   const [currentPassword, setCurrentPassword] = useState("");
@@ -61,6 +59,30 @@ export default function SET_13() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  // 로딩 상태
+  const [isLoadingLibraries, setIsLoadingLibraries] = useState(false);
+
+  // 컴포넌트 마운트 시 선호 도서관 목록 가져오기
+  useEffect(() => {
+    const fetchFavoriteLibraries = async () => {
+      setIsLoadingLibraries(true);
+      try {
+        const response = await apiClient.get<string[]>(LIBRARY_ENDPOINTS.FAVORITE_LIBRARIES);
+        setUserData(prevData => ({
+          ...prevData,
+          favoriteLibraries: response || [],
+        }));
+      } catch (error) {
+        console.error("선호 도서관 목록 조회 실패:", error);
+        // 에러 발생 시 목업 데이터 유지
+      } finally {
+        setIsLoadingLibraries(false);
+      }
+    };
+
+    fetchFavoriteLibraries();
+  }, []);
 
   // 닉네임 수정 핸들러
   const handleEditNickname = () => {
@@ -227,41 +249,29 @@ export default function SET_13() {
     // TODO: 모달 열기 또는 인라인 편집
   };
 
-  // 도서관 추가 핸들러
+  // 도서관 검색 모달 열기
   const handleAddLibrary = () => {
-    setTempLibraryName("");
-    setIsAddingLibrary(true);
+    setIsLibrarySearchModalOpen(true);
   };
 
-  const handleSaveLibrary = async () => {
-    if (!tempLibraryName.trim()) {
-      alert("도서관 이름을 입력해주세요.");
-      return;
-    }
-
+  // 도서관 선택 시 (모달에서 선택)
+  const handleSelectLibrary = async (library: Library) => {
     try {
       // API 호출: 관심 도서관 추가
       await apiClient.post(LIBRARY_ENDPOINTS.ADD_FAVORITE_LIBRARY, {
-        libraryName: tempLibraryName.trim(),
+        libraryName: library.libraryName,
       });
 
       // 로컬 상태 업데이트
       setUserData({
         ...userData,
-        favoriteLibraries: [...userData.favoriteLibraries, tempLibraryName.trim()],
+        favoriteLibraries: [...userData.favoriteLibraries, library.libraryName],
       });
-      setIsAddingLibrary(false);
-      setTempLibraryName("");
-      console.log("관심 도서관 추가:", tempLibraryName);
+      console.log("관심 도서관 추가:", library.libraryName);
     } catch (error) {
       console.error("관심 도서관 추가 실패:", error);
       alert("관심 도서관 추가에 실패했습니다. 다시 시도해주세요.");
     }
-  };
-
-  const handleCancelAddLibrary = () => {
-    setTempLibraryName("");
-    setIsAddingLibrary(false);
   };
 
   // 도서관 삭제 핸들러
@@ -288,61 +298,19 @@ export default function SET_13() {
       style={{ background: "#FFF9F2" }}
     >
       <div className="max-w-[1400px] mx-auto px-8 py-12">
-        <div className="flex gap-8">
-          {/* 좌측 사이드바 */}
-          <div
-            className="w-[415px] rounded-lg p-8"
-            style={{ background: "#E9E5DC" }}
+        {/* 페이지 타이틀 */}
+        <div className="mb-8 text-center">
+          <h1
+            className="text-[40px] font-bold"
+            style={{ color: "black", lineHeight: "48px" }}
           >
-            {/* 사용자 이름 */}
-            <div className="mb-16 text-center">
-              <h2
-                className="text-[32px] font-semibold"
-                style={{ color: "black", lineHeight: "44.8px" }}
-              >
-                {userData.name}
-              </h2>
-            </div>
+            설정
+          </h1>
+        </div>
 
-            {/* 탭 메뉴 */}
-            <div className="space-y-2">
-              <button
-                onClick={() => setActiveTab("profile")}
-                className={`w-full text-left px-6 py-4 rounded transition ${
-                  activeTab === "profile" ? "shadow-sm" : ""
-                }`}
-                style={{
-                  background: activeTab === "profile" ? "#FFF9F2" : "transparent",
-                  color: "black",
-                  fontSize: "32px",
-                  fontWeight: 600,
-                  lineHeight: "44.8px",
-                }}
-              >
-                프로필
-              </button>
-              <button
-                onClick={() => setActiveTab("security")}
-                className={`w-full text-left px-6 py-4 rounded transition ${
-                  activeTab === "security" ? "shadow-sm" : ""
-                }`}
-                style={{
-                  background: activeTab === "security" ? "#FFF9F2" : "transparent",
-                  color: "black",
-                  fontSize: "32px",
-                  fontWeight: 600,
-                  lineHeight: "44.8px",
-                }}
-              >
-                보안
-              </button>
-            </div>
-          </div>
-
-          {/* 우측 메인 영역 */}
-          <div className="flex-1">
-            {activeTab === "profile" && (
-              <div className="space-y-6">
+        {/* 메인 설정 영역 */}
+        <div className="max-w-[900px] mx-auto">
+          <div className="space-y-6">
                 {/* 닉네임 */}
                 <div
                   className="flex items-center gap-4 px-6 py-6 rounded"
@@ -657,76 +625,23 @@ export default function SET_13() {
                     >
                       관심 도서관
                     </span>
-                    {!isAddingLibrary ? (
-                      <button
-                        onClick={handleAddLibrary}
-                        className="px-6 py-3 rounded hover:opacity-90 transition ml-auto"
+                    <button
+                      onClick={handleAddLibrary}
+                      className="px-6 py-3 rounded hover:opacity-90 transition ml-auto"
+                      style={{
+                        background: "#6B4F3F",
+                        color: "white",
+                      }}
+                    >
+                      <span
                         style={{
-                          background: "#6B4F3F",
-                          color: "white",
+                          fontSize: "28px",
+                          lineHeight: "36px",
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          추가
-                        </span>
-                      </button>
-                    ) : (
-                      <>
-                        <input
-                          type="text"
-                          value={tempLibraryName}
-                          onChange={(e) => setTempLibraryName(e.target.value)}
-                          placeholder="도서관 이름을 입력하세요"
-                          className="flex-1 px-4 py-2 rounded"
-                          style={{
-                            background: "#FFF9F2",
-                            color: "black",
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                            border: "2px solid #6B4F3F",
-                          }}
-                        />
-                        <button
-                          onClick={handleSaveLibrary}
-                          className="px-6 py-3 rounded hover:opacity-90 transition"
-                          style={{
-                            background: "#6B4F3F",
-                            color: "white",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "28px",
-                              lineHeight: "36px",
-                            }}
-                          >
-                            저장
-                          </span>
-                        </button>
-                        <button
-                          onClick={handleCancelAddLibrary}
-                          className="px-6 py-3 rounded hover:opacity-90 transition"
-                          style={{
-                            background: "#D9D9D9",
-                            color: "black",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "28px",
-                              lineHeight: "36px",
-                            }}
-                          >
-                            취소
-                          </span>
-                        </button>
-                      </>
-                    )}
+                        추가
+                      </span>
+                    </button>
                   </div>
 
                   {/* 도서관 태그들 */}
@@ -800,11 +715,7 @@ export default function SET_13() {
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {activeTab === "security" && (
-              <div className="space-y-6">
                 {/* 비밀번호 변경 */}
                 <div
                   className="px-6 py-6 rounded"
@@ -977,47 +888,16 @@ export default function SET_13() {
                     </div>
                   )}
                 </div>
-
-                <div
-                  className="flex items-center justify-between px-6 py-6 rounded"
-                  style={{ background: "#E9E5DC" }}
-                >
-                  <span
-                    className="flex-1"
-                    style={{
-                      color: "black",
-                      fontSize: "36px",
-                      opacity: 0.6,
-                      lineHeight: "36px",
-                    }}
-                  >
-                    2단계 인증
-                  </span>
-                  <button
-                    onClick={() => handleEdit("2fa")}
-                    className="px-6 py-3 rounded hover:opacity-80 transition"
-                    style={{
-                      background: "#6B4F3F",
-                      opacity: 0.3,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "black",
-                        fontSize: "36px",
-                        opacity: 0.7,
-                        lineHeight: "36px",
-                      }}
-                    >
-                      설정
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* 도서관 검색 모달 */}
+      <LibrarySearchModal
+        isOpen={isLibrarySearchModalOpen}
+        onClose={() => setIsLibrarySearchModalOpen(false)}
+        onSelectLibrary={handleSelectLibrary}
+      />
     </div>
   );
 }

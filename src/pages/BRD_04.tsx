@@ -71,6 +71,7 @@ export const BRD_List: React.FC = () => {
   // 검색 타입 상태
   const [searchType, setSearchType] = useState<SearchType>(searchTypeParam);
 
+  // 메인 게시글 목록
   const { data, isLoading, error } = useQuery({
     queryKey: ["posts", page, pageSize, category, searchQuery, searchType],
     queryFn: async () => {
@@ -93,6 +94,34 @@ export const BRD_List: React.FC = () => {
       });
     },
     staleTime: 1000 * 60 * 5,
+  });
+
+  // 인기 게시글 (좋아요 순)
+  const { data: popularPosts } = useQuery({
+    queryKey: ["posts", "popular"],
+    queryFn: async () => {
+      return getPosts({
+        page: 1,
+        size: 5,
+        sort: "likeCount,desc",
+      });
+    },
+    staleTime: 1000 * 60 * 10,
+    enabled: !category && !searchQuery, // 메인 페이지에서만 표시
+  });
+
+  // 모임 모집 게시글
+  const { data: recruitmentPosts } = useQuery({
+    queryKey: ["posts", "recruitment"],
+    queryFn: async () => {
+      return getPosts({
+        page: 1,
+        size: 5,
+        category: "NOTI",
+      });
+    },
+    staleTime: 1000 * 60 * 10,
+    enabled: !category && !searchQuery, // 메인 페이지에서만 표시
   });
 
   const totalPages = useMemo(() => Math.max(1, data?.totalPages ?? 1), [data]);
@@ -184,6 +213,119 @@ export const BRD_List: React.FC = () => {
             ))}
           </ul>
         </nav>
+
+        {/* 메인 페이지 특별 섹션: 인기 게시글, 모임 모집, 인기 도서 */}
+        {!category && !searchQuery && (
+          <div className="space-y-6 mb-8">
+            {/* 인기 게시글 */}
+            {popularPosts && popularPosts.items && popularPosts.items.length > 0 && (
+              <section className="bg-[color:var(--color-bg-elev-1)] rounded-[var(--radius-lg)] p-4 sm:p-6 border border-[color:var(--color-border-subtle)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-bold text-[color:var(--color-fg-primary)] flex items-center gap-2">
+                    🔥 인기 게시글
+                  </h2>
+                  <button
+                    onClick={() => {
+                      params.delete("category");
+                      params.delete("search");
+                      params.set("page", "1");
+                      setParams(params);
+                    }}
+                    className="text-sm text-[color:var(--color-accent)] hover:underline"
+                  >
+                    더보기 →
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {popularPosts.items.slice(0, 3).map((post) => (
+                    <div
+                      key={post.postId}
+                      onClick={() => navigate(`/boards/${post.postId}`)}
+                      className="bg-[color:var(--color-bg-elev-2)] rounded-[var(--radius-md)] p-4 cursor-pointer hover:bg-[color:var(--color-bg-elev-2-hover,var(--color-bg-elev-2))] border border-[color:var(--color-border-default)] transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-sm sm:text-base line-clamp-2 flex-1">
+                          {post.title}
+                        </h3>
+                        <span className="px-2 py-0.5 rounded text-xs bg-[color:var(--color-bg-elev-1)] shrink-0">
+                          {getCategoryLabel(post.category)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-[color:var(--color-fg-muted)]">
+                        <span>{post.authorNickname}</span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          ❤️ {post.likeCount}
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          👁 {post.hit}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 모임 모집 게시글 */}
+            {recruitmentPosts && recruitmentPosts.items && recruitmentPosts.items.length > 0 && (
+              <section className="bg-[color:var(--color-bg-elev-1)] rounded-[var(--radius-lg)] p-4 sm:p-6 border border-[color:var(--color-border-subtle)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-bold text-[color:var(--color-fg-primary)] flex items-center gap-2">
+                    👥 모임 모집
+                  </h2>
+                  <button
+                    onClick={() => handleCategoryChange("NOTI")}
+                    className="text-sm text-[color:var(--color-accent)] hover:underline"
+                  >
+                    더보기 →
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {recruitmentPosts.items.slice(0, 3).map((post) => (
+                    <div
+                      key={post.postId}
+                      onClick={() => navigate(`/boards/${post.postId}`)}
+                      className="bg-[color:var(--color-bg-elev-2)] rounded-[var(--radius-md)] p-4 cursor-pointer hover:bg-[color:var(--color-bg-elev-2-hover,var(--color-bg-elev-2))] border border-[color:var(--color-border-default)] transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-sm sm:text-base line-clamp-2 flex-1">
+                          {post.title}
+                        </h3>
+                        {post.commentCount > 0 && (
+                          <span className="text-[color:var(--color-fg-danger)] text-xs shrink-0">
+                            [{post.commentCount}]
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-[color:var(--color-fg-muted)]">
+                        <span>{post.authorNickname}</span>
+                        <span>·</span>
+                        <span>{formatDate(post.createdAt)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 인기 도서 (백엔드 API 대기 중 - 플레이스홀더) */}
+            <section className="bg-[color:var(--color-bg-elev-1)] rounded-[var(--radius-lg)] p-4 sm:p-6 border border-[color:var(--color-border-subtle)] opacity-60">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-[color:var(--color-fg-primary)] flex items-center gap-2">
+                  📚 인기 도서
+                </h2>
+                <span className="text-sm text-[color:var(--color-fg-muted)]">
+                  준비 중
+                </span>
+              </div>
+              <div className="text-center py-8 text-[color:var(--color-fg-muted)] text-sm">
+                인기 도서 정보는 백엔드 API 연동 후 표시됩니다
+              </div>
+            </section>
+          </div>
+        )}
 
         {/* 검색 및 액션바 */}
         <div className="py-3 sm:py-4 space-y-3 sm:space-y-4">

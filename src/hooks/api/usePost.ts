@@ -144,7 +144,8 @@ export function useLikePost(
     { previousPost?: Post }
   >({
     ...options,
-    mutationFn: ({ postId }) => postService.likePost(postId),
+    mutationFn: ({ postId, isLiked }) =>
+      isLiked ? postService.unlikePost(postId) : postService.likePost(postId),
     onMutate: async ({ postId, isLiked }) => {
       // 낙관적 업데이트: 즉시 UI 반영
       await queryClient.cancelQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
