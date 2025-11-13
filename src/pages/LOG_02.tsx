@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { isEmail } from '@/utils/validation';
+import { login as loginApi } from '@/services/authService';
 import logo from '@/assets/logo.png';
 
 export default function LOG_02() {
@@ -12,6 +13,8 @@ export default function LOG_02() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({ username: '', password: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const validateUsername = (value: string) => {
     if (!value.trim()) {
@@ -50,7 +53,7 @@ export default function LOG_02() {
     return !usernameError && !passwordError;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     // 최종 유효성 검증
@@ -62,19 +65,38 @@ export default function LOG_02() {
       return;
     }
 
-    // TODO: 백엔드 인증 로직 연동 시 이 부분을 API 호출로 대체하세요.
-    console.log('로그인 시도', { username, password, rememberMe });
+    setIsLoading(true);
+    setLoginError('');
 
-    // 임시로 로그인 처리 (실제로는 백엔드 API 응답을 받아야 함)
-    login({
-      id: 1,
-      name: username || 'user',
-      email: `${username}@example.com`,
-    });
+    try {
+      // 백엔드 API 호출
+      const response = await loginApi({
+        email: username,
+        password: password,
+      });
 
-    // 로그인 후 원래 가려던 페이지로 이동 (없으면 게시판으로)
-    const from = (location.state as any)?.from?.pathname || '/boards';
-    navigate(from, { replace: true });
+      // Access Token을 AuthContext에 저장
+      login(response.accessToken);
+
+      // 로그인 후 원래 가려던 페이지로 이동 (없으면 게시판으로)
+      const from = (location.state as any)?.from?.pathname || '/boards';
+      navigate(from, { replace: true });
+    } catch (error: any) {
+      console.error('로그인 실패:', error);
+
+      // 에러 처리
+      if (error.response?.status === 404) {
+        setLoginError('존재하지 않는 사용자입니다.');
+      } else if (error.response?.status === 401) {
+        setLoginError('이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else if (error.code === 'ERR_NETWORK') {
+        setLoginError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        setLoginError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -125,12 +147,18 @@ export default function LOG_02() {
             )}
           </div>
 
+          {loginError && (
+            <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+              {loginError}
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={!isFormValid()}
+            disabled={!isFormValid() || isLoading}
             className="mt-2 w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            로그인
+            {isLoading ? '로그인 중...' : '로그인'}
           </button>
 
           <div className="flex items-center justify-between text-sm text-slate-700">

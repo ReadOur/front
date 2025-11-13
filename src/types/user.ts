@@ -51,9 +51,9 @@ export interface LoginRequest {
  * 로그인 응답
  */
 export interface LoginResponse {
-  user: User;
+  tokenType: string;
   accessToken: string;
-  refreshToken: string;
+  accessTokenExpiresAt: string;
 }
 
 /**
