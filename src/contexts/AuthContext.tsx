@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getUserId, setUserId, removeUserId, GUEST_USER_ID } from '@/utils/auth';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email?: string;
 }
@@ -25,9 +25,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUserId !== GUEST_USER_ID) {
       setUser({ id: storedUserId, name: 'user' });
     } else {
-      // 테스트용: localStorage에 userId가 없으면 1로 설정
-      setUserId(1);
-      setUser({ id: 1, name: 'user' });
+      // 테스트용: localStorage에 userId가 없으면 '1'로 설정
+      setUserId('1');
+      setUser({ id: '1', name: 'user' });
     }
   }, []);
 
