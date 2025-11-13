@@ -63,6 +63,8 @@ export interface SignupRequest {
   email: string;
   password: string;
   nickname: string;
+  gender: 'MALE' | 'FEMALE';
+  birthDate: string; // YYYY-MM-DD 형식
   /**
    * 선택 사용자 아이디 (이메일과 별개의 로그인 ID)
    */

@@ -11,6 +11,8 @@ interface RegisterFormState {
   nickname: string;
   password: string;
   passwordConfirm: string;
+  gender: 'MALE' | 'FEMALE' | '';
+  birthDate: string;
 }
 
 const defaultFormState: RegisterFormState = {
@@ -19,6 +21,8 @@ const defaultFormState: RegisterFormState = {
   nickname: '',
   password: '',
   passwordConfirm: '',
+  gender: '',
+  birthDate: '',
 };
 
 export default function REG_03() {
@@ -33,6 +37,8 @@ export default function REG_03() {
     nickname: '',
     password: '',
     passwordConfirm: '',
+    gender: '',
+    birthDate: '',
   });
 
   const validateEmail = (email: string) => {
@@ -63,13 +69,31 @@ export default function REG_03() {
     return '';
   };
 
+  const validateGender = (gender: string) => {
+    if (!gender) return '성별을 선택해주세요.';
+    return '';
+  };
+
+  const validateBirthDate = (birthDate: string) => {
+    if (!birthDate) return '생년월일을 입력해주세요.';
+    const date = new Date(birthDate);
+    const today = new Date();
+    if (date > today) return '생년월일은 오늘 이전이어야 합니다.';
+    const age = today.getFullYear() - date.getFullYear();
+    if (age < 14) return '만 14세 이상만 가입 가능합니다.';
+    if (age > 120) return '올바른 생년월일을 입력해주세요.';
+    return '';
+  };
+
   const isFormValid = useMemo(() => {
     const emailError = validateEmail(formState.email);
     const nicknameError = validateNickname(formState.nickname);
     const passwordError = validatePassword(formState.password);
     const passwordConfirmError = validatePasswordConfirm(formState.password, formState.passwordConfirm);
+    const genderError = validateGender(formState.gender);
+    const birthDateError = validateBirthDate(formState.birthDate);
 
-    return !emailError && !nicknameError && !passwordError && !passwordConfirmError;
+    return !emailError && !nicknameError && !passwordError && !passwordConfirmError && !genderError && !birthDateError;
   }, [formState]);
 
   const handleChange = (field: keyof RegisterFormState) =>
@@ -98,6 +122,12 @@ export default function REG_03() {
           break;
         case 'passwordConfirm':
           error = validatePasswordConfirm(formState.password, value);
+          break;
+        case 'gender':
+          error = validateGender(value);
+          break;
+        case 'birthDate':
+          error = validateBirthDate(value);
           break;
       }
       setFieldErrors(prev => ({ ...prev, [field]: error }));
@@ -128,6 +158,8 @@ export default function REG_03() {
         email: formState.email,
         password: formState.password,
         nickname: formState.nickname,
+        gender: formState.gender as 'MALE' | 'FEMALE',
+        birthDate: formState.birthDate,
         userId: formState.userId.trim() ? formState.userId.trim() : undefined,
       });
 
@@ -135,11 +167,25 @@ export default function REG_03() {
       setFormState(defaultFormState);
     } catch (error) {
       if (isAxiosError(error)) {
-        const apiMessage =
-          (typeof error.response?.data === 'object' && error.response?.data?.message) ||
-          error.response?.data?.error ||
-          error.message;
-        setErrorMessage(apiMessage ?? '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.');
+        // 409 에러: 중복 (이메일 또는 닉네임)
+        if (error.response?.status === 409) {
+          const message = error.response?.data?.message || '이미 존재하는 정보입니다.';
+          setErrorMessage(message);
+        }
+        // 400 에러: 잘못된 요청
+        else if (error.response?.status === 400) {
+          const message = error.response?.data?.message || '입력 정보를 확인해주세요.';
+          setErrorMessage(message);
+        }
+        // 네트워크 에러
+        else if (error.code === 'ERR_NETWORK') {
+          setErrorMessage('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        }
+        // 기타 에러
+        else {
+          const apiMessage = error.response?.data?.message || error.message;
+          setErrorMessage(apiMessage || '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.');
+        }
       } else {
         setErrorMessage('회원가입 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
       }
@@ -210,6 +256,46 @@ export default function REG_03() {
               />
               {fieldErrors.nickname && (
                 <p className="text-sm text-red-600">{fieldErrors.nickname}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="gender" className="text-sm font-medium text-slate-800">
+                성별
+              </label>
+              <select
+                id="gender"
+                value={formState.gender}
+                onChange={(e) => {
+                  setFormState(prev => ({ ...prev, gender: e.target.value as 'MALE' | 'FEMALE' | '' }));
+                  setFieldErrors(prev => ({ ...prev, gender: validateGender(e.target.value) }));
+                }}
+                className={`w-full rounded-xl border ${fieldErrors.gender ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                required
+              >
+                <option value="">선택해주세요</option>
+                <option value="MALE">남성</option>
+                <option value="FEMALE">여성</option>
+              </select>
+              {fieldErrors.gender && (
+                <p className="text-sm text-red-600">{fieldErrors.gender}</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="birthDate" className="text-sm font-medium text-slate-800">
+                생년월일
+              </label>
+              <input
+                id="birthDate"
+                type="date"
+                value={formState.birthDate}
+                onChange={handleChange('birthDate')}
+                className={`w-full rounded-xl border ${fieldErrors.birthDate ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                required
+              />
+              {fieldErrors.birthDate && (
+                <p className="text-sm text-red-600">{fieldErrors.birthDate}</p>
               )}
             </div>
 
