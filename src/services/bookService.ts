@@ -5,11 +5,52 @@
 import { apiClient } from "@/api/client";
 import { BOOK_ENDPOINTS } from "@/api/endpoints";
 import {
+  BookDetail,
   WishlistResponse,
   WishlistItem,
   BookReview,
   BookHighlight,
+  CreateHighlightRequest,
+  LibraryAvailability,
+  PaginatedResponse,
+  PostListItem,
 } from "@/types";
+
+/**
+ * 책 상세 정보 조회
+ */
+export async function getBookDetail(bookId: string): Promise<BookDetail> {
+  return apiClient.get<BookDetail>(BOOK_ENDPOINTS.DETAIL(bookId));
+}
+
+/**
+ * ISBN으로 책 상세 정보 조회
+ */
+export async function getBookDetailByISBN(isbn13: string): Promise<BookDetail> {
+  return apiClient.get<BookDetail>(BOOK_ENDPOINTS.DETAIL_BY_ISBN(isbn13));
+}
+
+/**
+ * 책 연관 게시글 목록 조회
+ */
+export async function getRelatedPosts(
+  bookId: string,
+  params?: { page?: number; size?: number }
+): Promise<PaginatedResponse<PostListItem>> {
+  return apiClient.get<PaginatedResponse<PostListItem>>(
+    BOOK_ENDPOINTS.RELATED_POSTS(bookId),
+    { params: { page: params?.page || 0, size: params?.size || 20 } }
+  );
+}
+
+/**
+ * 도서관 대출 가능 여부 조회
+ */
+export async function getLibraryAvailability(isbn13: string): Promise<LibraryAvailability[]> {
+  return apiClient.get<LibraryAvailability[]>(BOOK_ENDPOINTS.AVAILABILITY, {
+    params: { isbn13 },
+  });
+}
 
 /**
  * 위시리스트 토글 (추가/삭제)
@@ -63,8 +104,13 @@ export async function deleteBookReview(bookId: string, reviewId: string): Promis
 /**
  * 책 하이라이트 목록 조회
  */
-export async function getBookHighlights(bookId: string): Promise<BookHighlight[]> {
-  return apiClient.get<BookHighlight[]>(BOOK_ENDPOINTS.HIGHLIGHTS(bookId));
+export async function getBookHighlights(
+  bookId: string,
+  params?: { page?: number; size?: number }
+): Promise<PaginatedResponse<BookHighlight>> {
+  return apiClient.get<PaginatedResponse<BookHighlight>>(BOOK_ENDPOINTS.HIGHLIGHTS(bookId), {
+    params: { page: params?.page || 0, size: params?.size || 20 },
+  });
 }
 
 /**
@@ -72,7 +118,7 @@ export async function getBookHighlights(bookId: string): Promise<BookHighlight[]
  */
 export async function createBookHighlight(
   bookId: string,
-  data: { content: string; page?: number }
+  data: CreateHighlightRequest
 ): Promise<BookHighlight> {
   return apiClient.post<BookHighlight>(BOOK_ENDPOINTS.CREATE_HIGHLIGHT(bookId), data);
 }
@@ -83,7 +129,7 @@ export async function createBookHighlight(
 export async function updateBookHighlight(
   bookId: string,
   highlightId: string,
-  data: { content: string; page?: number }
+  data: CreateHighlightRequest
 ): Promise<BookHighlight> {
   return apiClient.put<BookHighlight>(
     BOOK_ENDPOINTS.UPDATE_HIGHLIGHT(bookId, highlightId),
@@ -99,6 +145,10 @@ export async function deleteBookHighlight(bookId: string, highlightId: string): 
 }
 
 export const bookService = {
+  getBookDetail,
+  getBookDetailByISBN,
+  getRelatedPosts,
+  getLibraryAvailability,
   toggleWishlist,
   getWishlist,
   getBookReviews,

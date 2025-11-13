@@ -17,6 +17,23 @@ export interface Book {
 }
 
 /**
+ * 책 상세 정보 (API 응답)
+ */
+export interface BookDetail {
+  bookId: number;
+  isbn13: string;
+  bookname: string;
+  authors: string;
+  publisher: string;
+  publicationYear: number;
+  description: string;
+  bookImageUrl: string;
+  averageRating: number | null;
+  reviewCount: number;
+  isWishlisted: boolean;
+}
+
+/**
  * 위시리스트 응답
  */
 export interface WishlistResponse {
@@ -48,12 +65,30 @@ export interface BookReview {
  * 책 하이라이트
  */
 export interface BookHighlight {
-  highlightId: string;
-  bookId: string;
-  userId: string;
+  highlightId: number;
+  bookId: number;
+  userId: number;
   userNickname: string;
   content: string;
-  page?: number;
+  pageNumber?: number;
   createdAt: string;
   updatedAt?: string;
+}
+
+/**
+ * 하이라이트 생성 요청
+ */
+export interface CreateHighlightRequest {
+  content: string;
+  pageNumber?: number;
+}
+
+/**
+ * 도서관 대출 가능 여부
+ */
+export interface LibraryAvailability {
+  libraryName: string;
+  available: boolean;
+  loanStatus?: string;
+  returnDate?: string;
 }
