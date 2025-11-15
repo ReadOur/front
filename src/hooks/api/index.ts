@@ -2,6 +2,9 @@
  * API 훅 통합 export
  */
 
+// 사용자
+export * from "./useUser";
+
 // 게시글
 export * from "./usePost";
 
