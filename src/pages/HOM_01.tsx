@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
 import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
-import { BookOpen, TrendingUp, Clock, ArrowRight, PenSquare } from "lucide-react";
+import { BookOpen, TrendingUp, Clock, ArrowRight, PenSquare, Users } from "lucide-react";
 
 // 날짜 포맷 함수
 function formatDate(dateString: string): string {
@@ -107,6 +107,19 @@ export default function HOM_01() {
     staleTime: 1000 * 60 * 5,
   });
 
+  // 모임 모집 게시글 조회
+  const { data: gatheringPosts, isLoading: isLoadingGathering } = useQuery({
+    queryKey: ["posts", "gathering"],
+    queryFn: () =>
+      getPosts({
+        page: 1,
+        size: 4,
+        category: "NOTI",
+        sort: "createdAt,desc",
+      }),
+    staleTime: 1000 * 60 * 5,
+  });
+
   // 최근 게시글 조회
   const { data: recentPosts, isLoading: isLoadingRecent } = useQuery({
     queryKey: ["posts", "recent"],
@@ -202,6 +215,41 @@ export default function HOM_01() {
         ) : (
           <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
             아직 인기 게시글이 없습니다.
+          </div>
+        )}
+      </section>
+
+      {/* 모임 모집 게시글 */}
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Users className="w-6 h-6 text-pink-500" />
+            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">모임 모집</h2>
+          </div>
+          <button
+            onClick={() => navigate("/boards?category=NOTI")}
+            className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
+          >
+            더보기
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {isLoadingGathering ? (
+          <PostListSkeleton count={4} />
+        ) : gatheringPosts && gatheringPosts.items.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {gatheringPosts.items.map((post) => (
+              <PostCard
+                key={post.postId}
+                post={post}
+                onClick={() => navigate(`/boards/${post.postId}`)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
+            아직 모임 모집 게시글이 없습니다.
           </div>
         )}
       </section>
