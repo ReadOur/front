@@ -14,16 +14,16 @@
 **완료된 작업:**
 - [x] userId 파라미터 완전 제거
 - [x] accessToken 기반 인증으로 전환
-- [x] Authorization Bearer 토큰만으로 사용자 식별
-- [x] X-User-Id 헤더 제거
+- [x] Authorization Bearer 토큰과 X-User-Id 헤더 동시 전송
+- [x] X-User-Id 헤더 값을 accessToken으로 설정
 - [x] JWT 파싱 로직 제거
 
 **변경된 파일 (7개):**
 1. `src/utils/auth.ts` - userId 관련 함수 제거 (78줄 → 48줄)
-2. `src/api/client.ts` - X-User-Id 헤더 제거
+2. `src/api/client.ts` - X-User-Id 헤더 값을 accessToken으로 변경
 3. `src/contexts/AuthContext.tsx` - JWT 파싱 로직 제거, accessToken을 user.id로 사용
 4. `src/types/chat.ts` - API 파라미터에서 userId 제거
-5. `src/services/chatService.ts` - getRoomMessages에서 X-User-Id 헤더 제거
+5. `src/services/chatService.ts` - getRoomMessages에서 userId 파라미터 제거
 6. `src/hooks/api/useChat.ts` - 쿼리 키에서 userId 제거
 7. `src/features/message/ChatDock.tsx` - accessToken 사용으로 변경
 
@@ -40,9 +40,15 @@
 - [ ] 토큰 만료 시 처리 로직 확인
 
 **백엔드 연동 확인 필요:**
-- [ ] 백엔드가 Authorization Bearer 토큰만으로 사용자 식별 가능한지 확인
-- [ ] X-User-Id 헤더 없이도 API 동작하는지 확인
-- [ ] 채팅 메시지 전송 시 senderId 필드 처리 방식 확인
+- [ ] 백엔드가 Authorization Bearer 토큰과 X-User-Id 헤더를 모두 수신하는지 확인
+- [ ] X-User-Id 헤더 값이 accessToken인 경우 처리 가능한지 확인
+- [ ] 채팅 메시지 전송 시 senderId 필드가 accessToken 값으로 전달되는 것 확인
+
+**API 헤더 구조:**
+```
+Authorization: Bearer {accessToken}
+X-User-Id: {accessToken}
+```
 
 **PR 준비 상태:**
 - ✅ 커밋 메시지 작성 완료
