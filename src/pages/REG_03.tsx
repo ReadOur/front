@@ -1,9 +1,9 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { isEmail, isStrongPassword } from '@/utils/validation';
 
-import { signup } from '@/services/authService';
+import { signup, checkEmail, checkNickname } from '@/services/authService';
 
 interface RegisterFormState {
   email: string;
@@ -40,6 +40,26 @@ export default function REG_03() {
     gender: '',
     birthDate: '',
   });
+
+  // 중복 검사 상태
+  const [emailCheckStatus, setEmailCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [nicknameCheckStatus, setNicknameCheckStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+
+  // 디바운스를 위한 타이머 ref
+  const emailCheckTimer = useRef<NodeJS.Timeout | null>(null);
+  const nicknameCheckTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (emailCheckTimer.current) {
+        clearTimeout(emailCheckTimer.current);
+      }
+      if (nicknameCheckTimer.current) {
+        clearTimeout(nicknameCheckTimer.current);
+      }
+    };
+  }, []);
 
   const validateEmail = (email: string) => {
     if (!email.trim()) return '이메일을 입력해주세요.';
@@ -85,6 +105,53 @@ export default function REG_03() {
     return '';
   };
 
+  // 이메일 중복 검사 (디바운스 적용)
+  const checkEmailDuplicate = async (email: string) => {
+    // 유효성 검사 먼저 확인
+    if (!email.trim() || !isEmail(email)) {
+      setEmailCheckStatus('idle');
+      return;
+    }
+
+    setEmailCheckStatus('checking');
+
+    try {
+      const response = await checkEmail({ email });
+      setEmailCheckStatus(response.available ? 'available' : 'taken');
+
+      if (!response.available) {
+        setFieldErrors(prev => ({ ...prev, email: '이미 사용 중인 이메일입니다.' }));
+      }
+    } catch (error) {
+      console.error('이메일 중복 검사 실패:', error);
+      setEmailCheckStatus('idle');
+    }
+  };
+
+  // 닉네임 중복 검사 (디바운스 적용)
+  const checkNicknameDuplicate = async (nickname: string) => {
+    // 유효성 검사 먼저 확인
+    const validationError = validateNickname(nickname);
+    if (validationError) {
+      setNicknameCheckStatus('idle');
+      return;
+    }
+
+    setNicknameCheckStatus('checking');
+
+    try {
+      const response = await checkNickname({ nickname });
+      setNicknameCheckStatus(response.available ? 'available' : 'taken');
+
+      if (!response.available) {
+        setFieldErrors(prev => ({ ...prev, nickname: '이미 사용 중인 닉네임입니다.' }));
+      }
+    } catch (error) {
+      console.error('닉네임 중복 검사 실패:', error);
+      setNicknameCheckStatus('idle');
+    }
+  };
+
   const isFormValid = useMemo(() => {
     const emailError = validateEmail(formState.email);
     const nicknameError = validateNickname(formState.nickname);
@@ -93,8 +160,12 @@ export default function REG_03() {
     const genderError = validateGender(formState.gender);
     const birthDateError = validateBirthDate(formState.birthDate);
 
-    return !emailError && !nicknameError && !passwordError && !passwordConfirmError && !genderError && !birthDateError;
-  }, [formState]);
+    // 중복 검사 완료 여부 확인
+    const emailAvailable = emailCheckStatus === 'available';
+    const nicknameAvailable = nicknameCheckStatus === 'available';
+
+    return !emailError && !nicknameError && !passwordError && !passwordConfirmError && !genderError && !birthDateError && emailAvailable && nicknameAvailable;
+  }, [formState, emailCheckStatus, nicknameCheckStatus]);
 
   const handleChange = (field: keyof RegisterFormState) =>
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -106,10 +177,40 @@ export default function REG_03() {
       switch (field) {
         case 'email':
           error = validateEmail(value);
+
+          // 이메일 중복 검사 (디바운스 적용)
+          if (emailCheckTimer.current) {
+            clearTimeout(emailCheckTimer.current);
+          }
+
+          if (!error) {
+            setEmailCheckStatus('idle');
+            emailCheckTimer.current = setTimeout(() => {
+              checkEmailDuplicate(value);
+            }, 500); // 500ms 디바운스
+          } else {
+            setEmailCheckStatus('idle');
+          }
           break;
+
         case 'nickname':
           error = validateNickname(value);
+
+          // 닉네임 중복 검사 (디바운스 적용)
+          if (nicknameCheckTimer.current) {
+            clearTimeout(nicknameCheckTimer.current);
+          }
+
+          if (!error) {
+            setNicknameCheckStatus('idle');
+            nicknameCheckTimer.current = setTimeout(() => {
+              checkNicknameDuplicate(value);
+            }, 500); // 500ms 디바운스
+          } else {
+            setNicknameCheckStatus('idle');
+          }
           break;
+
         case 'password':
           error = validatePassword(value);
           // 비밀번호 변경 시 비밀번호 확인도 재검증
@@ -210,18 +311,41 @@ export default function REG_03() {
               <label htmlFor="email" className="text-sm font-medium text-slate-800">
                 이메일
               </label>
-              <input
-                id="email"
-                type="email"
-                value={formState.email}
-                onChange={handleChange('email')}
-                placeholder="example@email.com"
-                className={`w-full rounded-xl border ${fieldErrors.email ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
-                autoComplete="email"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="email"
+                  type="email"
+                  value={formState.email}
+                  onChange={handleChange('email')}
+                  placeholder="example@email.com"
+                  className={`w-full rounded-xl border ${
+                    fieldErrors.email || emailCheckStatus === 'taken'
+                      ? 'border-red-500'
+                      : emailCheckStatus === 'available'
+                      ? 'border-green-500'
+                      : 'border-slate-200'
+                  } bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                  autoComplete="email"
+                  required
+                />
+                {emailCheckStatus === 'checking' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                  </div>
+                )}
+                {emailCheckStatus === 'available' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
               {fieldErrors.email && (
                 <p className="text-sm text-red-600">{fieldErrors.email}</p>
+              )}
+              {!fieldErrors.email && emailCheckStatus === 'available' && (
+                <p className="text-sm text-green-600">사용 가능한 이메일입니다.</p>
               )}
             </div>
 
@@ -244,18 +368,41 @@ export default function REG_03() {
               <label htmlFor="nickname" className="text-sm font-medium text-slate-800">
                 닉네임
               </label>
-              <input
-                id="nickname"
-                type="text"
-                value={formState.nickname}
-                onChange={handleChange('nickname')}
-                placeholder="표시할 닉네임"
-                className={`w-full rounded-xl border ${fieldErrors.nickname ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
-                autoComplete="nickname"
-                required
-              />
+              <div className="relative">
+                <input
+                  id="nickname"
+                  type="text"
+                  value={formState.nickname}
+                  onChange={handleChange('nickname')}
+                  placeholder="표시할 닉네임"
+                  className={`w-full rounded-xl border ${
+                    fieldErrors.nickname || nicknameCheckStatus === 'taken'
+                      ? 'border-red-500'
+                      : nicknameCheckStatus === 'available'
+                      ? 'border-green-500'
+                      : 'border-slate-200'
+                  } bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                  autoComplete="nickname"
+                  required
+                />
+                {nicknameCheckStatus === 'checking' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                  </div>
+                )}
+                {nicknameCheckStatus === 'available' && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
               {fieldErrors.nickname && (
                 <p className="text-sm text-red-600">{fieldErrors.nickname}</p>
+              )}
+              {!fieldErrors.nickname && nicknameCheckStatus === 'available' && (
+                <p className="text-sm text-green-600">사용 가능한 닉네임입니다.</p>
               )}
             </div>
 

@@ -13,6 +13,9 @@ export const AUTH_ENDPOINTS = {
   LOGOUT: "/auth/logout",
   REFRESH: "/auth/refresh",
   ME: "/auth/me",
+  // 중복 검사
+  CHECK_EMAIL: "/auth/check-email",
+  CHECK_NICKNAME: "/auth/check-nickname",
 } as const;
 
 /**

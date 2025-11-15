@@ -12,6 +12,10 @@ import type {
   FindIdResponse,
   ResetPasswordRequest,
   ChangePasswordRequest,
+  CheckEmailRequest,
+  CheckEmailResponse,
+  CheckNicknameRequest,
+  CheckNicknameResponse,
 } from '@/types';
 
 /**
@@ -56,6 +60,20 @@ export async function changePassword(data: ChangePasswordRequest): Promise<void>
   await apiClient.post<void, ChangePasswordRequest>(USER_ENDPOINTS.CHANGE_PASSWORD, data);
 }
 
+/**
+ * 이메일 중복 검사
+ */
+export async function checkEmail(data: CheckEmailRequest): Promise<CheckEmailResponse> {
+  return apiClient.post<CheckEmailResponse, CheckEmailRequest>(AUTH_ENDPOINTS.CHECK_EMAIL, data);
+}
+
+/**
+ * 닉네임 중복 검사
+ */
+export async function checkNickname(data: CheckNicknameRequest): Promise<CheckNicknameResponse> {
+  return apiClient.post<CheckNicknameResponse, CheckNicknameRequest>(AUTH_ENDPOINTS.CHECK_NICKNAME, data);
+}
+
 export const authService = {
   login,
   signup,
@@ -63,6 +81,8 @@ export const authService = {
   findId,
   resetPassword,
   changePassword,
+  checkEmail,
+  checkNickname,
 };
 
 export default authService;

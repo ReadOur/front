@@ -130,3 +130,33 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+// ===== 중복 검사 =====
+
+/**
+ * 이메일 중복 검사 요청
+ */
+export interface CheckEmailRequest {
+  email: string;
+}
+
+/**
+ * 이메일 중복 검사 응답
+ */
+export interface CheckEmailResponse {
+  available: boolean;
+}
+
+/**
+ * 닉네임 중복 검사 요청
+ */
+export interface CheckNicknameRequest {
+  nickname: string;
+}
+
+/**
+ * 닉네임 중복 검사 응답
+ */
+export interface CheckNicknameResponse {
+  available: boolean;
+}
