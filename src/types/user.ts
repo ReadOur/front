@@ -164,6 +164,30 @@ export interface CheckNicknameResponse {
 // ===== 마이페이지 =====
 
 /**
+ * 마이페이지 게시글 항목
+ */
+export interface MyPagePost {
+  postId: number;
+  title: string;
+  category: string;
+  likeCount: number;
+  commentCount: number;
+  hit: number;
+  createdAt: string;
+}
+
+/**
+ * 마이페이지 댓글 항목
+ */
+export interface MyPageComment {
+  commentId: number;
+  content: string;
+  postId: number;
+  postTitle: string;
+  createdAt: string;
+}
+
+/**
  * 마이페이지 미리보기 응답
  */
 export interface MyPageResponse {
@@ -179,4 +203,7 @@ export interface MyPageResponse {
     commentsCount: number;
     likedPostsCount: number;
   };
+  recentPosts: MyPagePost[]; // 내가 작성한 게시글 최근 5건
+  recentComments: MyPageComment[]; // 내가 작성한 댓글 최근 5건
+  likedPosts: MyPagePost[]; // 좋아요 누른 글 최근 5건
 }
