@@ -29,6 +29,8 @@ export const USER_ENDPOINTS = {
   FIND_ID: "/users/find-id",
   RESET_PASSWORD: "/users/reset-password",
   CHANGE_PASSWORD: "/users/change-password",
+  // 마이페이지
+  MY_PAGE: "/my-page",
 } as const;
 
 /**

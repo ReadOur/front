@@ -160,3 +160,23 @@ export interface CheckNicknameRequest {
 export interface CheckNicknameResponse {
   available: boolean;
 }
+
+// ===== 마이페이지 =====
+
+/**
+ * 마이페이지 미리보기 응답
+ */
+export interface MyPageResponse {
+  user: {
+    id: string;
+    nickname: string;
+    email: string;
+    avatarUrl?: string;
+    bio?: string;
+  };
+  stats: {
+    postsCount: number;
+    commentsCount: number;
+    likedPostsCount: number;
+  };
+}
