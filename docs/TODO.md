@@ -1,13 +1,59 @@
 # 📋 ReadOur Front - TODO & Roadmap
 
 > **Last Updated:** 2025-11-13
-> **Current Status:** 캘린더 API 연동 완료, JWT 인증 시스템 구현 예정, 시연 시나리오 중심 개발
+> **Current Status:** JWT 인증 시스템 userId → accessToken 전환 완료, 시연 시나리오 중심 개발
+
+---
+
+## 🔍 검토사항 (Review Items)
+
+### ✅ JWT 토큰 인증 전환 완료 (2025-11-13)
+
+**브랜치:** `claude/jwt-token-receive-011CV5w5KVq7jXTxu1CFE35e`
+
+**완료된 작업:**
+- [x] userId 파라미터 완전 제거
+- [x] accessToken 기반 인증으로 전환
+- [x] Authorization Bearer 토큰만으로 사용자 식별
+- [x] X-User-Id 헤더 제거
+- [x] JWT 파싱 로직 제거
+
+**변경된 파일 (7개):**
+1. `src/utils/auth.ts` - userId 관련 함수 제거 (78줄 → 48줄)
+2. `src/api/client.ts` - X-User-Id 헤더 제거
+3. `src/contexts/AuthContext.tsx` - JWT 파싱 로직 제거, accessToken을 user.id로 사용
+4. `src/types/chat.ts` - API 파라미터에서 userId 제거
+5. `src/services/chatService.ts` - getRoomMessages에서 X-User-Id 헤더 제거
+6. `src/hooks/api/useChat.ts` - 쿼리 키에서 userId 제거
+7. `src/features/message/ChatDock.tsx` - accessToken 사용으로 변경
+
+**Git 상태:**
+- ✅ 로컬 변경사항 없음 (working tree clean)
+- ✅ 원격 저장소와 동기화 완료
+- ✅ 커밋 및 푸시 완료
+
+**테스트 필요 사항:**
+- [ ] 로그인 플로우 테스트 (accessToken 발급 확인)
+- [ ] API 요청 시 Authorization Bearer 토큰 전송 확인
+- [ ] 채팅 기능 동작 확인 (userId 제거 영향)
+- [ ] 로그아웃 시 accessToken 삭제 확인
+- [ ] 토큰 만료 시 처리 로직 확인
+
+**백엔드 연동 확인 필요:**
+- [ ] 백엔드가 Authorization Bearer 토큰만으로 사용자 식별 가능한지 확인
+- [ ] X-User-Id 헤더 없이도 API 동작하는지 확인
+- [ ] 채팅 메시지 전송 시 senderId 필드 처리 방식 확인
+
+**PR 준비 상태:**
+- ✅ 커밋 메시지 작성 완료
+- ✅ 변경사항 요약 작성 완료
+- [ ] PR 생성 대기 중
 
 ---
 
 ## 🎯 진행 중 (In Progress)
 
-- [ ] JWT 토큰 인증 시스템 구현 (Access Token만 사용)
+- [x] JWT 토큰 인증 시스템 구현 (Access Token만 사용) - ✅ 완료 (2025-11-13)
 - [ ] 시연 시나리오 중심 개발 (18일 목표)
 - [ ] 커뮤니티 UI 완성 (18일 목표)
 
