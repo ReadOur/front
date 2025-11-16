@@ -1,7 +1,7 @@
 // PRF_10.tsx - 마이페이지
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useMyProfile, useMyLikedPosts } from "@/hooks/api";
+import { useMyPage } from "@/hooks/api";
 
 // 목업 데이터 - 채팅방 (백엔드 API 대기 중)
 const mockChatRooms = [
@@ -20,14 +20,8 @@ const mockNotifications = [
 export default function PRF_10() {
   const navigate = useNavigate();
 
-  // API 호출: 내 프로필 및 좋아요 누른 글
-  const { data: myProfile, isLoading: isLoadingProfile } = useMyProfile();
-  const { data: likedPostsData, isLoading: isLoadingLikedPosts } = useMyLikedPosts({
-    page: 0,
-    size: 10,
-  });
-
-  const likedPosts = likedPostsData?.content || [];
+  // API 호출: 마이페이지 (프로필 + 최근 글 5개씩)
+  const { data: myPage, isLoading } = useMyPage();
 
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
@@ -71,11 +65,11 @@ export default function PRF_10() {
         </div>
 
         {/* 프로필 정보 */}
-        {isLoadingProfile ? (
+        {isLoading ? (
           <div className="text-center py-8 text-xl" style={{ color: "#999" }}>
             로딩 중...
           </div>
-        ) : myProfile && (
+        ) : myPage ? (
           <div className="mb-8 p-6 rounded-lg" style={{ background: "#E9E5DC" }}>
             <div className="flex items-center gap-6">
               <div
@@ -83,23 +77,27 @@ export default function PRF_10() {
                 style={{ background: "#90BE6D" }}
               >
                 <span className="text-3xl" style={{ color: "white" }}>
-                  {myProfile.nickname.charAt(0).toUpperCase()}
+                  {myPage.nickname.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: "#6B4F3F" }}>
-                  {myProfile.nickname}
+                  {myPage.nickname}
                 </h2>
                 <p className="text-lg" style={{ color: "#6B4F3F", opacity: 0.7 }}>
-                  {myProfile.email}
+                  사용자 ID: {myPage.userId}
                 </p>
                 <div className="flex gap-6 mt-3 text-base" style={{ color: "#6B4F3F" }}>
-                  <span>게시글 {myProfile.postCount}</span>
-                  <span>댓글 {myProfile.commentCount}</span>
-                  <span>좋아요 {myProfile.likedPostCount}</span>
+                  <span>내 글 {myPage.myPosts.length}</span>
+                  <span>댓글 단 글 {myPage.myComments.length}</span>
+                  <span>좋아요 {myPage.likedPosts.length}</span>
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-xl" style={{ color: "#999" }}>
+            프로필 정보를 불러올 수 없습니다.
           </div>
         )}
 
@@ -179,12 +177,12 @@ export default function PRF_10() {
                   }
                 `}</style>
                 <div className="bookmark-scroll space-y-2 p-4">
-                  {isLoadingLikedPosts ? (
+                  {isLoading ? (
                     <div className="text-center py-8 text-lg" style={{ color: "#999" }}>
                       로딩 중...
                     </div>
-                  ) : likedPosts.length > 0 ? (
-                    likedPosts.map((post) => (
+                  ) : myPage && myPage.likedPosts.length > 0 ? (
+                    myPage.likedPosts.map((post) => (
                       <div
                         key={post.postId}
                         onClick={() => handlePostClick(post.postId)}

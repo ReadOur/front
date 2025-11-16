@@ -4,106 +4,31 @@
 
 import { apiClient } from "@/api/client";
 import { USER_ENDPOINTS } from "@/api/endpoints";
-import {
-  MyPagePreview,
-  UserProfilePreview,
-  UpdateProfileRequest,
-  PaginatedResponse,
-  PostListItem,
-  Comment,
-} from "@/types";
+import { MyPagePreview, UserProfilePreview, UpdateProfileRequest } from "@/types";
 
 /**
- * 내 마이페이지 조회 (미리보기)
+ * 내 마이페이지 조회
+ * GET /my-page
+ * - 내 프로필 정보
+ * - 최근 작성한 게시글 5개 (myPosts)
+ * - 최근 댓글 단 게시글 5개 (myComments)
+ * - 최근 좋아요 누른 게시글 5개 (likedPosts)
  */
-export async function getMyProfile(): Promise<MyPagePreview> {
-  return apiClient.get<MyPagePreview>(USER_ENDPOINTS.MY_PROFILE);
+export async function getMyPage(): Promise<MyPagePreview> {
+  return apiClient.get<MyPagePreview>(USER_ENDPOINTS.MY_PAGE);
 }
 
 /**
- * 특정 사용자 프로필 조회 (미리보기)
+ * 특정 사용자 프로필 조회
+ * TODO: 백엔드 API 구현 확인 필요
  */
 export async function getUserProfile(userId: string): Promise<UserProfilePreview> {
   return apiClient.get<UserProfilePreview>(USER_ENDPOINTS.USER_PROFILE(userId));
 }
 
 /**
- * 내가 좋아요 누른 게시글 목록 조회
- */
-export async function getMyLikedPosts(params?: {
-  page?: number;
-  size?: number;
-}): Promise<PaginatedResponse<PostListItem>> {
-  return apiClient.get<PaginatedResponse<PostListItem>>(USER_ENDPOINTS.MY_LIKED_POSTS, {
-    params: { page: params?.page || 0, size: params?.size || 20 },
-  });
-}
-
-/**
- * 특정 사용자가 좋아요 누른 게시글 목록 조회
- */
-export async function getUserLikedPosts(
-  userId: string,
-  params?: { page?: number; size?: number }
-): Promise<PaginatedResponse<PostListItem>> {
-  return apiClient.get<PaginatedResponse<PostListItem>>(
-    USER_ENDPOINTS.USER_LIKED_POSTS(userId),
-    {
-      params: { page: params?.page || 0, size: params?.size || 20 },
-    }
-  );
-}
-
-/**
- * 내가 작성한 게시글 목록 조회
- */
-export async function getMyPosts(params?: {
-  page?: number;
-  size?: number;
-}): Promise<PaginatedResponse<PostListItem>> {
-  return apiClient.get<PaginatedResponse<PostListItem>>(USER_ENDPOINTS.MY_POSTS, {
-    params: { page: params?.page || 0, size: params?.size || 20 },
-  });
-}
-
-/**
- * 특정 사용자가 작성한 게시글 목록 조회
- */
-export async function getUserPosts(
-  userId: string,
-  params?: { page?: number; size?: number }
-): Promise<PaginatedResponse<PostListItem>> {
-  return apiClient.get<PaginatedResponse<PostListItem>>(USER_ENDPOINTS.USER_POSTS(userId), {
-    params: { page: params?.page || 0, size: params?.size || 20 },
-  });
-}
-
-/**
- * 내가 작성한 댓글 목록 조회
- */
-export async function getMyComments(params?: {
-  page?: number;
-  size?: number;
-}): Promise<PaginatedResponse<Comment>> {
-  return apiClient.get<PaginatedResponse<Comment>>(USER_ENDPOINTS.MY_COMMENTS, {
-    params: { page: params?.page || 0, size: params?.size || 20 },
-  });
-}
-
-/**
- * 특정 사용자가 작성한 댓글 목록 조회
- */
-export async function getUserComments(
-  userId: string,
-  params?: { page?: number; size?: number }
-): Promise<PaginatedResponse<Comment>> {
-  return apiClient.get<PaginatedResponse<Comment>>(USER_ENDPOINTS.USER_COMMENTS(userId), {
-    params: { page: params?.page || 0, size: params?.size || 20 },
-  });
-}
-
-/**
  * 프로필 수정
+ * TODO: 백엔드 API 구현 확인 필요
  */
 export async function updateProfile(
   userId: string,
@@ -113,13 +38,9 @@ export async function updateProfile(
 }
 
 export const userService = {
-  getMyProfile,
+  getMyPage,
   getUserProfile,
-  getMyLikedPosts,
-  getUserLikedPosts,
-  getMyPosts,
-  getUserPosts,
-  getMyComments,
-  getUserComments,
   updateProfile,
 };
+
+export default userService;

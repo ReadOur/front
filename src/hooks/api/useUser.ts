@@ -4,50 +4,36 @@
 
 import { useQuery, useMutation, useQueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
-import {
-  MyPagePreview,
-  UserProfilePreview,
-  UpdateProfileRequest,
-  PaginatedResponse,
-  PostListItem,
-  Comment,
-} from "@/types";
+import { MyPagePreview, UserProfilePreview, UpdateProfileRequest } from "@/types";
 
 // ===== Query Keys =====
 export const USER_QUERY_KEYS = {
   all: ["users"] as const,
   // 마이페이지
-  myProfile: () => [...USER_QUERY_KEYS.all, "myProfile"] as const,
-  myLikedPosts: (params?: { page?: number; size?: number }) =>
-    [...USER_QUERY_KEYS.all, "myLikedPosts", params] as const,
-  myPosts: (params?: { page?: number; size?: number }) =>
-    [...USER_QUERY_KEYS.all, "myPosts", params] as const,
-  myComments: (params?: { page?: number; size?: number }) =>
-    [...USER_QUERY_KEYS.all, "myComments", params] as const,
+  myPage: () => [...USER_QUERY_KEYS.all, "myPage"] as const,
   // 특정 사용자
   userProfile: (userId: string) => [...USER_QUERY_KEYS.all, "userProfile", userId] as const,
-  userLikedPosts: (userId: string, params?: { page?: number; size?: number }) =>
-    [...USER_QUERY_KEYS.all, "userLikedPosts", userId, params] as const,
-  userPosts: (userId: string, params?: { page?: number; size?: number }) =>
-    [...USER_QUERY_KEYS.all, "userPosts", userId, params] as const,
-  userComments: (userId: string, params?: { page?: number; size?: number }) =>
-    [...USER_QUERY_KEYS.all, "userComments", userId, params] as const,
 };
 
 // ===== Queries =====
 
 /**
  * 내 마이페이지 조회
+ * - 내 프로필 정보 (userId, nickname)
+ * - 최근 작성한 게시글 5개
+ * - 최근 댓글 단 게시글 5개
+ * - 최근 좋아요 누른 게시글 5개
  */
-export function useMyProfile() {
+export function useMyPage() {
   return useQuery<MyPagePreview>({
-    queryKey: USER_QUERY_KEYS.myProfile(),
-    queryFn: userService.getMyProfile,
+    queryKey: USER_QUERY_KEYS.myPage(),
+    queryFn: userService.getMyPage,
   });
 }
 
 /**
  * 특정 사용자 프로필 조회
+ * TODO: 백엔드 API 구현 확인 필요
  */
 export function useUserProfile(userId: string) {
   return useQuery<UserProfilePreview>({
@@ -57,73 +43,11 @@ export function useUserProfile(userId: string) {
   });
 }
 
-/**
- * 내가 좋아요 누른 게시글 목록
- */
-export function useMyLikedPosts(params?: { page?: number; size?: number }) {
-  return useQuery<PaginatedResponse<PostListItem>>({
-    queryKey: USER_QUERY_KEYS.myLikedPosts(params),
-    queryFn: () => userService.getMyLikedPosts(params),
-  });
-}
-
-/**
- * 특정 사용자가 좋아요 누른 게시글 목록
- */
-export function useUserLikedPosts(userId: string, params?: { page?: number; size?: number }) {
-  return useQuery<PaginatedResponse<PostListItem>>({
-    queryKey: USER_QUERY_KEYS.userLikedPosts(userId, params),
-    queryFn: () => userService.getUserLikedPosts(userId, params),
-    enabled: !!userId,
-  });
-}
-
-/**
- * 내가 작성한 게시글 목록
- */
-export function useMyPosts(params?: { page?: number; size?: number }) {
-  return useQuery<PaginatedResponse<PostListItem>>({
-    queryKey: USER_QUERY_KEYS.myPosts(params),
-    queryFn: () => userService.getMyPosts(params),
-  });
-}
-
-/**
- * 특정 사용자가 작성한 게시글 목록
- */
-export function useUserPosts(userId: string, params?: { page?: number; size?: number }) {
-  return useQuery<PaginatedResponse<PostListItem>>({
-    queryKey: USER_QUERY_KEYS.userPosts(userId, params),
-    queryFn: () => userService.getUserPosts(userId, params),
-    enabled: !!userId,
-  });
-}
-
-/**
- * 내가 작성한 댓글 목록
- */
-export function useMyComments(params?: { page?: number; size?: number }) {
-  return useQuery<PaginatedResponse<Comment>>({
-    queryKey: USER_QUERY_KEYS.myComments(params),
-    queryFn: () => userService.getMyComments(params),
-  });
-}
-
-/**
- * 특정 사용자가 작성한 댓글 목록
- */
-export function useUserComments(userId: string, params?: { page?: number; size?: number }) {
-  return useQuery<PaginatedResponse<Comment>>({
-    queryKey: USER_QUERY_KEYS.userComments(userId, params),
-    queryFn: () => userService.getUserComments(userId, params),
-    enabled: !!userId,
-  });
-}
-
 // ===== Mutations =====
 
 /**
  * 프로필 수정
+ * TODO: 백엔드 API 구현 확인 필요
  */
 export function useUpdateProfile(
   options?: UseMutationOptions<
@@ -144,8 +68,8 @@ export function useUpdateProfile(
     ...options,
     mutationFn: ({ userId, data }) => userService.updateProfile(userId, data),
     onSuccess: (data, variables, context) => {
-      // 내 프로필 무효화
-      queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.myProfile() });
+      // 내 마이페이지 무효화
+      queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.myPage() });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {

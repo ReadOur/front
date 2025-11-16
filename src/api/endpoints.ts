@@ -26,16 +26,10 @@ export const USER_ENDPOINTS = {
   FIND_ID: "/users/find-id",
   RESET_PASSWORD: "/users/reset-password",
   CHANGE_PASSWORD: "/users/change-password",
-  // 마이페이지 - 본인
-  MY_PROFILE: "/users/me/profile",
-  MY_LIKED_POSTS: "/users/me/liked-posts",
-  MY_POSTS: "/users/me/posts",
-  MY_COMMENTS: "/users/me/comments",
-  // 마이페이지 - 특정 사용자
+  // 마이페이지
+  MY_PAGE: "/my-page", // 내 프로필 + 최근 글/댓글/좋아요 5개씩
+  // 마이페이지 - 특정 사용자 (TODO: 백엔드 API 확인 필요)
   USER_PROFILE: (userId: string) => `/users/${userId}/profile`,
-  USER_LIKED_POSTS: (userId: string) => `/users/${userId}/liked-posts`,
-  USER_POSTS: (userId: string) => `/users/${userId}/posts`,
-  USER_COMMENTS: (userId: string) => `/users/${userId}/comments`,
 } as const;
 
 /**

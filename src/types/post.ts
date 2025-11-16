@@ -82,6 +82,13 @@ export interface PostListItem {
   createdAt: string;
   updatedAt?: string;
   isPinned?: boolean;
+  // 마이페이지 응답 등에서 추가로 포함되는 필드들
+  isLiked?: boolean;
+  isSpoiler?: boolean;
+  bookId?: number;
+  currentMemberCount?: number | null;
+  recruitmentLimit?: number | null;
+  isApplied?: boolean | null;
 }
 
 // ===== 게시글 요청/응답 =====
