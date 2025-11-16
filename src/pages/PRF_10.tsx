@@ -1,20 +1,16 @@
 // PRF_10.tsx - 마이페이지
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useMyProfile, useMyLikedPosts } from "@/hooks/api";
 
-// 목업 데이터 (나중에 API로 교체)
+// 목업 데이터 - 채팅방 (백엔드 API 대기 중)
 const mockChatRooms = [
   { id: 1, name: "채팅방 1", profileImage: null },
   { id: 2, name: "채팅방 2", profileImage: null },
   { id: 3, name: "채팅방 3", profileImage: null },
 ];
 
-const mockBookmarks = [
-  { id: 1, title: "북마크된 게시글 1", date: "2024.01.15" },
-  { id: 2, title: "북마크된 게시글 2", date: "2024.01.14" },
-  { id: 3, title: "북마크된 게시글 3", date: "2024.01.13" },
-];
-
+// 목업 데이터 - 알림 (백엔드 API 대기 중)
 const mockNotifications = [
   { id: 1, message: "새로운 댓글이 달렸습니다", time: "10분 전" },
   { id: 2, message: "게시글에 좋아요가 추가되었습니다", time: "1시간 전" },
@@ -23,6 +19,28 @@ const mockNotifications = [
 
 export default function PRF_10() {
   const navigate = useNavigate();
+
+  // API 호출: 내 프로필 및 좋아요 누른 글
+  const { data: myProfile, isLoading: isLoadingProfile } = useMyProfile();
+  const { data: likedPostsData, isLoading: isLoadingLikedPosts } = useMyLikedPosts({
+    page: 0,
+    size: 10,
+  });
+
+  const likedPosts = likedPostsData?.content || [];
+
+  // 날짜 포맷 함수
+  const formatDate = (dateString: string) => {
+    const d = new Date(dateString);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}.${m}.${day}`;
+  };
+
+  const handlePostClick = (postId: number) => {
+    navigate(`/boards/${postId}`);
+  };
 
   return (
     <div
@@ -51,6 +69,39 @@ export default function PRF_10() {
             <span className="text-xl font-semibold">설정</span>
           </button>
         </div>
+
+        {/* 프로필 정보 */}
+        {isLoadingProfile ? (
+          <div className="text-center py-8 text-xl" style={{ color: "#999" }}>
+            로딩 중...
+          </div>
+        ) : myProfile && (
+          <div className="mb-8 p-6 rounded-lg" style={{ background: "#E9E5DC" }}>
+            <div className="flex items-center gap-6">
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center"
+                style={{ background: "#90BE6D" }}
+              >
+                <span className="text-3xl" style={{ color: "white" }}>
+                  {myProfile.nickname.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold mb-2" style={{ color: "#6B4F3F" }}>
+                  {myProfile.nickname}
+                </h2>
+                <p className="text-lg" style={{ color: "#6B4F3F", opacity: 0.7 }}>
+                  {myProfile.email}
+                </p>
+                <div className="flex gap-6 mt-3 text-base" style={{ color: "#6B4F3F" }}>
+                  <span>게시글 {myProfile.postCount}</span>
+                  <span>댓글 {myProfile.commentCount}</span>
+                  <span>좋아요 {myProfile.likedPostCount}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 좌측: 채팅방 목록 */}
@@ -89,9 +140,9 @@ export default function PRF_10() {
             ))}
           </div>
 
-          {/* 우측: 북마크 & 알림 */}
+          {/* 우측: 좋아요 누른 글 & 알림 */}
           <div className="space-y-8">
-            {/* 북마크된 게시글 */}
+            {/* 좋아요 누른 글 */}
             <div
               className="rounded-[30px] overflow-hidden"
               style={{ background: "#FFF9F2" }}
@@ -105,7 +156,7 @@ export default function PRF_10() {
                   className="text-2xl font-normal text-center"
                   style={{ color: "#6B4F3F" }}
                 >
-                  북마크 된 게시글
+                  좋아요 누른 글
                 </h3>
               </div>
 
@@ -128,26 +179,37 @@ export default function PRF_10() {
                   }
                 `}</style>
                 <div className="bookmark-scroll space-y-2 p-4">
-                  {mockBookmarks.map((bookmark) => (
-                    <div
-                      key={bookmark.id}
-                      className="p-4 rounded cursor-pointer hover:opacity-80 transition"
-                      style={{ background: "#E9E5DC" }}
-                    >
-                      <p
-                        className="font-normal"
-                        style={{ color: "#6B4F3F", fontSize: "18px" }}
-                      >
-                        {bookmark.title}
-                      </p>
-                      <p
-                        className="text-sm mt-1"
-                        style={{ color: "#6B4F3F", opacity: 0.7 }}
-                      >
-                        {bookmark.date}
-                      </p>
+                  {isLoadingLikedPosts ? (
+                    <div className="text-center py-8 text-lg" style={{ color: "#999" }}>
+                      로딩 중...
                     </div>
-                  ))}
+                  ) : likedPosts.length > 0 ? (
+                    likedPosts.map((post) => (
+                      <div
+                        key={post.postId}
+                        onClick={() => handlePostClick(post.postId)}
+                        className="p-4 rounded cursor-pointer hover:opacity-80 transition"
+                        style={{ background: "#E9E5DC" }}
+                      >
+                        <p
+                          className="font-normal line-clamp-1"
+                          style={{ color: "#6B4F3F", fontSize: "18px" }}
+                        >
+                          {post.title}
+                        </p>
+                        <p
+                          className="text-sm mt-1"
+                          style={{ color: "#6B4F3F", opacity: 0.7 }}
+                        >
+                          {formatDate(post.createdAt)}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-lg" style={{ color: "#999" }}>
+                      좋아요 누른 글이 없습니다.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

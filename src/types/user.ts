@@ -130,3 +130,33 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+// ===== 마이페이지 관련 =====
+
+/**
+ * 마이페이지 미리보기 (본인용)
+ */
+export interface MyPagePreview {
+  userId: string;
+  nickname: string;
+  email: string;
+  avatarUrl?: string;
+  bio?: string;
+  postCount: number;
+  commentCount: number;
+  likedPostCount: number;
+  createdAt?: string;
+}
+
+/**
+ * 사용자 프로필 미리보기 (다른 사용자 조회용)
+ */
+export interface UserProfilePreview {
+  userId: string;
+  nickname: string;
+  avatarUrl?: string;
+  bio?: string;
+  postCount: number;
+  commentCount: number;
+  likedPostCount: number;
+}
