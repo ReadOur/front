@@ -141,6 +141,8 @@ export const LIBRARY_ENDPOINTS = {
   ADD_BOOKMARK: "/library/bookmarks",
   REMOVE_BOOKMARK: (bookmarkId: string) => `/library/bookmarks/${bookmarkId}`,
   SAVED_POSTS: "/library/saved-posts",
+  // 내 서재 - 리뷰
+  MY_REVIEWS: "/my-library/reviews", // 내가 작성한 리뷰 목록 (페이지네이션)
   // 관심 도서관
   FAVORITE_LIBRARIES: "/users/me/favorite-libraries",
   ADD_FAVORITE_LIBRARY: "/users/me/favorite-libraries",

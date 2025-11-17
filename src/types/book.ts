@@ -92,3 +92,32 @@ export interface LibraryAvailability {
   loanStatus?: string;
   returnDate?: string;
 }
+
+/**
+ * 내 서재 리뷰 아이템
+ * TODO: 백엔드 응답에서 content가 비어있어 정확한 구조 확인 필요
+ * 책 정보가 포함될 것으로 추정
+ */
+export interface MyLibraryReview {
+  reviewId: number;
+  bookId: number;
+  book?: {
+    title: string;
+    thumbnail?: string;
+    author?: string;
+  };
+  rating: number;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/**
+ * 내 서재 리뷰 목록 응답
+ * GET /my-library/reviews
+ */
+export interface MyLibraryReviewsResponse {
+  userId: number;
+  nickname: string;
+  reviewPage: import("./spring").SpringPage<MyLibraryReview>;
+}

@@ -3,7 +3,7 @@
  */
 
 import { apiClient } from "@/api/client";
-import { BOOK_ENDPOINTS } from "@/api/endpoints";
+import { BOOK_ENDPOINTS, LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import {
   BookDetail,
   WishlistResponse,
@@ -12,6 +12,7 @@ import {
   BookHighlight,
   CreateHighlightRequest,
   LibraryAvailability,
+  MyLibraryReviewsResponse,
   PaginatedResponse,
   PostListItem,
 } from "@/types";
@@ -144,6 +145,24 @@ export async function deleteBookHighlight(bookId: string, highlightId: string): 
   return apiClient.delete(BOOK_ENDPOINTS.DELETE_HIGHLIGHT(bookId, highlightId));
 }
 
+/**
+ * 내 서재 - 리뷰 목록 조회 (페이지네이션)
+ * GET /my-library/reviews?page=0&size=10&sort=createdAt,ASC
+ */
+export async function getMyReviews(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<MyLibraryReviewsResponse> {
+  return apiClient.get<MyLibraryReviewsResponse>(LIBRARY_ENDPOINTS.MY_REVIEWS, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 10,
+      sort: params?.sort || "createdAt,DESC",
+    },
+  });
+}
+
 export const bookService = {
   getBookDetail,
   getBookDetailByISBN,
@@ -159,4 +178,5 @@ export const bookService = {
   createBookHighlight,
   updateBookHighlight,
   deleteBookHighlight,
+  getMyReviews,
 };
