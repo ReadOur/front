@@ -130,3 +130,32 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+// ===== 마이페이지 관련 =====
+
+/**
+ * 마이페이지 응답
+ * 백엔드 GET /my-page 응답 형식
+ * - myPosts, myComments, likedPosts는 각각 최대 5개씩 반환
+ */
+export interface MyPagePreview {
+  userId: number;
+  nickname: string;
+  myPosts: import("./post").PostListItem[];
+  myComments: import("./post").PostListItem[];
+  likedPosts: import("./post").PostListItem[];
+}
+
+/**
+ * 사용자 프로필 미리보기 (다른 사용자 조회용)
+ * TODO: 백엔드 API 확인 필요
+ */
+export interface UserProfilePreview {
+  userId: number;
+  nickname: string;
+  avatarUrl?: string;
+  bio?: string;
+  postCount: number;
+  commentCount: number;
+  likedPostCount: number;
+}

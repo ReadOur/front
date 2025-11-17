@@ -1,25 +1,10 @@
 // MYB_14.tsx - 내 서재 페이지
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useWishlist } from "@/hooks/api";
 
-// 책 타입 정의
-interface Book {
-  id: number;
-  title: string;
-  author?: string;
-  coverImage?: string;
-}
-
-// 목업 데이터 (나중에 API로 교체)
-const mockWishlist: Book[] = [
-  { id: 1, title: "책 제목 1", author: "저자 1" },
-  { id: 2, title: "책 제목 2", author: "저자 2" },
-  { id: 3, title: "책 제목 3", author: "저자 3" },
-  { id: 4, title: "책 제목 4", author: "저자 4" },
-  { id: 5, title: "책 제목 5", author: "저자 5" },
-];
-
-const mockReviewedBooks: Book[] = [
+// 목업 데이터 - 리뷰 남긴 책들 (백엔드 API 대기 중)
+const mockReviewedBooks = [
   { id: 6, title: "책 제목 1", author: "저자 1" },
   { id: 7, title: "책 제목 2", author: "저자 2" },
   { id: 8, title: "책 제목 3", author: "저자 3" },
@@ -41,6 +26,9 @@ export default function MYB_14() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // API 호출: 위시리스트
+  const { data: wishlistData, isLoading: isLoadingWishlist } = useWishlist();
+
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,7 +46,6 @@ export default function MYB_14() {
     if (!searchTerm.trim()) return;
 
     console.log("검색:", searchTerm);
-    // TODO: 검색 결과 페이지로 이동
     navigate(`/library/search?q=${encodeURIComponent(searchTerm)}`);
     setShowSuggestions(false);
   };
@@ -68,11 +55,11 @@ export default function MYB_14() {
     handleSearch(suggestion);
   };
 
-  const handleBookClick = (book: Book) => {
-    console.log("책 클릭:", book);
-    // TODO: 책 상세 페이지(BOD_15)로 이동
-    navigate(`/books/${book.id}`);
+  const handleBookClick = (bookId: string) => {
+    navigate(`/books/${bookId}`);
   };
+
+  const wishlist = wishlistData || [];
 
   return (
     <div
@@ -170,41 +157,62 @@ export default function MYB_14() {
 
             {/* 책 목록 - 가로 스크롤 */}
             <div className="p-8">
-              <div className="flex gap-6 overflow-x-auto pb-4">
-                <style>{`
-                  .book-scroll::-webkit-scrollbar {
-                    height: 8px;
-                  }
-                  .book-scroll::-webkit-scrollbar-track {
-                    background: #E9E5DC;
-                    border-radius: 4px;
-                  }
-                  .book-scroll::-webkit-scrollbar-thumb {
-                    background: #90BE6D;
-                    border-radius: 4px;
-                  }
-                `}</style>
-                <div className="book-scroll flex gap-6">
-                  {mockWishlist.map((book) => (
-                    <div
-                      key={book.id}
-                      onClick={() => handleBookClick(book)}
-                      className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition flex items-center justify-center"
-                      style={{ background: "#E9E5DC" }}
-                    >
-                      <p
-                        className="text-center px-4"
-                        style={{
-                          color: "black",
-                          fontSize: "24px",
-                        }}
-                      >
-                        {book.title}
-                      </p>
-                    </div>
-                  ))}
+              {isLoadingWishlist ? (
+                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
+                  로딩 중...
                 </div>
-              </div>
+              ) : wishlist.length > 0 ? (
+                <div className="flex gap-6 overflow-x-auto pb-4">
+                  <style>{`
+                    .book-scroll::-webkit-scrollbar {
+                      height: 8px;
+                    }
+                    .book-scroll::-webkit-scrollbar-track {
+                      background: #E9E5DC;
+                      border-radius: 4px;
+                    }
+                    .book-scroll::-webkit-scrollbar-thumb {
+                      background: #90BE6D;
+                      border-radius: 4px;
+                    }
+                  `}</style>
+                  <div className="book-scroll flex gap-6">
+                    {wishlist.map((book) => (
+                      <div
+                        key={book.bookId}
+                        onClick={() => handleBookClick(book.bookId)}
+                        className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
+                        style={{ background: "#E9E5DC" }}
+                      >
+                        {book.thumbnail ? (
+                          <img
+                            src={book.thumbnail}
+                            alt={book.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center p-4">
+                            <p
+                              className="text-center"
+                              style={{
+                                color: "black",
+                                fontSize: "18px",
+                                lineHeight: "1.4",
+                              }}
+                            >
+                              {book.title}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
+                  위시리스트가 비어있습니다.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -235,7 +243,7 @@ export default function MYB_14() {
                   {mockReviewedBooks.map((book) => (
                     <div
                       key={book.id}
-                      onClick={() => handleBookClick(book)}
+                      onClick={() => handleBookClick(book.id.toString())}
                       className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition flex items-center justify-center"
                       style={{ background: "#E9E5DC" }}
                     >
