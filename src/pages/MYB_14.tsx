@@ -249,10 +249,10 @@ export default function MYB_14() {
                         className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
                         style={{ background: "#E9E5DC" }}
                       >
-                        {review.book?.thumbnail ? (
+                        {review.bookImageUrl ? (
                           <img
-                            src={review.book.thumbnail}
-                            alt={review.book.title}
+                            src={review.bookImageUrl}
+                            alt={review.bookname}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -265,7 +265,7 @@ export default function MYB_14() {
                                 lineHeight: "1.4",
                               }}
                             >
-                              {review.book?.title || "책 정보 없음"}
+                              {review.bookname}
                             </p>
                           </div>
                         )}

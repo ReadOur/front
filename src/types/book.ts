@@ -95,21 +95,16 @@ export interface LibraryAvailability {
 
 /**
  * 내 서재 리뷰 아이템
- * TODO: 백엔드 응답에서 content가 비어있어 정확한 구조 확인 필요
- * 책 정보가 포함될 것으로 추정
+ * 백엔드 GET /my-library/reviews 응답 형식
  */
 export interface MyLibraryReview {
   reviewId: number;
   bookId: number;
-  book?: {
-    title: string;
-    thumbnail?: string;
-    author?: string;
-  };
+  bookname: string;
+  bookImageUrl: string;
   rating: number;
   content: string;
   createdAt: string;
-  updatedAt?: string;
 }
 
 /**
