@@ -92,3 +92,27 @@ export interface LibraryAvailability {
   loanStatus?: string;
   returnDate?: string;
 }
+
+/**
+ * 내 서재 리뷰 아이템
+ * 백엔드 GET /my-library/reviews 응답 형식
+ */
+export interface MyLibraryReview {
+  reviewId: number;
+  bookId: number;
+  bookname: string;
+  bookImageUrl: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
+/**
+ * 내 서재 리뷰 목록 응답
+ * GET /my-library/reviews
+ */
+export interface MyLibraryReviewsResponse {
+  userId: number;
+  nickname: string;
+  reviewPage: import("./spring").SpringPage<MyLibraryReview>;
+}

@@ -11,6 +11,7 @@ import {
   BookReview,
   BookHighlight,
   LibraryAvailability,
+  MyLibraryReviewsResponse,
   PaginatedResponse,
   PostListItem,
 } from "@/types";
@@ -26,6 +27,8 @@ export const BOOK_QUERY_KEYS = {
   wishlist: () => [...BOOK_QUERY_KEYS.wishlists()] as const,
   reviews: () => [...BOOK_QUERY_KEYS.all, "reviews"] as const,
   reviewList: (bookId: string) => [...BOOK_QUERY_KEYS.reviews(), bookId] as const,
+  myReviews: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...BOOK_QUERY_KEYS.all, "myReviews", params] as const,
   highlights: () => [...BOOK_QUERY_KEYS.all, "highlights"] as const,
   highlightList: (bookId: string) => [...BOOK_QUERY_KEYS.highlights(), bookId] as const,
 };
@@ -94,6 +97,17 @@ export function useBookHighlights(bookId: string, params?: { page?: number; size
     queryKey: [...BOOK_QUERY_KEYS.highlightList(bookId), params],
     queryFn: () => bookService.getBookHighlights(bookId, params),
     enabled: !!bookId,
+  });
+}
+
+/**
+ * 내 서재 - 리뷰 목록 조회 (페이지네이션)
+ * GET /my-library/reviews
+ */
+export function useMyReviews(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<MyLibraryReviewsResponse>({
+    queryKey: BOOK_QUERY_KEYS.myReviews(params),
+    queryFn: () => bookService.getMyReviews(params),
   });
 }
 

@@ -1,16 +1,7 @@
 // MYB_14.tsx - 내 서재 페이지
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useWishlist } from "@/hooks/api";
-
-// 목업 데이터 - 리뷰 남긴 책들 (백엔드 API 대기 중)
-const mockReviewedBooks = [
-  { id: 6, title: "책 제목 1", author: "저자 1" },
-  { id: 7, title: "책 제목 2", author: "저자 2" },
-  { id: 8, title: "책 제목 3", author: "저자 3" },
-  { id: 9, title: "책 제목 4", author: "저자 4" },
-  { id: 10, title: "책 제목 5", author: "저자 5" },
-];
+import { useWishlist, useMyReviews } from "@/hooks/api";
 
 // 목업 연관 검색어 (나중에 API로 교체)
 const mockSuggestions = [
@@ -26,8 +17,13 @@ export default function MYB_14() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // API 호출: 위시리스트
+  // API 호출: 위시리스트 & 리뷰
   const { data: wishlistData, isLoading: isLoadingWishlist } = useWishlist();
+  const { data: myReviewsData, isLoading: isLoadingReviews } = useMyReviews({
+    page: 0,
+    size: 10,
+    sort: "createdAt,DESC",
+  });
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -60,6 +56,7 @@ export default function MYB_14() {
   };
 
   const wishlist = wishlistData || [];
+  const reviewedBooks = myReviewsData?.reviewPage.content || [];
 
   return (
     <div
@@ -238,28 +235,49 @@ export default function MYB_14() {
 
             {/* 책 목록 - 가로 스크롤 */}
             <div className="p-8">
-              <div className="flex gap-6 overflow-x-auto pb-4">
-                <div className="book-scroll flex gap-6">
-                  {mockReviewedBooks.map((book) => (
-                    <div
-                      key={book.id}
-                      onClick={() => handleBookClick(book.id.toString())}
-                      className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition flex items-center justify-center"
-                      style={{ background: "#E9E5DC" }}
-                    >
-                      <p
-                        className="text-center px-4"
-                        style={{
-                          color: "black",
-                          fontSize: "24px",
-                        }}
-                      >
-                        {book.title}
-                      </p>
-                    </div>
-                  ))}
+              {isLoadingReviews ? (
+                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
+                  로딩 중...
                 </div>
-              </div>
+              ) : reviewedBooks.length > 0 ? (
+                <div className="flex gap-6 overflow-x-auto pb-4">
+                  <div className="book-scroll flex gap-6">
+                    {reviewedBooks.map((review) => (
+                      <div
+                        key={review.reviewId}
+                        onClick={() => handleBookClick(review.bookId.toString())}
+                        className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
+                        style={{ background: "#E9E5DC" }}
+                      >
+                        {review.bookImageUrl ? (
+                          <img
+                            src={review.bookImageUrl}
+                            alt={review.bookname}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center p-4">
+                            <p
+                              className="text-center"
+                              style={{
+                                color: "black",
+                                fontSize: "18px",
+                                lineHeight: "1.4",
+                              }}
+                            >
+                              {review.bookname}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
+                  리뷰 남긴 책이 없습니다.
+                </div>
+              )}
             </div>
           </div>
         </div>
