@@ -4,13 +4,19 @@
 
 import { useQuery, useMutation, useQueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
-import { MyPagePreview, UserProfilePreview, UpdateProfileRequest } from "@/types";
+import { MyPagePreview, UserProfilePreview, UpdateProfileRequest, SpringPage, PostListItem } from "@/types";
 
 // ===== Query Keys =====
 export const USER_QUERY_KEYS = {
   all: ["users"] as const,
   // 마이페이지
   myPage: () => [...USER_QUERY_KEYS.all, "myPage"] as const,
+  myPosts: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...USER_QUERY_KEYS.all, "myPosts", params] as const,
+  myLikedPosts: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...USER_QUERY_KEYS.all, "myLikedPosts", params] as const,
+  myComments: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...USER_QUERY_KEYS.all, "myComments", params] as const,
   // 특정 사용자
   userProfile: (userId: string) => [...USER_QUERY_KEYS.all, "userProfile", userId] as const,
 };
@@ -28,6 +34,36 @@ export function useMyPage() {
   return useQuery<MyPagePreview>({
     queryKey: USER_QUERY_KEYS.myPage(),
     queryFn: userService.getMyPage,
+  });
+}
+
+/**
+ * 내가 작성한 게시글 전체 조회 (페이징)
+ */
+export function useMyPosts(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<SpringPage<PostListItem>>({
+    queryKey: USER_QUERY_KEYS.myPosts(params),
+    queryFn: () => userService.getMyPosts(params),
+  });
+}
+
+/**
+ * 좋아요 누른 글 전체 조회 (페이징)
+ */
+export function useMyLikedPosts(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<SpringPage<PostListItem>>({
+    queryKey: USER_QUERY_KEYS.myLikedPosts(params),
+    queryFn: () => userService.getMyLikedPosts(params),
+  });
+}
+
+/**
+ * 내가 작성한 댓글 전체 조회 (페이징)
+ */
+export function useMyComments(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<SpringPage<PostListItem>>({
+    queryKey: USER_QUERY_KEYS.myComments(params),
+    queryFn: () => userService.getMyComments(params),
   });
 }
 

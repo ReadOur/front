@@ -4,7 +4,7 @@
 
 import { apiClient } from "@/api/client";
 import { USER_ENDPOINTS } from "@/api/endpoints";
-import { MyPagePreview, UserProfilePreview, UpdateProfileRequest } from "@/types";
+import { MyPagePreview, UserProfilePreview, UpdateProfileRequest, SpringPage, PostListItem } from "@/types";
 
 /**
  * 내 마이페이지 조회
@@ -37,10 +37,67 @@ export async function updateProfile(
   return apiClient.put<UserProfilePreview>(USER_ENDPOINTS.UPDATE_PROFILE(userId), data);
 }
 
+/**
+ * 내가 작성한 게시글 전체 조회 (페이징)
+ * GET /my-page/posts?page=0&size=20&sort=createdAt,DESC
+ */
+export async function getMyPosts(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<SpringPage<PostListItem>> {
+  return apiClient.get<SpringPage<PostListItem>>(USER_ENDPOINTS.MY_POSTS, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 20,
+      sort: params?.sort || "createdAt,DESC",
+    },
+  });
+}
+
+/**
+ * 좋아요 누른 글 전체 조회 (페이징)
+ * GET /my-page/liked-posts?page=0&size=20&sort=createdAt,DESC
+ */
+export async function getMyLikedPosts(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<SpringPage<PostListItem>> {
+  return apiClient.get<SpringPage<PostListItem>>(USER_ENDPOINTS.MY_LIKED_POSTS, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 20,
+      sort: params?.sort || "createdAt,DESC",
+    },
+  });
+}
+
+/**
+ * 내가 작성한 댓글 전체 조회 (페이징)
+ * GET /my-page/comments?page=0&size=20&sort=createdAt,DESC
+ */
+export async function getMyComments(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<SpringPage<PostListItem>> {
+  return apiClient.get<SpringPage<PostListItem>>(USER_ENDPOINTS.MY_COMMENTS, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 20,
+      sort: params?.sort || "createdAt,DESC",
+    },
+  });
+}
+
 export const userService = {
   getMyPage,
   getUserProfile,
   updateProfile,
+  getMyPosts,
+  getMyLikedPosts,
+  getMyComments,
 };
 
 export default userService;
