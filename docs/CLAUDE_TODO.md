@@ -103,9 +103,10 @@
   - ✅ `postService.likePost()`, `unlikePost()` 이미 구현됨
   - ✅ `usePost.useLikePost()` 훅 이미 구현됨 (낙관적 업데이트 포함)
   - ✅ `BRD_05.tsx` 버튼 연결 완료
-- [ ] 게시글 조회수 증가 프론트엔드 연결 (Line 125)
-  - API는 분리되어 있음 (`postService.ts:70-72`)
-  - `BRD_05.tsx:7, 128-130` 주석 해제 및 호출 필요
+- [x] **게시글 조회수 증가 프론트엔드 연결** (Line 125) ✅ **완료**
+  - ✅ `postService.viewPost()` 이미 구현됨
+  - ✅ `usePost.useViewPost()` 훅 이미 구현됨
+  - ✅ `BRD_05.tsx:134, 144-151` 페이지 진입 시 자동 호출 완료
 
 ### 👤 마이페이지
 - [x] **내 마이페이지 조회 API 연동** (Line 146-147) ✅ **완료**
@@ -127,20 +128,46 @@
   - ✅ `getMyReviews()` 서비스 함수 구현 (페이지네이션)
   - ✅ `useMyReviews()` 훅 구현
   - ✅ `MYB_14.tsx` 페이지 연동 완료
+- [x] **위시리스트 조회 프론트엔드 연동** (Line 199-200) ✅ **완료**
+  - ✅ `getWishlist()` 서비스 함수 구현
+  - ✅ `useWishlist()` 훅 구현
+  - ✅ `MYB_14.tsx` 페이지 연동 완료
+- [x] **도서 위시리스트 토글 프론트엔드 연동** (Line 201-202) ✅ **완료**
+  - ✅ `toggleWishlist()` 서비스 함수 구현
+  - ✅ `useToggleWishlist()` 훅 구현 (낙관적 업데이트)
+  - ✅ `BOD_15.tsx:48-62` 버튼 연결 완료
+- [x] **책 연관 게시글 목록 조회 프론트엔드 연동** (Line 190-191) ✅ **완료**
+  - ✅ `getRelatedPosts()` 서비스 함수 구현
+  - ✅ `useRelatedPosts()` 훅 구현
+  - ✅ `BOD_15.tsx:24-27` 페이지 연동 완료
+- [x] **선호 도서관 대출 가능 여부 조회 프론트엔드 연동** (Line 192-194) ✅ **완료**
+  - ✅ `getLibraryAvailability()` 서비스 함수 구현
+  - ✅ `useLibraryAvailability()` 훅 구현
+  - ✅ `BOD_15.tsx:28-30` 페이지 연동 완료
+- [x] **책 하이라이트 조회 프론트엔드 연동** (Line 214-215) ✅ **완료**
+  - ✅ `getBookHighlights()` 서비스 함수 구현
+  - ✅ `useBookHighlights()` 훅 구현
+  - ✅ `BOD_15.tsx:31-34` 페이지 연동 완료
+- [x] **책 하이라이트 작성 프론트엔드 연동** (Line 216-217) ✅ **완료**
+  - ✅ `createBookHighlight()` 서비스 함수 구현
+  - ✅ `useCreateBookHighlight()` 훅 구현
+  - ✅ `BOD_15.tsx:64-86` 연동 완료
+- [x] **책 하이라이트 수정 프론트엔드 연동** (Line 218-219) ✅ **완료**
+  - ✅ `updateBookHighlight()` 서비스 함수 구현
+  - ✅ `useUpdateBookHighlight()` 훅 구현
+- [x] **책 하이라이트 삭제 프론트엔드 연동** (Line 220-221) ✅ **완료**
+  - ✅ `deleteBookHighlight()` 서비스 함수 구현
+  - ✅ `useDeleteBookHighlight()` 훅 구현
+  - ✅ `BOD_15.tsx:88-99` 연동 완료
+- [x] **도서 상세 조회 프론트엔드 연동** (Line 186-189) ✅ **완료**
+  - ✅ `getBookDetail()` 서비스 함수 구현
+  - ✅ `useBookDetail()` 훅 구현
+  - ✅ `BOD_15.tsx:23` 페이지 연동 완료
+- [ ] **책 리뷰 CRUD** ⚠️ 훅은 구현되었으나 UI 연결 확인 필요
+  - ✅ `createBookReview()`, `updateBookReview()`, `deleteBookReview()` 서비스 구현
+  - ✅ `useCreateBookReview()`, `useUpdateBookReview()`, `useDeleteBookReview()` 훅 구현
+  - ❓ UI 페이지 연결 확인 필요
 - [ ] 도서 검색 (외부 API) 프론트엔드 연동 (Line 177-178)
-- [ ] 도서 상세 조회 (DB 저장) 프론트엔드 연동 (Line 186-187)
-- [ ] DB 도서 상세 정보 조회 프론트엔드 연동 (Line 188-189)
-- [ ] 책 연관 게시글 목록 조회 프론트엔드 연동 (Line 190-191)
-- [ ] 선호 도서관 대출 가능 여부 조회 프론트엔드 연동 (Line 192-194)
-- [ ] 위시리스트 조회 프론트엔드 연동 (Line 199-200)
-- [ ] 도서 위시리스트 토글 프론트엔드 연동 (Line 201-202)
-- [ ] 책 리뷰 작성 프론트엔드 연동 (Line 207-208)
-- [ ] 책 리뷰 수정 프론트엔드 연동 (Line 209-210)
-- [ ] 책 리뷰 삭제 프론트엔드 연동 (Line 211-212)
-- [ ] 책 하이라이트 조회 프론트엔드 연동 (Line 214-215)
-- [ ] 책 하이라이트 작성 프론트엔드 연동 (Line 216-217)
-- [ ] 책 하이라이트 수정 프론트엔드 연동 (Line 218-219)
-- [ ] 책 하이라이트 삭제 프론트엔드 연동 (Line 220-221)
 - [ ] 특정 사용자 서재 조회 프론트엔드 연동 (Line 227-228)
 - [ ] 특정 사용자 위시리스트 조회 프론트엔드 연동 (Line 229-230)
 - [ ] 특정 사용자 리뷰 조회 프론트엔드 연동 (Line 231-232)
