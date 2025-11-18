@@ -25,7 +25,7 @@ const CATEGORIES = [
   { key: "DISCUSSION", label: "토의" },
   { key: "QUESTION", label: "질문" },
   { key: "FREE", label: "자유" },
-  { key: "NOTI", label: "모임" }, //현재 안만들어짐. NOTI로 일단 대체
+  { key: "GROUP", label: "모임" },
 ] as const;
 
 // 검색 타입 정의
@@ -46,6 +46,7 @@ function getCategoryLabel(category: string): string {
     GENERAL: "일반",
     DISCUSSION: "토의",
     QUESTION: "질문",
+    GROUP: "모임",
   };
   return categoryMap[category] || category;
 }
@@ -156,7 +157,7 @@ export const BRD_List: React.FC = () => {
       return getPosts({
         page: 1,
         size: 5,
-        category: "NOTI",
+        category: "GROUP",
       });
     },
     staleTime: 1000 * 60 * 10,
@@ -315,7 +316,7 @@ export const BRD_List: React.FC = () => {
                     👥 모임 모집
                   </h2>
                   <button
-                    onClick={() => handleCategoryChange("NOTI")}
+                    onClick={() => handleCategoryChange("GROUP")}
                     className="text-sm text-[color:var(--color-accent)] hover:underline"
                   >
                     더보기 →
@@ -427,7 +428,7 @@ export const BRD_List: React.FC = () => {
               )}
 
               {/* 모임모집 버튼 (모임 카테고리일 때만 표시) */}
-              {category === "NOTI" && (
+              {category === "GROUP" && (
                 <button
                   className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 whitespace-nowrap"
                   onClick={() => setIsCreateRoomModalOpen(true)}

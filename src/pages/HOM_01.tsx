@@ -24,7 +24,7 @@ function getCategoryLabel(category: string): string {
     REVIEW: "리뷰",
     DISCUSSION: "토의",
     QUESTION: "질문",
-    NOTI: "모임",
+    GROUP: "모임",
   };
   return categoryMap[category] || category;
 }
@@ -35,7 +35,7 @@ const CATEGORIES = [
   { key: "DISCUSSION", label: "토의", icon: "💬", color: "bg-green-500/10 text-green-600" },
   { key: "QUESTION", label: "질문", icon: "❓", color: "bg-yellow-500/10 text-yellow-600" },
   { key: "FREE", label: "자유", icon: "✨", color: "bg-purple-500/10 text-purple-600" },
-  { key: "NOTI", label: "모임", icon: "👥", color: "bg-pink-500/10 text-pink-600" },
+  { key: "GROUP", label: "모임", icon: "👥", color: "bg-pink-500/10 text-pink-600" },
 ] as const;
 
 // 게시글 카드 컴포넌트
