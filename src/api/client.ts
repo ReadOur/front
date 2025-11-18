@@ -127,8 +127,9 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
 
         if (!refreshToken) {
-          // 리프레시 토큰이 없으면 로그아웃 처리
-          handleLogout();
+          // 리프레시 토큰이 없으면 조용히 에러 반환 (로그인 페이지로 리다이렉트 안 함)
+          console.warn("⚠️ Refresh token이 없습니다. 401 에러를 반환합니다.");
+          localStorage.removeItem("accessToken");
           return Promise.reject(error);
         }
 
@@ -151,60 +152,35 @@ axiosInstance.interceptors.response.use(
         // 원래 요청 재시도
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // 토큰 갱신 실패 시 로그아웃
-        handleLogout();
-        return Promise.reject(refreshError);
+        // 토큰 갱신 실패 시 조용히 에러 반환 (로그인 페이지로 리다이렉트 안 함)
+        console.warn("⚠️ Token refresh 실패. 401 에러를 반환합니다.");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        return Promise.reject(error);
       }
     }
 
     // 403 Forbidden - 권한 없음
     if (error.response?.status === 403) {
-      console.error("접근 권한이 없습니다.");
-
-      // 에러 메시지 표시
-      const errorMessage = error.response?.data?.message || "접근 권한이 없습니다.";
-      alert(errorMessage);
-
-      // 메인 페이지로 리다이렉트 (권한 없음 페이지가 없는 경우)
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
+      console.error("❌ 403 Forbidden:", error.response?.data?.message || "접근 권한이 없습니다.");
     }
 
-    // 404 Not Found - 권한 없음 (백엔드 정책)
+    // 404 Not Found
     if (error.response?.status === 404) {
-      console.error("권한이 없거나 존재하지 않는 리소스입니다.");
-      // 에러 메시지를 확장하여 컴포넌트에서 처리할 수 있도록 함
+      console.error("❌ 404 Not Found:", error.response?.data?.message || "리소스를 찾을 수 없습니다.");
     }
 
     // 500 Internal Server Error
     if (error.response?.status === 500) {
-      console.error("서버 에러가 발생했습니다.");
-
-      // 에러 메시지 표시
-      const errorMessage = error.response?.data?.message || "서버 에러가 발생했습니다. 잠시 후 다시 시도해주세요.";
-      alert(errorMessage);
+      console.error("❌ 500 Internal Server Error:", error.response?.data?.message || "서버 오류가 발생했습니다.");
     }
 
+    // 모든 에러는 조용히 반환 (컴포넌트에서 처리)
     return Promise.reject(error);
   }
 );
 
-/**
- * 로그아웃 처리 (토큰 제거 및 로그인 페이지로 리다이렉트)
- */
-function handleLogout() {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-
-  console.warn("로그아웃 처리됨 - 로그인 페이지로 이동");
-
-  // 로그인 페이지로 리다이렉트
-  if (typeof window !== "undefined") {
-    window.location.href = "/login";
-  }
-}
+// handleLogout 함수 제거: 더 이상 강제 로그인 페이지 리다이렉트 안 함
 
 // ===== API 클라이언트 헬퍼 함수 =====
 
