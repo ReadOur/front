@@ -361,18 +361,42 @@ export default function BOD_15() {
                   선호 도서관 대출 가능 여부
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {availability.map((lib, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 rounded-full text-base"
-                      style={{
-                        background: lib.available ? "#90BE6D" : "#E9E5DC",
-                        color: lib.available ? "white" : "#6B4F3F",
-                      }}
-                    >
-                      {lib.libraryName}: {lib.available ? "대출 가능" : "대출 중"}
-                    </span>
-                  ))}
+                  {availability.map((lib, index) => {
+                    // hasBook에 따른 배경색 및 텍스트 결정
+                    let background: string;
+                    let color: string;
+                    let statusText: string;
+
+                    if (!lib.hasBook) {
+                      // 책이 해당 도서관에 없음
+                      background = "#D9D9D9";
+                      color = "#6B4F3F";
+                      statusText = "책이 해당 도서관에 없습니다";
+                    } else if (lib.loanAvailable) {
+                      // 대출 가능
+                      background = "#90BE6D";
+                      color = "white";
+                      statusText = "대출 가능";
+                    } else {
+                      // 대출 불가능
+                      background = "#F4A261";
+                      color = "white";
+                      statusText = "대출 불가능";
+                    }
+
+                    return (
+                      <span
+                        key={index}
+                        className="px-3 py-1 rounded-full text-base"
+                        style={{
+                          background,
+                          color,
+                        }}
+                      >
+                        {lib.libraryName}: {statusText}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
