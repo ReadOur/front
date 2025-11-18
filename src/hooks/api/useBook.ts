@@ -322,8 +322,8 @@ export function useUpdateBookHighlight(
     unknown
   >({
     ...options,
-    mutationFn: ({ bookId, highlightId, content, pageNumber }) =>
-      bookService.updateBookHighlight(bookId, highlightId, { content, pageNumber }),
+    mutationFn: ({ highlightId, content, pageNumber }) =>
+      bookService.updateBookHighlight(highlightId, { content, pageNumber }),
     onSuccess: (data, variables, context) => {
       // 하이라이트 목록 무효화
       queryClient.invalidateQueries({
@@ -347,7 +347,7 @@ export function useDeleteBookHighlight(
 
   return useMutation<void, Error, { bookId: string; highlightId: string }, unknown>({
     ...options,
-    mutationFn: ({ bookId, highlightId }) => bookService.deleteBookHighlight(bookId, highlightId),
+    mutationFn: ({ highlightId }) => bookService.deleteBookHighlight(highlightId),
     onSuccess: (data, variables, context) => {
       // 하이라이트 목록 무효화
       queryClient.invalidateQueries({

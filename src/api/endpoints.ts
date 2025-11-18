@@ -136,8 +136,8 @@ export const BOOK_ENDPOINTS = {
   // 하이라이트
   HIGHLIGHTS: (bookId: string) => `/books/${bookId}/highlights`,
   CREATE_HIGHLIGHT: (bookId: string) => `/books/${bookId}/highlights`,
-  UPDATE_HIGHLIGHT: (bookId: string, highlightId: string) => `/books/${bookId}/highlights/${highlightId}`,
-  DELETE_HIGHLIGHT: (bookId: string, highlightId: string) => `/books/${bookId}/highlights/${highlightId}`,
+  UPDATE_HIGHLIGHT: (highlightId: string) => `/books/highlights/${highlightId}`,
+  DELETE_HIGHLIGHT: (highlightId: string) => `/books/highlights/${highlightId}`,
 } as const;
 
 /**
