@@ -39,16 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setToken] = useState<string | null>(null);
 
-  /**
-   * 페이지 로드 시 초기화
-   * localStorage에서 JWT 토큰 복원하여 로그인 상태 유지
-   */
+  // localStorage에서 토큰 읽어오기 (페이지 새로고침 시에도 유지)
   useEffect(() => {
     const storedToken = getAccessToken();
     if (storedToken) {
       setToken(storedToken);
-      // 사용자 정보는 최소한으로 설정 (실제 정보는 JWT에서 추출)
       setUser({
+        id: storedToken,
         name: 'user',
       });
     }
