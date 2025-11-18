@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { MessageCircle, Search, Star, Users, Send, Loader2, User } from "lucide-react";
+import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useRoomsOverview } from "@/hooks/api/useChat";
+import { useRoomsOverview, useCreateRoom } from "@/hooks/api/useChat";
 import { MyRoomItem, PublicRoomItem } from "@/types/chat";
+import Modal from "@/components/Modal/Modal";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -224,11 +225,44 @@ export default function CHT_17() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { openThread } = useChatContext();
 
+  // 모임모집 모달 상태
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [roomName, setRoomName] = useState("");
+  const [roomDescription, setRoomDescription] = useState("");
+
   // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
   const userId = '1'; // 테스트용 userId
 
   // 채팅방 데이터 가져오기
   const { data, isLoading, error } = useRoomsOverview({ userId });
+
+  // 채팅방 생성 mutation
+  const createRoomMutation = useCreateRoom({
+    onSuccess: (data) => {
+      alert(`"${data.name}" 채팅방이 생성되었습니다!`);
+      setIsCreateRoomModalOpen(false);
+      setRoomName("");
+      setRoomDescription("");
+      // 생성된 채팅방 열기
+      openThread(data.roomId.toString());
+    },
+    onError: (error) => {
+      alert(`채팅방 생성 실패: ${error.message}`);
+    },
+  });
+
+  const handleCreateRoom = () => {
+    if (!roomName.trim()) {
+      alert("채팅방 이름을 입력해주세요.");
+      return;
+    }
+
+    createRoomMutation.mutate({
+      name: roomName.trim(),
+      description: roomDescription.trim() || undefined,
+      category: "GROUP",
+    });
+  };
 
   // 백엔드 응답을 UI 형식으로 변환
   const threads = useMemo(() => {
@@ -300,10 +334,19 @@ export default function CHT_17() {
       <div className="w-full md:w-96 flex flex-col border-r border-[color:var(--color-border-subtle)]">
         {/* 헤더 */}
         <div className="p-4 border-b border-[color:var(--color-border-subtle)]">
-          <h1 className="text-xl font-bold text-[color:var(--color-fg-primary)] mb-3 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6" />
-            채팅
-          </h1>
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-xl font-bold text-[color:var(--color-fg-primary)] flex items-center gap-2">
+              <MessageCircle className="w-6 h-6" />
+              채팅
+            </h1>
+            <button
+              onClick={() => setIsCreateRoomModalOpen(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white hover:opacity-90 transition-opacity text-sm font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              모임모집
+            </button>
+          </div>
           {/* 검색 */}
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--color-fg-muted)]" />
@@ -391,6 +434,60 @@ export default function CHT_17() {
           </div>
         </div>
       </div>
+
+      {/* 채팅방 생성 모달 */}
+      <Modal
+        isOpen={isCreateRoomModalOpen}
+        onClose={() => setIsCreateRoomModalOpen(false)}
+        title="모임 채팅방 만들기"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
+              채팅방 이름 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="예: 독서 모임, 스터디 그룹 등"
+              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)]"
+              maxLength={50}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
+              채팅방 설명 (선택)
+            </label>
+            <textarea
+              value={roomDescription}
+              onChange={(e) => setRoomDescription(e.target.value)}
+              placeholder="채팅방에 대한 간단한 설명을 입력해주세요"
+              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)] resize-none"
+              rows={4}
+              maxLength={200}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setIsCreateRoomModalOpen(false)}
+              className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg-subtle)] text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-muted)] transition-colors"
+              disabled={createRoomMutation.isPending}
+            >
+              취소
+            </button>
+            <button
+              onClick={handleCreateRoom}
+              disabled={createRoomMutation.isPending || !roomName.trim()}
+              className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {createRoomMutation.isPending ? "생성 중..." : "채팅방 만들기"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
