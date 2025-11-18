@@ -188,17 +188,17 @@ export const BRD_List: React.FC = () => {
     >
       <div className="mx-auto px-3 sm:px-4 md:px-6 mt-[70px] sm:mt-[80px] md:mt-[90px] lg:mt-[100px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
         {/* 카테고리 탭 네비게이션 */}
-        <nav className="flex justify-center border-b border-[color:var(--color-border-subtle)] mb-4 sm:mb-6 overflow-x-auto">
+        <nav className="flex justify-center border-b border-[color:var(--color-border-subtle)] mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
           <ul className="flex items-stretch h-12 sm:h-14 md:h-16 font-medium text-[color:var(--color-fg-muted)] text-sm sm:text-base md:text-lg whitespace-nowrap">
             {CATEGORIES.map((cat, idx) => (
               <li key={cat.key} className="relative flex items-center px-3 sm:px-4 md:px-6">
                 <button
                   onClick={() => handleCategoryChange(cat.key)}
                   className={[
-                    "relative h-full flex items-center pb-1 cursor-pointer transition-all duration-200",
+                    "relative h-full flex items-center pb-1 cursor-pointer transition-colors duration-200",
                     category === cat.key
                       ? "text-[color:var(--color-fg-primary)] font-semibold"
-                      : "hover:text-[color:var(--color-fg-primary)] hover:scale-105",
+                      : "hover:text-[color:var(--color-fg-primary)]",
                   ].join(" ")}
                 >
                   {cat.label}
