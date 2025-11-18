@@ -16,8 +16,8 @@ import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
 import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
 import { isLoggedIn } from "@/utils/auth";
-
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { getBookDetail } from "@/services/bookService";
 /**
  * 게시글 상세 페이지 (BRD_05)
  *
@@ -113,7 +113,14 @@ export default function PostShow() {
 
   const queryClient = useQueryClient();
 
-  // 6. 게시글 삭제 mutation (DELETE /community/posts/{postId})
+  // 6. 책 정보 조회 (REVIEW 카테고리인 경우)
+  const { data: bookDetail, isLoading: isBookLoading } = useQuery({
+    queryKey: ["book", post?.bookId],
+    queryFn: () => getBookDetail(String(post?.bookId)),
+    enabled: post?.category === "REVIEW" && !!post?.bookId,
+  });
+
+  // 7. 게시글 삭제 mutation (DELETE /community/posts/{postId})
   const deletePostMutation = useDeletePost({
     onSuccess: async () => {
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
@@ -419,6 +426,41 @@ export default function PostShow() {
           }`}
           aria-hidden={post.isSpoiler && !isSpoilerRevealed}
         >
+          {/* ========== 책 리뷰 정보 (REVIEW 카테고리인 경우) ========== */}
+          {post.category === "REVIEW" && post.bookId && bookDetail && (
+            <div
+              onClick={() => navigate(`/books/${post.bookId}`)}
+              className="mb-4 p-4 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg flex items-start gap-4 cursor-pointer hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
+            >
+              {/* 책 표지 */}
+              <div className="flex-shrink-0 w-20 h-28 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
+                {bookDetail.coverImage ? (
+                  <img
+                    src={bookDetail.coverImage}
+                    alt={bookDetail.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[color:var(--color-fg-muted)] text-2xl">
+                    📚
+                  </div>
+                )}
+              </div>
+
+              {/* 책 정보 */}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-[color:var(--color-fg-muted)] mb-1">리뷰 대상 도서</p>
+                <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-1 truncate">{bookDetail.title}</h3>
+                {bookDetail.author && (
+                  <p className="text-sm text-[color:var(--color-fg-secondary)] truncate">{bookDetail.author}</p>
+                )}
+                {bookDetail.publisher && (
+                  <p className="text-xs text-[color:var(--color-fg-muted)] mt-1">{bookDetail.publisher}</p>
+                )}
+              </div>
+            </div>
+          )}
+
           <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* 게시글 제목 (API의 title 필드) */}
           <h1 id="title" className="flex-1 text-lg sm:text-xl md:text-2xl font-extrabold text-[color:var(--color-fg-primary)] break-words">
@@ -573,6 +615,43 @@ export default function PostShow() {
             </button>
           )}
         </div>
+
+        {/* ========== 모임 게시판 채팅방 입장 (DISCUSSION 카테고리인 경우) ========== */}
+        {post.category === "DISCUSSION" && post.chatRoomId && (
+          <div className="mt-6 pt-6 border-t border-[color:var(--color-border-subtle)]">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[color:var(--color-bg-elev-2)] rounded-lg border border-[color:var(--color-border-subtle)]">
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-2">💬 모임 채팅방</h3>
+                <div className="flex items-center gap-4 text-sm text-[color:var(--color-fg-secondary)]">
+                  {post.currentMemberCount !== undefined && post.recruitmentLimit !== undefined && (
+                    <span>
+                      참여 인원: <strong className="text-[color:var(--color-fg-primary)]">{post.currentMemberCount}</strong> / {post.recruitmentLimit}
+                    </span>
+                  )}
+                  {post.isApplied && (
+                    <span className="px-2 py-1 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-full text-xs font-medium">
+                      참여 중
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isLoggedIn()) {
+                    toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+                    navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+                    return;
+                  }
+                  navigate(`/chat?roomId=${post.chatRoomId}`);
+                }}
+                className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                채팅방 입장
+              </button>
+            </div>
+          </div>
+        )}
         </div>
       </article>
 

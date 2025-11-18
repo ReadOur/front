@@ -9,7 +9,7 @@ import { PaginationParams } from "./api";
 /**
  * 게시글 카테고리
  */
-export type PostCategory = "NOTICE" | "GENERAL" | "QNA" | "FREE" | "REVIEW" | "DISCUSSION" | "QUESTION";
+export type PostCategory = "NOTICE" | "GENERAL" | "QNA" | "FREE" | "REVIEW" | "DISCUSSION" | "QUESTION" | "GATHERING";
 
 /**
  * 게시글 경고/주의사항 (백엔드 응답 형식)
@@ -44,6 +44,10 @@ export interface Post {
   authorNickname: string;
   authorId: number;
   bookId?: number; // 책 ID (리뷰 게시글용)
+  chatRoomId?: number; // 채팅방 ID (모임 게시글용)
+  currentMemberCount?: number; // 현재 참여 인원 (모임 게시글용)
+  recruitmentLimit?: number; // 모집 인원 (모임 게시글용)
+  isApplied?: boolean; // 모임 참여 여부 (모임 게시글용)
   hit: number;
   likeCount: number;
   commentCount: number;
@@ -101,6 +105,8 @@ export interface CreatePostRequest {
   content: string;
   category?: string;
   bookId?: number; // 책 ID (리뷰 게시글용)
+  chatRoomId?: number; // 채팅방 ID (모임 게시글용)
+  recruitmentLimit?: number; // 모집 인원 (모임 게시글용)
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
   attachmentIds?: string[];
@@ -114,6 +120,8 @@ export interface UpdatePostRequest {
   content?: string;
   category?: string;
   bookId?: number; // 책 ID (리뷰 게시글용)
+  chatRoomId?: number; // 채팅방 ID (모임 게시글용)
+  recruitmentLimit?: number; // 모집 인원 (모임 게시글용)
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
   attachmentIds?: string[];
