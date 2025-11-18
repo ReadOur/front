@@ -171,6 +171,9 @@ export function useToggleWishlist(
       // 서버 응답으로 최종 업데이트
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.wishlist() });
 
+      // 책 상세 정보도 무효화하여 위시리스트 버튼 상태 갱신
+      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
+
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, variables, context);

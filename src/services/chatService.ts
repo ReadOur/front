@@ -24,6 +24,8 @@ import {
   GetMyRoomsParams,
   SendRoomMessageRequest,
   RoomMessage,
+  CreateRoomRequest,
+  CreateRoomResponse,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -42,6 +44,13 @@ export async function getRoomsOverview(params: GetRoomsOverviewParams): Promise<
 export async function getMyRooms(params: GetMyRoomsParams): Promise<MyRoomsResponse> {
   // userId를 쿼리 파라미터로 포함
   return apiClient.get<MyRoomsResponse>(CHAT_ENDPOINTS.MY_ROOMS, { params });
+}
+
+/**
+ * 채팅방 생성
+ */
+export async function createRoom(data: CreateRoomRequest): Promise<CreateRoomResponse> {
+  return apiClient.post<CreateRoomResponse>(CHAT_ENDPOINTS.CREATE_ROOM, data);
 }
 
 /**
@@ -149,6 +158,7 @@ export const chatService = {
   getMyRooms,
   getRoomMessages,
   sendRoomMessage,
+  createRoom,
 
   // 스레드
   getThreads,

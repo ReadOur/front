@@ -122,8 +122,6 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         bookId: category === "REVIEW" ? bookId : undefined,
-        chatRoomId: category === "DISCUSSION" ? chatRoomId : undefined,
-        recruitmentLimit: category === "DISCUSSION" ? recruitmentLimit : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
@@ -136,8 +134,6 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         bookId: category === "REVIEW" ? bookId : undefined,
-        chatRoomId: category === "DISCUSSION" ? chatRoomId : undefined,
-        recruitmentLimit: category === "DISCUSSION" ? recruitmentLimit : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
@@ -234,52 +230,6 @@ export const BRD_06 = (): React.JSX.Element => {
               </div>
             )}
 
-            {/* 채팅방 ID 입력 (DISCUSSION 카테고리인 경우) */}
-            {category === "DISCUSSION" && (
-              <>
-                <div className="min-w-[200px]">
-                  <label htmlFor="chatRoomId" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
-                    채팅방 ID
-                  </label>
-                  <input
-                    id="chatRoomId"
-                    type="number"
-                    value={chatRoomId || ""}
-                    onChange={(e) => setChatRoomId(e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="채팅방 ID"
-                    className="
-                      w-full h-10 rounded-[var(--radius-md)]
-                      bg-[color:var(--color-bg-elev-1)]
-                      text-[color:var(--color-fg-primary)]
-                      border border-[color:var(--color-border-subtle)]
-                      focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
-                      px-3
-                    "
-                  />
-                </div>
-                <div className="min-w-[150px]">
-                  <label htmlFor="recruitmentLimit" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
-                    모집 인원
-                  </label>
-                  <input
-                    id="recruitmentLimit"
-                    type="number"
-                    value={recruitmentLimit || ""}
-                    onChange={(e) => setRecruitmentLimit(e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="인원"
-                    min="1"
-                    className="
-                      w-full h-10 rounded-[var(--radius-md)]
-                      bg-[color:var(--color-bg-elev-1)]
-                      text-[color:var(--color-fg-primary)]
-                      border border-[color:var(--color-border-subtle)]
-                      focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
-                      px-3
-                    "
-                  />
-                </div>
-              </>
-            )}
 
             {/* 스포일러 체크 */}
             <label className="inline-flex items-center gap-2 select-none">

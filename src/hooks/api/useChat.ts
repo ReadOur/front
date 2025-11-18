@@ -24,6 +24,8 @@ import {
   GetMyRoomsParams,
   SendRoomMessageRequest,
   RoomMessage,
+  CreateRoomRequest,
+  CreateRoomResponse,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -334,6 +336,30 @@ export function usePinThread(
 
       // 해당 스레드 상세도 업데이트
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.threadDetail(variables.threadId) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 생성
+ */
+export function useCreateRoom(
+  options?: UseMutationOptions<CreateRoomResponse, Error, CreateRoomRequest, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<CreateRoomResponse, Error, CreateRoomRequest, unknown>({
+    ...options,
+    mutationFn: chatService.createRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {

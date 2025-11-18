@@ -42,7 +42,7 @@ export default function MYB_14() {
     if (!searchTerm.trim()) return;
 
     console.log("검색:", searchTerm);
-    navigate(`/library/search?q=${encodeURIComponent(searchTerm)}`);
+    navigate(`/my-library/search?q=${encodeURIComponent(searchTerm)}`);
     setShowSuggestions(false);
   };
 

@@ -88,7 +88,8 @@ export interface CreateHighlightRequest {
  */
 export interface LibraryAvailability {
   libraryName: string;
-  available: boolean;
+  hasBook: boolean; // 해당 도서관에 책이 있는지 여부
+  loanAvailable: boolean; // 대출 가능한지 여부
   loanStatus?: string;
   returnDate?: string;
 }

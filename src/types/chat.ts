@@ -288,3 +288,30 @@ export interface GetRoomMessagesParams {
   roomId: number;
   before?: string; // 커서 기반 페이징
 }
+
+// ===== 채팅방 생성 =====
+
+/**
+ * 채팅방 카테고리 타입
+ */
+export type RoomCategory = "DIRECT" | "GROUP" | "MEETING";
+
+/**
+ * 채팅방 생성 요청
+ */
+export interface CreateRoomRequest {
+  name: string;
+  description?: string;
+  category: RoomCategory;
+}
+
+/**
+ * 채팅방 생성 응답
+ */
+export interface CreateRoomResponse {
+  roomId: number;
+  name: string;
+  description: string;
+  category: RoomCategory;
+  createdAt: string;
+}
