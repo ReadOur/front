@@ -1,12 +1,55 @@
 # 🤖 Claude 작업 체크리스트
 
-> **세션 시작:** 2025-11-17
-> **브랜치:** `claude/review-codebase-018kxQ852QRdx6FQEDjiYZ86`
-> **목적:** TODO.md 기반 API 연동 작업 진행 및 추적
+> **세션 시작:** 2025-11-18
+> **브랜치:** `claude/add-chat-link-api-01NtKU5APwArCmnSdCNDjkKY`
+> **목적:** 모임 게시글 채팅방 참여 토글 기능 구현
 
 ---
 
 ## ✅ 완료된 작업
+
+### 2025-11-18: 모임 게시글 참여 토글 기능
+
+#### 1. 채팅방 참여 토글 API 연동
+- [x] **엔드포인트 추가** (`src/api/endpoints.ts:54`)
+  - [x] `POST_ENDPOINTS.TOGGLE_RECRUITMENT_APPLY = "/community/recruitments/{postId}/apply-toggle"` 추가
+
+- [x] **서비스 레이어** (`src/services/postService.ts:79-81`)
+  - [x] `toggleRecruitmentApply(postId)` 함수 구현
+  - [x] 백엔드에서 자동으로 참여/탈퇴 토글 처리
+  - [x] 응답 타입: `{ isApplied: boolean }`
+
+- [x] **React Query 훅** (`src/hooks/api/usePost.ts:196-259`)
+  - [x] `useToggleRecruitmentApply()` 훅 구현
+  - [x] 낙관적 업데이트로 즉시 UI 반영 (`isApplied`, `currentMemberCount`)
+  - [x] 에러 시 자동 롤백
+  - [x] 성공 시 게시글 상세 및 목록 캐시 무효화
+
+- [x] **페이지 UI 연동** (`src/pages/BRD_05.tsx`)
+  - [x] `handleToggleRecruitment()` 핸들러 구현 (Line 333-344)
+  - [x] 로그인 확인 처리
+  - [x] 참여 상태에 따른 버튼 UI 분기 (Line 639-708)
+    - 미참여: "참여하기" 버튼만 표시
+    - 참여 중: "채팅방 입장" + "참여 취소" 버튼 표시
+  - [x] 토스트 알림 메시지
+    - 참여 성공: "모임에 참여했습니다."
+    - 참여 취소: "모임 참여가 취소되었습니다."
+    - 에러 발생: 에러 메시지 표시
+  - [x] 로딩 상태 처리 (`isPending`)
+
+**커밋 정보:**
+- Commit: `48b1f66` (참여 토글 기능), `cd31a1d` (빌드 에러 수정)
+- 브랜치: `claude/add-chat-link-api-01NtKU5APwArCmnSdCNDjkKY`
+- 푸시 완료 ✅
+
+**변경 파일:**
+- `src/api/endpoints.ts` - 엔드포인트 추가
+- `src/services/postService.ts` - 서비스 함수 추가
+- `src/hooks/api/usePost.ts` - React Query 훅 추가
+- `src/pages/BRD_05.tsx` - UI 연동
+- `src/pages/CAL_11.tsx` - GUEST_USER_ID 빌드 에러 수정 (import 제거, 상수로 정의)
+
+---
 
 ### 2025-11-17: 마이페이지 & 내서재 API 연동
 
