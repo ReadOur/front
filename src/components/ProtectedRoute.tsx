@@ -11,8 +11,13 @@ interface ProtectedRouteProps {
  * 비로그인 상태에서 접근 시 로그인 페이지로 리다이렉트
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  // 초기 로딩 중에는 아무것도 렌더링하지 않음 (깜빡임 방지)
+  if (isLoading) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     // 로그인 후 원래 가려던 페이지로 돌아갈 수 있도록 state에 저장
