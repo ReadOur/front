@@ -36,7 +36,15 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     // 로컬스토리지에서 액세스 토큰 가져오기
-    const accessToken = localStorage.getItem("accessToken");
+    const rawToken = localStorage.getItem("accessToken");
+    // JSON.parse로 감싸진 토큰 언래핑
+    let accessToken: string | null = null;
+    try {
+      accessToken = rawToken ? JSON.parse(rawToken) : null;
+    } catch {
+      // JSON이 아니면 그대로 사용
+      accessToken = rawToken;
+    }
 
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -124,7 +132,13 @@ axiosInstance.interceptors.response.use(
 
       try {
         // 리프레시 토큰으로 액세스 토큰 갱신
-        const refreshToken = localStorage.getItem("refreshToken");
+        const rawRefreshToken = localStorage.getItem("refreshToken");
+        let refreshToken: string | null = null;
+        try {
+          refreshToken = rawRefreshToken ? JSON.parse(rawRefreshToken) : null;
+        } catch {
+          refreshToken = rawRefreshToken;
+        }
 
         if (!refreshToken) {
           // 리프레시 토큰이 없으면 조용히 에러 반환 (로그인 페이지로 리다이렉트 안 함)

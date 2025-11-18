@@ -52,11 +52,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // localStorage 변경 감지 (다른 탭이나 API 인터셉터에서 토큰 제거 시)
     const handleStorageChange = () => {
       const currentToken = getAccessToken();
-      if (!currentToken) {
-        // 토큰이 제거되었으면 로그아웃 상태로 변경
-        setUser(null);
-        setToken(null);
-      }
+
+      // 현재 state의 토큰과 localStorage의 토큰이 다른 경우에만 업데이트
+      setToken(prev => {
+        if (prev && !currentToken) {
+          // 토큰이 있었는데 제거된 경우 → 로그아웃
+          console.log('⚠️ 토큰이 제거되었습니다. 로그아웃 처리합니다.');
+          setUser(null);
+          return null;
+        } else if (!prev && currentToken) {
+          // 토큰이 없었는데 생긴 경우 → 로그인 (다른 탭에서 로그인한 경우)
+          console.log('✅ 토큰이 감지되었습니다. 로그인 처리합니다.');
+          setUser({ name: 'user' });
+          return currentToken;
+        }
+        return prev;
+      });
     };
 
     // 1초마다 토큰 확인 (localStorage는 같은 탭 내에서 storage 이벤트 발생 안 함)
@@ -75,9 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 모든 API 요청에 자동으로 Authorization 헤더 포함됨
    */
   const login = (token: string, userData?: Partial<User>) => {
+    console.log('🔐 로그인 시도:', { token: token.substring(0, 20) + '...', userData });
+
     // JWT 토큰 저장
     setAccessToken(token);  // localStorage
     setToken(token);        // state
+
+    // 저장 확인
+    const savedToken = getAccessToken();
+    console.log('✅ 토큰 저장 확인:', {
+      original: token.substring(0, 20) + '...',
+      saved: savedToken?.substring(0, 20) + '...',
+      match: token === savedToken
+    });
 
     // 사용자 UI 표시용 정보 저장
     setUser({
