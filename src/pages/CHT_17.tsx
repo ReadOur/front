@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { MessageCircle, Search, Star, Users, Send, Loader2, User } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
 import { useRoomsOverview } from "@/hooks/api/useChat";
@@ -220,6 +221,8 @@ export default function CHT_17() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("ALL");
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { openThread } = useChatContext();
 
   // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
   const userId = '1'; // 테스트용 userId
@@ -257,6 +260,20 @@ export default function CHT_17() {
 
     return [...myRooms, ...publicRooms];
   }, [data]);
+
+  // URL에서 roomId 쿼리 파라미터를 읽어서 자동으로 채팅방 열기
+  useEffect(() => {
+    const roomId = searchParams.get('roomId');
+    if (roomId && threads.length > 0) {
+      // 해당 채팅방이 존재하는지 확인
+      const targetThread = threads.find(t => t.id === roomId);
+      if (targetThread) {
+        openThread(roomId);
+        // 쿼리 파라미터 제거 (한 번만 실행하도록)
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, threads, openThread, setSearchParams]);
 
   // 카테고리별 읽지 않은 메시지 수 계산
   const unreadCounts = {
