@@ -8,6 +8,7 @@ import {
   useLibraryAvailability,
   useBookHighlights,
   useCreateBookHighlight,
+  useUpdateBookHighlight,
   useDeleteBookHighlight,
   useBookReviews,
   useCreateBookReview,
@@ -33,6 +34,11 @@ export default function BOD_15() {
   const [editReviewContent, setEditReviewContent] = useState("");
   const [editReviewRating, setEditReviewRating] = useState<number>(5);
 
+  // 하이라이트 수정 관련 상태
+  const [editingHighlightId, setEditingHighlightId] = useState<number | null>(null);
+  const [editHighlightContent, setEditHighlightContent] = useState("");
+  const [editHighlightPage, setEditHighlightPage] = useState<number | undefined>();
+
   // API 호출
   const { data: book, isLoading: isLoadingBook } = useBookDetail(bookId || "");
   const { data: relatedPostsData, isLoading: isLoadingPosts } = useRelatedPosts(bookId || "", {
@@ -53,6 +59,7 @@ export default function BOD_15() {
 
   // 하이라이트 mutation
   const createHighlightMutation = useCreateBookHighlight();
+  const updateHighlightMutation = useUpdateBookHighlight();
   const deleteHighlightMutation = useDeleteBookHighlight();
 
   // 리뷰 mutation
@@ -106,6 +113,45 @@ export default function BOD_15() {
         },
         onError: (error: any) => {
           const errorMessage = error.response?.data?.message || error.message || "하이라이트 추가에 실패했습니다.";
+          alert(errorMessage);
+        },
+      }
+    );
+  };
+
+  const handleStartEditHighlight = (highlightId: number, content: string, pageNumber?: number) => {
+    setEditingHighlightId(highlightId);
+    setEditHighlightContent(content);
+    setEditHighlightPage(pageNumber);
+  };
+
+  const handleCancelEditHighlight = () => {
+    setEditingHighlightId(null);
+    setEditHighlightContent("");
+    setEditHighlightPage(undefined);
+  };
+
+  const handleUpdateHighlight = (highlightId: number) => {
+    if (!bookId || !editHighlightContent.trim()) {
+      alert("하이라이트 내용을 입력해주세요.");
+      return;
+    }
+
+    updateHighlightMutation.mutate(
+      {
+        bookId,
+        highlightId: highlightId.toString(),
+        content: editHighlightContent.trim(),
+        pageNumber: editHighlightPage,
+      },
+      {
+        onSuccess: () => {
+          setEditingHighlightId(null);
+          setEditHighlightContent("");
+          setEditHighlightPage(undefined);
+        },
+        onError: (error: any) => {
+          const errorMessage = error.response?.data?.message || error.message || "하이라이트 수정에 실패했습니다.";
           alert(errorMessage);
         },
       }
@@ -701,26 +747,99 @@ export default function BOD_15() {
                     className="p-5 rounded"
                     style={{ background: "#E9E5DC" }}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <p className="text-xl mb-2" style={{ color: "#1E1E1E" }}>
-                          "{highlight.content}"
-                        </p>
-                        <div className="flex items-center gap-4 text-base" style={{ color: "#6B4F3F" }}>
-                          <span>{highlight.userNickname}</span>
-                          {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
+                    {editingHighlightId === highlight.highlightId ? (
+                      // 수정 모드
+                      <div>
+                        <textarea
+                          value={editHighlightContent}
+                          onChange={(e) => setEditHighlightContent(e.target.value)}
+                          placeholder="하이라이트 내용을 입력하세요"
+                          className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
+                          rows={3}
+                          style={{
+                            color: "#6B4F3F",
+                            fontSize: "18px",
+                            background: "white",
+                            border: "1px solid #E9E5DC",
+                          }}
+                        />
+                        <div className="flex items-center gap-3 mb-3">
+                          <label className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
+                            페이지 번호 (선택):
+                          </label>
+                          <input
+                            type="number"
+                            value={editHighlightPage || ""}
+                            onChange={(e) =>
+                              setEditHighlightPage(e.target.value ? parseInt(e.target.value) : undefined)
+                            }
+                            placeholder="예: 123"
+                            className="px-3 py-2 rounded outline-none"
+                            style={{
+                              width: "120px",
+                              color: "#6B4F3F",
+                              fontSize: "16px",
+                              background: "white",
+                              border: "1px solid #E9E5DC",
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleUpdateHighlight(highlight.highlightId)}
+                            disabled={updateHighlightMutation.isPending}
+                            className="px-4 py-2 rounded text-base hover:opacity-90 transition"
+                            style={{ background: "#90BE6D", color: "white", fontWeight: 600 }}
+                          >
+                            {updateHighlightMutation.isPending ? "수정 중..." : "수정 완료"}
+                          </button>
+                          <button
+                            onClick={handleCancelEditHighlight}
+                            className="px-4 py-2 rounded text-base hover:opacity-90 transition"
+                            style={{ background: "#999", color: "white" }}
+                          >
+                            취소
+                          </button>
                         </div>
                       </div>
-                      {isAuthenticated && (
-                        <button
-                          onClick={() => handleDeleteHighlight(highlight.highlightId)}
-                          className="ml-4 px-3 py-1 rounded hover:opacity-70 transition text-base"
-                          style={{ background: "#F4A261", color: "white" }}
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </div>
+                    ) : (
+                      // 보기 모드
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <p className="text-xl mb-2" style={{ color: "#1E1E1E" }}>
+                            "{highlight.content}"
+                          </p>
+                          <div className="flex items-center gap-4 text-base" style={{ color: "#6B4F3F" }}>
+                            <span>{highlight.userNickname}</span>
+                            {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
+                          </div>
+                        </div>
+                        {isAuthenticated && (
+                          <div className="ml-4 flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleStartEditHighlight(
+                                  highlight.highlightId,
+                                  highlight.content,
+                                  highlight.pageNumber
+                                )
+                              }
+                              className="px-3 py-1 rounded hover:opacity-70 transition text-base"
+                              style={{ background: "#90BE6D", color: "white" }}
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleDeleteHighlight(highlight.highlightId)}
+                              className="px-3 py-1 rounded hover:opacity-70 transition text-base"
+                              style={{ background: "#F4A261", color: "white" }}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

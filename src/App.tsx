@@ -40,8 +40,8 @@ export default function App() {
     {
       key: "library",
       label: "내서재",
-      onClick: () => navigate("/library"),
-      active: pathname.startsWith("/library"),
+      onClick: () => navigate("/my-library"),
+      active: pathname.startsWith("/my-library"),
     },
     {
       key: "chat",
