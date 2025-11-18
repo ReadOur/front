@@ -40,8 +40,6 @@ axiosInstance.interceptors.request.use(
 
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
-      // X-User-Id 헤더에 accessToken 값 설정
-      config.headers["X-User-Id"] = accessToken;
     }
 
     // 디버깅: 실제 요청 URL 출력
@@ -53,7 +51,6 @@ axiosInstance.interceptors.request.use(
       params: config.params,
       headers: {
         Authorization: accessToken ? 'Bearer ***' : undefined,
-        'X-User-Id': accessToken ? '***' : undefined,
       },
     });
 
