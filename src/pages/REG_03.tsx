@@ -2,7 +2,7 @@ import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { isEmail, isStrongPassword } from '@/utils/validation';
-
+import logo from '@/assets/logo.png';
 import { signup } from '@/services/authService';
 
 interface RegisterFormState {
@@ -198,6 +198,17 @@ export default function REG_03() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-16">
       <div className="w-full max-w-2xl rounded-3xl bg-white p-12 shadow-lg">
+        <div className="mb-8 flex justify-center">
+          <button
+            onClick={() => navigate('/')}
+            className="hover:opacity-80 transition-opacity"
+            aria-label="메인 페이지로 이동"
+            type="button"
+          >
+            <img src={logo} alt="ReadOur 로고" className="h-12 w-auto" loading="lazy" />
+          </button>
+        </div>
+
         <header className="mb-10 text-center">
           <h1 className="text-3xl font-semibold text-slate-900">회원가입</h1>
           <p className="mt-3 text-sm text-slate-600">

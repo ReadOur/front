@@ -183,12 +183,13 @@ export const BRD_06 = (): React.JSX.Element => {
             {/* 카테고리 */}
             <div className="min-w-[200px]">
               <label htmlFor="category" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
-                카테고리
+                카테고리 {isEditMode && <span className="text-xs">(변경 불가)</span>}
               </label>
               <select
                 id="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                disabled={isEditMode}
                 className="
                   w-full h-10 rounded-[var(--radius-md)]
                   bg-[color:var(--color-bg-elev-1)]
@@ -196,6 +197,7 @@ export const BRD_06 = (): React.JSX.Element => {
                   border border-transparent
                   focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
                   px-3
+                  disabled:opacity-60 disabled:cursor-not-allowed
                 "
               >
                 <option value="FREE">자유</option>
@@ -210,7 +212,7 @@ export const BRD_06 = (): React.JSX.Element => {
             {category === "REVIEW" && (
               <div className="min-w-[200px]">
                 <label htmlFor="bookId" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
-                  책 ID
+                  책 ID {isEditMode && <span className="text-xs">(변경 불가)</span>}
                 </label>
                 <input
                   id="bookId"
@@ -218,6 +220,7 @@ export const BRD_06 = (): React.JSX.Element => {
                   value={bookId || ""}
                   onChange={(e) => setBookId(e.target.value ? Number(e.target.value) : undefined)}
                   placeholder="책 ID를 입력하세요"
+                  disabled={isEditMode}
                   className="
                     w-full h-10 rounded-[var(--radius-md)]
                     bg-[color:var(--color-bg-elev-1)]
@@ -225,6 +228,7 @@ export const BRD_06 = (): React.JSX.Element => {
                     border border-[color:var(--color-border-subtle)]
                     focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
                     px-3
+                    disabled:opacity-60 disabled:cursor-not-allowed
                   "
                 />
               </div>

@@ -31,6 +31,7 @@ interface AuthContextType {
   login: (token: string, userData?: Partial<User>) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +39,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // 초기 로딩 상태
 
   // localStorage에서 토큰 읽어오기 (페이지 새로고침 시에도 유지)
   useEffect(() => {
@@ -45,10 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken) {
       setToken(storedToken);
       setUser({
-        id: storedToken,
         name: 'user',
       });
     }
+    setIsLoading(false); // 로딩 완료
   }, []);
 
   /**
@@ -95,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = accessToken !== null;
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, accessToken, login, logout, isAuthenticated, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
