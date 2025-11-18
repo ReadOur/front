@@ -127,18 +127,10 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
 
         if (!refreshToken) {
-          // 리프레시 토큰이 없으면 토큰 삭제하고 재시도
-          console.warn("⚠️ Refresh token이 없습니다. Access token을 제거하고 재시도합니다.");
+          // 리프레시 토큰이 없으면 조용히 에러 반환 (로그인 페이지로 리다이렉트 안 함)
+          console.warn("⚠️ Refresh token이 없습니다. 401 에러를 반환합니다.");
           localStorage.removeItem("accessToken");
-
-          // Authorization 헤더 제거
-          if (originalRequest.headers) {
-            delete originalRequest.headers.Authorization;
-            delete originalRequest.headers["X-User-Id"];
-          }
-
-          // 토큰 없이 재시도 (공개 API의 경우 성공할 수 있음)
-          return axiosInstance(originalRequest);
+          return Promise.reject(error);
         }
 
         // 토큰 갱신 요청
@@ -160,19 +152,11 @@ axiosInstance.interceptors.response.use(
         // 원래 요청 재시도
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // 토큰 갱신 실패 시 토큰 제거하고 재시도
-        console.warn("⚠️ Token refresh 실패. Access token을 제거하고 재시도합니다.");
+        // 토큰 갱신 실패 시 조용히 에러 반환 (로그인 페이지로 리다이렉트 안 함)
+        console.warn("⚠️ Token refresh 실패. 401 에러를 반환합니다.");
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-
-        // Authorization 헤더 제거
-        if (originalRequest.headers) {
-          delete originalRequest.headers.Authorization;
-          delete originalRequest.headers["X-User-Id"];
-        }
-
-        // 토큰 없이 재시도 (공개 API의 경우 성공할 수 있음)
-        return axiosInstance(originalRequest);
+        return Promise.reject(error);
       }
     }
 

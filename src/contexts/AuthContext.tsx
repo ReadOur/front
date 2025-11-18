@@ -45,10 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken) {
       setToken(storedToken);
       setUser({
-        id: storedToken,
         name: 'user',
       });
     }
+
+    // localStorage 변경 감지 (다른 탭이나 API 인터셉터에서 토큰 제거 시)
+    const handleStorageChange = () => {
+      const currentToken = getAccessToken();
+      if (!currentToken) {
+        // 토큰이 제거되었으면 로그아웃 상태로 변경
+        setUser(null);
+        setToken(null);
+      }
+    };
+
+    // 1초마다 토큰 확인 (localStorage는 같은 탭 내에서 storage 이벤트 발생 안 함)
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   /**
