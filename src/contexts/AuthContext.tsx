@@ -39,41 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setToken] = useState<string | null>(null);
 
-  // localStorage에서 토큰 읽어오기 (페이지 새로고침 시에도 유지)
+  /**
+   * 페이지 로드 시 초기화
+   * localStorage에서 JWT 토큰 복원하여 로그인 상태 유지
+   */
   useEffect(() => {
     const storedToken = getAccessToken();
     if (storedToken) {
       setToken(storedToken);
+      // 사용자 정보는 최소한으로 설정 (실제 정보는 JWT에서 추출)
       setUser({
         name: 'user',
       });
     }
-
-    // localStorage 변경 감지 (다른 탭이나 API 인터셉터에서 토큰 제거 시)
-    const handleStorageChange = () => {
-      const currentToken = getAccessToken();
-
-      // 현재 state의 토큰과 localStorage의 토큰이 다른 경우에만 업데이트
-      setToken(prev => {
-        if (prev && !currentToken) {
-          // 토큰이 있었는데 제거된 경우 → 로그아웃
-          console.log('⚠️ 토큰이 제거되었습니다. 로그아웃 처리합니다.');
-          setUser(null);
-          return null;
-        } else if (!prev && currentToken) {
-          // 토큰이 없었는데 생긴 경우 → 로그인 (다른 탭에서 로그인한 경우)
-          console.log('✅ 토큰이 감지되었습니다. 로그인 처리합니다.');
-          setUser({ name: 'user' });
-          return currentToken;
-        }
-        return prev;
-      });
-    };
-
-    // 1초마다 토큰 확인 (localStorage는 같은 탭 내에서 storage 이벤트 발생 안 함)
-    const interval = setInterval(handleStorageChange, 1000);
-
-    return () => clearInterval(interval);
   }, []);
 
   /**
