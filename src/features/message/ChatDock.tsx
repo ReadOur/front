@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 // Optional: npm i socket.io-client (when backend ready)
 // import { io, Socket } from "socket.io-client";
-import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
+import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell, UserMinus } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, usePinThread, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, usePinThread, useLeaveRoom, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
+import { useToast } from "@/components/Toast/ToastProvider";
 import AIDock from "@/features/ai/AIDock";
 import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
@@ -135,11 +136,13 @@ function Avatar({ user, size = 24 }: { user: ChatUser; size?: number }) {
 function ThreadChip({
   thread,
   onOpen,
-  onTogglePin
+  onTogglePin,
+  onLeave
 }: {
   thread: ChatThread;
   onOpen: (t: ChatThread) => void;
   onTogglePin?: (threadId: string) => void;
+  onLeave?: (threadId: string) => void;
 }) {
   const title = thread.users.map((u) => u.name).join(", ");
   const unread = Math.min(99, thread.unreadCount || 0);
@@ -195,6 +198,18 @@ function ThreadChip({
                   : "text-[color:var(--chatdock-fg-muted)]"
               )}
             />
+          </button>
+        )}
+        {onLeave && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onLeave(thread.id);
+            }}
+            className="w-6 h-6 grid place-items-center rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-elev-2)] opacity-0 group-hover:opacity-100 transition-opacity"
+            title="채팅방 나가기"
+          >
+            <UserMinus className="w-3.5 h-3.5 text-red-500" />
           </button>
         )}
       </div>
@@ -615,6 +630,7 @@ export default function ChatDock() {
   const navigate = useNavigate();
   const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
@@ -668,6 +684,17 @@ export default function ChatDock() {
     },
   });
 
+  // 채팅방 나가기 mutation
+  const leaveRoomMutation = useLeaveRoom({
+    onSuccess: () => {
+      showToast("채팅방에서 나갔습니다", "success");
+    },
+    onError: (error) => {
+      showToast("채팅방 나가기에 실패했습니다", "error");
+      console.error("Leave room error:", error);
+    },
+  });
+
   // 백엔드 응답을 UI 형식으로 변환
   const threads = useMemo(() => {
     if (!myRoomsData) return [];
@@ -706,6 +733,18 @@ export default function ChatDock() {
       threadId,
       isPinned: !thread.isPinned, // 현재 상태의 반대로 토글
     });
+  };
+
+  // 채팅방 나가기 함수
+  const handleLeaveRoom = (threadId: string) => {
+    const roomId = parseInt(threadId);
+    if (confirm("정말 이 채팅방에서 나가시겠습니까?")) {
+      leaveRoomMutation.mutate(roomId);
+      // 나간 채팅방이 열려있으면 닫기
+      if (openThreadIds.includes(threadId)) {
+        closeThreadInContext(threadId);
+      }
+    }
   };
 
   // 핀된 채팅방을 상단에 표시하도록 정렬
@@ -1088,6 +1127,7 @@ export default function ChatDock() {
                     thread={thread}
                     onOpen={openThread}
                     onTogglePin={togglePin}
+                    onLeave={handleLeaveRoom}
                   />
                 ))}
               </div>

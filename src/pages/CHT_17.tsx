@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { MessageCircle, Search, Star, Users, Send, Loader2, User } from "lucide-react";
+import { MessageCircle, Search, Star, Users, Send, Loader2, User, UserPlus, UserMinus } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useRoomsOverview } from "@/hooks/api/useChat";
+import { useRoomsOverview, useJoinRoom, useLeaveRoom } from "@/hooks/api/useChat";
 import { MyRoomItem, PublicRoomItem } from "@/types/chat";
+import { useToast } from "@/components/Toast/ToastProvider";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -151,17 +152,37 @@ function formatRelativeTime(ms: number): string {
   return `${days}일 전`;
 }
 
-function ThreadListItem({ thread }: { thread: ChatThread }) {
+function ThreadListItem({
+  thread,
+  isJoined,
+  onJoin,
+  onLeave
+}: {
+  thread: ChatThread;
+  isJoined: boolean;
+  onJoin: (roomId: number) => void;
+  onLeave: (roomId: number) => void;
+}) {
   const { openThread } = useChatContext();
   const isGroup = thread.users.length > 1;
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
     : thread.users[0]?.name || "알 수 없음";
 
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const roomId = parseInt(thread.id);
+    if (isJoined) {
+      onLeave(roomId);
+    } else {
+      onJoin(roomId);
+    }
+  };
+
   return (
     <div
       className="flex items-start gap-3 p-4 hover:bg-[color:var(--color-bg-subtle)] cursor-pointer border-b border-[color:var(--color-border-subtle)] transition-colors"
-      onClick={() => openThread(thread.id)}
+      onClick={() => isJoined && openThread(thread.id)}
     >
       {/* Avatar */}
       <div className="relative flex-shrink-0">
@@ -204,6 +225,19 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
           ) : null}
         </div>
       </div>
+
+      {/* Join/Leave Button */}
+      <button
+        onClick={handleButtonClick}
+        className={`flex-shrink-0 p-2 rounded-lg transition-colors ${
+          isJoined
+            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+            : "text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+        }`}
+        title={isJoined ? "채팅방 나가기" : "채팅방 참여"}
+      >
+        {isJoined ? <UserMinus className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+      </button>
     </div>
   );
 }
@@ -223,6 +257,7 @@ export default function CHT_17() {
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { openThread } = useChatContext();
+  const { showToast } = useToast();
 
   // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
   const userId = '1'; // 테스트용 userId
@@ -230,25 +265,51 @@ export default function CHT_17() {
   // 채팅방 데이터 가져오기
   const { data, isLoading, error } = useRoomsOverview({ userId });
 
-  // 백엔드 응답을 UI 형식으로 변환
-  const threads = useMemo(() => {
-    if (!data) return [];
+  // 채팅방 참여/나가기 mutation
+  const joinRoomMutation = useJoinRoom({
+    onSuccess: () => {
+      showToast("채팅방에 참여했습니다", "success");
+    },
+    onError: (error) => {
+      showToast("채팅방 참여에 실패했습니다", "error");
+      console.error("Join room error:", error);
+    },
+  });
 
-    const myRooms: ChatThread[] = data.myRooms.items.map((room) => ({
-      id: room.roomId.toString(),
-      users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
-      category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
-      unreadCount: room.unreadCount,
-      lastMessage: room.lastMsg
-        ? {
-            id: room.lastMsg.id.toString(),
-            threadId: room.roomId.toString(),
-            fromId: "unknown",
-            text: room.lastMsg.preview,
-            createdAt: new Date(room.lastMsg.createdAt).getTime(),
-          }
-        : undefined,
-    }));
+  const leaveRoomMutation = useLeaveRoom({
+    onSuccess: () => {
+      showToast("채팅방에서 나갔습니다", "success");
+    },
+    onError: (error) => {
+      showToast("채팅방 나가기에 실패했습니다", "error");
+      console.error("Leave room error:", error);
+    },
+  });
+
+  // 백엔드 응답을 UI 형식으로 변환
+  const { threads, joinedRoomIds } = useMemo(() => {
+    if (!data) return { threads: [], joinedRoomIds: new Set<string>() };
+
+    const joinedIds = new Set<string>();
+
+    const myRooms: ChatThread[] = data.myRooms.items.map((room) => {
+      joinedIds.add(room.roomId.toString());
+      return {
+        id: room.roomId.toString(),
+        users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
+        category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
+        unreadCount: room.unreadCount,
+        lastMessage: room.lastMsg
+          ? {
+              id: room.lastMsg.id.toString(),
+              threadId: room.roomId.toString(),
+              fromId: "unknown",
+              text: room.lastMsg.preview,
+              createdAt: new Date(room.lastMsg.createdAt).getTime(),
+            }
+          : undefined,
+      };
+    });
 
     const publicRooms: ChatThread[] = data.publicRooms.items.map((room) => ({
       id: room.roomId.toString(),
@@ -258,8 +319,20 @@ export default function CHT_17() {
       lastMessage: undefined,
     }));
 
-    return [...myRooms, ...publicRooms];
+    return {
+      threads: [...myRooms, ...publicRooms],
+      joinedRoomIds: joinedIds
+    };
   }, [data]);
+
+  // 채팅방 참여/나가기 핸들러
+  const handleJoinRoom = (roomId: number) => {
+    joinRoomMutation.mutate(roomId);
+  };
+
+  const handleLeaveRoom = (roomId: number) => {
+    leaveRoomMutation.mutate(roomId);
+  };
 
   // URL에서 roomId 쿼리 파라미터를 읽어서 자동으로 채팅방 열기
   useEffect(() => {
@@ -367,7 +440,13 @@ export default function CHT_17() {
             </div>
           ) : (
             filteredThreads.map((thread) => (
-              <ThreadListItem key={thread.id} thread={thread} />
+              <ThreadListItem
+                key={thread.id}
+                thread={thread}
+                isJoined={joinedRoomIds.has(thread.id)}
+                onJoin={handleJoinRoom}
+                onLeave={handleLeaveRoom}
+              />
             ))
           )}
         </div>

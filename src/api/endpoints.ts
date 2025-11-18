@@ -93,6 +93,10 @@ export const CHAT_ENDPOINTS = {
   // 채팅방 메시지 (백엔드 API)
   ROOM_MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`, // 채팅방 메시지 조회
 
+  // 채팅방 참여/나가기 (백엔드 API)
+  JOIN_ROOM: (roomId: number) => `/chat/rooms/${roomId}/join`, // 채팅방 참여
+  LEAVE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/leave`, // 채팅방 나가기
+
   // 기존 엔드포인트 (향후 사용)
   THREADS: "/chat/threads",
   THREAD_DETAIL: (threadId: string) => `/chat/threads/${threadId}`,

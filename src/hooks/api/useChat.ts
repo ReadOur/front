@@ -178,6 +178,71 @@ export function useSendRoomMessage(
 }
 
 /**
+ * 채팅방 참여
+ */
+export function useJoinRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.joinRoom,
+    onSuccess: (data, variables, context) => {
+      // 내 채팅방 목록 무효화 (새로 참여한 방이 추가됨)
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.myRooms(0)
+      });
+
+      // 채팅방 overview 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomsOverview()
+      });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 나가기
+ */
+export function useLeaveRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.leaveRoom,
+    onSuccess: (data, variables, context) => {
+      // 내 채팅방 목록 무효화 (나간 방이 제거됨)
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.myRooms(0)
+      });
+
+      // 채팅방 overview 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomsOverview()
+      });
+
+      // 해당 채팅방의 메시지도 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomMessages(variables)
+      });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
  * 채팅 스레드 생성
  */
 export function useCreateThread(

@@ -68,6 +68,20 @@ export async function sendRoomMessage(data: SendRoomMessageRequest): Promise<Roo
   );
 }
 
+/**
+ * 채팅방 참여
+ */
+export async function joinRoom(roomId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.JOIN_ROOM(roomId));
+}
+
+/**
+ * 채팅방 나가기
+ */
+export async function leaveRoom(roomId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.LEAVE_ROOM(roomId));
+}
+
 // ===== 스레드 (대화방) 관련 =====
 
 /**
@@ -149,6 +163,8 @@ export const chatService = {
   getMyRooms,
   getRoomMessages,
   sendRoomMessage,
+  joinRoom,
+  leaveRoom,
 
   // 스레드
   getThreads,
