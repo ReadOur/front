@@ -2,7 +2,9 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
 import { useAuth } from "@/contexts/AuthContext";
-import { GUEST_USER_ID } from "@/utils/auth";
+
+// 게스트 사용자 ID
+const GUEST_USER_ID = 0;
 
 export default function CAL_11() {
   const { user, isAuthenticated } = useAuth();
