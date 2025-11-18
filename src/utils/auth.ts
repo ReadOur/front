@@ -2,8 +2,6 @@
  * 인증 관련 유틸리티 함수
  */
 
-import { getLocalStorage, setLocalStorage, removeLocalStorage } from './storage';
-
 /**
  * localStorage 키
  */
@@ -28,21 +26,38 @@ export function isGuest(): boolean {
 /**
  * Access Token 가져오기
  * @returns Access Token (없으면 null)
+ *
+ * 주의: 토큰은 단순 문자열이므로 JSON.stringify/parse를 사용하지 않고 직접 저장/로드
  */
 export function getAccessToken(): string | null {
-  return getLocalStorage<string>(ACCESS_TOKEN_KEY);
+  try {
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  } catch (error) {
+    console.error('토큰 읽기 실패:', error);
+    return null;
+  }
 }
 
 /**
  * Access Token 저장
+ *
+ * 주의: 토큰은 단순 문자열이므로 JSON.stringify/parse를 사용하지 않고 직접 저장/로드
  */
 export function setAccessToken(token: string): void {
-  setLocalStorage(ACCESS_TOKEN_KEY, token);
+  try {
+    localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  } catch (error) {
+    console.error('토큰 저장 실패:', error);
+  }
 }
 
 /**
  * Access Token 제거
  */
 export function removeAccessToken(): void {
-  removeLocalStorage(ACCESS_TOKEN_KEY);
+  try {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  } catch (error) {
+    console.error('토큰 삭제 실패:', error);
+  }
 }
