@@ -4,12 +4,21 @@
 
 import { useQuery, useMutation, useQueryClient, UseMutationOptions } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
-import { MyPagePreview, UserProfilePreview, UpdateProfileRequest, SpringPage, PostListItem } from "@/types";
+import {
+  MyPagePreview,
+  UserProfilePreview,
+  UserProfilePostsResponse,
+  UserProfileLikedPostsResponse,
+  UserProfileCommentsResponse,
+  UpdateProfileRequest,
+  SpringPage,
+  PostListItem,
+} from "@/types";
 
 // ===== Query Keys =====
 export const USER_QUERY_KEYS = {
   all: ["users"] as const,
-  // 마이페이지
+  // 마이페이지 - 내 프로필
   myPage: () => [...USER_QUERY_KEYS.all, "myPage"] as const,
   myPosts: (params?: { page?: number; size?: number; sort?: string }) =>
     [...USER_QUERY_KEYS.all, "myPosts", params] as const,
@@ -17,8 +26,14 @@ export const USER_QUERY_KEYS = {
     [...USER_QUERY_KEYS.all, "myLikedPosts", params] as const,
   myComments: (params?: { page?: number; size?: number; sort?: string }) =>
     [...USER_QUERY_KEYS.all, "myComments", params] as const,
-  // 특정 사용자
-  userProfile: (userId: string) => [...USER_QUERY_KEYS.all, "userProfile", userId] as const,
+  // 마이페이지 - 특정 사용자
+  userMyPage: (userId: number | string) => [...USER_QUERY_KEYS.all, "userMyPage", userId] as const,
+  userMyPagePosts: (userId: number | string, params?: { page?: number; size?: number; sort?: string }) =>
+    [...USER_QUERY_KEYS.all, "userMyPagePosts", userId, params] as const,
+  userMyPageLikedPosts: (userId: number | string, params?: { page?: number; size?: number; sort?: string }) =>
+    [...USER_QUERY_KEYS.all, "userMyPageLikedPosts", userId, params] as const,
+  userMyPageComments: (userId: number | string, params?: { page?: number; size?: number; sort?: string }) =>
+    [...USER_QUERY_KEYS.all, "userMyPageComments", userId, params] as const,
 };
 
 // ===== Queries =====
@@ -68,13 +83,58 @@ export function useMyComments(params?: { page?: number; size?: number; sort?: st
 }
 
 /**
- * 특정 사용자 프로필 조회
- * TODO: 백엔드 API 구현 확인 필요
+ * 특정 사용자 마이페이지 조회 (미리보기)
+ * - 특정 사용자 프로필 정보 (userId, nickname)
+ * - 최근 작성한 게시글 5개
+ * - 최근 댓글 단 게시글 5개
+ * - 최근 좋아요 누른 게시글 5개
  */
-export function useUserProfile(userId: string) {
+export function useUserMyPage(userId: number | string) {
   return useQuery<UserProfilePreview>({
-    queryKey: USER_QUERY_KEYS.userProfile(userId),
-    queryFn: () => userService.getUserProfile(userId),
+    queryKey: USER_QUERY_KEYS.userMyPage(userId),
+    queryFn: () => userService.getUserMyPage(userId),
+    enabled: !!userId,
+  });
+}
+
+/**
+ * 특정 사용자 작성 게시글 전체 조회 (페이징)
+ */
+export function useUserMyPagePosts(
+  userId: number | string,
+  params?: { page?: number; size?: number; sort?: string }
+) {
+  return useQuery<UserProfilePostsResponse>({
+    queryKey: USER_QUERY_KEYS.userMyPagePosts(userId, params),
+    queryFn: () => userService.getUserMyPagePosts(userId, params),
+    enabled: !!userId,
+  });
+}
+
+/**
+ * 특정 사용자 좋아요 게시글 전체 조회 (페이징)
+ */
+export function useUserMyPageLikedPosts(
+  userId: number | string,
+  params?: { page?: number; size?: number; sort?: string }
+) {
+  return useQuery<UserProfileLikedPostsResponse>({
+    queryKey: USER_QUERY_KEYS.userMyPageLikedPosts(userId, params),
+    queryFn: () => userService.getUserMyPageLikedPosts(userId, params),
+    enabled: !!userId,
+  });
+}
+
+/**
+ * 특정 사용자 작성 댓글 전체 조회 (페이징)
+ */
+export function useUserMyPageComments(
+  userId: number | string,
+  params?: { page?: number; size?: number; sort?: string }
+) {
+  return useQuery<UserProfileCommentsResponse>({
+    queryKey: USER_QUERY_KEYS.userMyPageComments(userId, params),
+    queryFn: () => userService.getUserMyPageComments(userId, params),
     enabled: !!userId,
   });
 }

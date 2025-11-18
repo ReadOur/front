@@ -1,7 +1,16 @@
-// PRF_10.tsx - 마이페이지
+// PRF_10.tsx - 마이페이지 / 특정 사용자 프로필
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMyPage, useMyLikedPosts, useMyPosts, useMyComments } from "@/hooks/api";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  useMyPage,
+  useMyLikedPosts,
+  useMyPosts,
+  useMyComments,
+  useUserMyPage,
+  useUserMyPageLikedPosts,
+  useUserMyPagePosts,
+  useUserMyPageComments,
+} from "@/hooks/api";
 
 // 목업 데이터 - 알림 (백엔드 API 대기 중)
 const mockNotifications = [
@@ -12,28 +21,66 @@ const mockNotifications = [
 
 export default function PRF_10() {
   const navigate = useNavigate();
+  const { userId } = useParams<{ userId: string }>(); // URL 파라미터에서 userId 추출
 
   // 전체보기 상태 관리
   const [showFullLikedPosts, setShowFullLikedPosts] = useState(false);
   const [showFullMyPosts, setShowFullMyPosts] = useState(false);
   const [showFullMyComments, setShowFullMyComments] = useState(false);
 
-  // API 호출: 마이페이지 (프로필 + 최근 글 5개씩)
-  const { data: myPage, isLoading } = useMyPage();
+  // 조건부 API 호출: userId가 있으면 특정 사용자, 없으면 내 프로필
+  const isViewingOtherUser = !!userId;
 
-  // 전체 목록 조회 (조건부 활성화)
-  const { data: likedPostsData, isLoading: isLoadingLikedPosts } = useMyLikedPosts({
+  // 내 프로필 API (userId 없을 때)
+  const { data: myPageData, isLoading: isLoadingMyPage } = useMyPage();
+  const { data: myLikedPostsData, isLoading: isLoadingMyLikedPosts } = useMyLikedPosts({
     page: 0,
     size: 20,
   });
-  const { data: myPostsData, isLoading: isLoadingMyPosts } = useMyPosts({
+  const { data: myPostsDataFull, isLoading: isLoadingMyPostsFull } = useMyPosts({
     page: 0,
     size: 20,
   });
-  const { data: myCommentsData, isLoading: isLoadingMyComments } = useMyComments({
+  const { data: myCommentsDataFull, isLoading: isLoadingMyCommentsFull } = useMyComments({
     page: 0,
     size: 20,
   });
+
+  // 특정 사용자 프로필 API (userId 있을 때)
+  const { data: userPageData, isLoading: isLoadingUserPage } = useUserMyPage(
+    userId || "",
+  );
+  const { data: userLikedPostsData, isLoading: isLoadingUserLikedPosts } = useUserMyPageLikedPosts(
+    userId || "",
+    { page: 0, size: 20 }
+  );
+  const { data: userPostsData, isLoading: isLoadingUserPosts } = useUserMyPagePosts(
+    userId || "",
+    { page: 0, size: 20 }
+  );
+  const { data: userCommentsData, isLoading: isLoadingUserComments } = useUserMyPageComments(
+    userId || "",
+    { page: 0, size: 20 }
+  );
+
+  // 조건에 따라 사용할 데이터 선택
+  const profileData = isViewingOtherUser ? userPageData : myPageData;
+  const isLoading = isViewingOtherUser ? isLoadingUserPage : isLoadingMyPage;
+
+  // 전체 목록 데이터
+  const likedPostsData = isViewingOtherUser
+    ? userLikedPostsData?.likedPostsPage
+    : myLikedPostsData;
+  const myPostsData = isViewingOtherUser
+    ? userPostsData?.postPage
+    : myPostsDataFull;
+  const myCommentsData = isViewingOtherUser
+    ? userCommentsData?.commentPage
+    : myCommentsDataFull;
+
+  const isLoadingLikedPosts = isViewingOtherUser ? isLoadingUserLikedPosts : isLoadingMyLikedPosts;
+  const isLoadingMyPosts = isViewingOtherUser ? isLoadingUserPosts : isLoadingMyPostsFull;
+  const isLoadingMyComments = isViewingOtherUser ? isLoadingUserComments : isLoadingMyCommentsFull;
 
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
@@ -54,34 +101,36 @@ export default function PRF_10() {
       style={{ background: "#FFF9F2" }}
     >
       <div className="max-w-[1400px] mx-auto">
-        {/* 설정 버튼 */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => navigate("/settings")}
-            className="px-6 py-3 rounded-lg hover:opacity-80 transition flex items-center gap-2"
-            style={{ background: "#90BE6D", color: "#6B4F3F" }}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+        {/* 설정 버튼 - 내 프로필일 때만 표시 */}
+        {!isViewingOtherUser && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => navigate("/settings")}
+              className="px-6 py-3 rounded-lg hover:opacity-80 transition flex items-center gap-2"
+              style={{ background: "#90BE6D", color: "#6B4F3F" }}
             >
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 1v6m0 6v6m0-18l-2 2m2-2l2 2m-2 16l-2-2m2 2l2-2m9-10h-6m-6 0H1m18 0l-2-2m2 2l-2 2M1 12l2-2m-2 2l2 2"></path>
-            </svg>
-            <span className="text-xl font-semibold">설정</span>
-          </button>
-        </div>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m0-18l-2 2m2-2l2 2m-2 16l-2-2m2 2l2-2m9-10h-6m-6 0H1m18 0l-2-2m2 2l-2 2M1 12l2-2m-2 2l2 2"></path>
+              </svg>
+              <span className="text-xl font-semibold">설정</span>
+            </button>
+          </div>
+        )}
 
         {/* 프로필 정보 */}
         {isLoading ? (
           <div className="text-center py-8 text-xl" style={{ color: "#999" }}>
             로딩 중...
           </div>
-        ) : myPage ? (
+        ) : profileData ? (
           <div className="mb-8 p-6 rounded-lg" style={{ background: "#E9E5DC" }}>
             <div className="flex items-center gap-6">
               <div
@@ -89,20 +138,20 @@ export default function PRF_10() {
                 style={{ background: "#90BE6D" }}
               >
                 <span className="text-3xl" style={{ color: "white" }}>
-                  {myPage.nickname.charAt(0).toUpperCase()}
+                  {profileData.nickname.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1">
                 <h2 className="text-3xl font-bold mb-2" style={{ color: "#6B4F3F" }}>
-                  {myPage.nickname}
+                  {profileData.nickname}
                 </h2>
                 <p className="text-lg" style={{ color: "#6B4F3F", opacity: 0.7 }}>
-                  사용자 ID: {myPage.userId}
+                  사용자 ID: {profileData.userId}
                 </p>
                 <div className="flex gap-6 mt-3 text-base" style={{ color: "#6B4F3F" }}>
-                  <span>내 글 {myPage.myPosts.length}</span>
-                  <span>댓글 단 글 {myPage.myComments.length}</span>
-                  <span>좋아요 {myPage.likedPosts.length}</span>
+                  <span>내 글 {profileData.myPosts.length}</span>
+                  <span>댓글 단 글 {profileData.myComments.length}</span>
+                  <span>좋아요 {profileData.likedPosts.length}</span>
                 </div>
               </div>
             </div>
@@ -167,7 +216,7 @@ export default function PRF_10() {
                   ) : (() => {
                     const posts = showFullLikedPosts
                       ? likedPostsData?.content || []
-                      : myPage?.likedPosts || [];
+                      : profileData?.likedPosts || [];
 
                     return posts.length > 0 ? (
                       posts.map((post) => (
@@ -239,7 +288,7 @@ export default function PRF_10() {
                   ) : (() => {
                     const posts = showFullMyPosts
                       ? myPostsData?.content || []
-                      : myPage?.myPosts || [];
+                      : profileData?.myPosts || [];
 
                     return posts.length > 0 ? (
                       posts.map((post) => (
@@ -311,7 +360,7 @@ export default function PRF_10() {
                   ) : (() => {
                     const posts = showFullMyComments
                       ? myCommentsData?.content || []
-                      : myPage?.myComments || [];
+                      : profileData?.myComments || [];
 
                     return posts.length > 0 ? (
                       posts.map((post) => (
@@ -346,14 +395,15 @@ export default function PRF_10() {
             </div>
           </div>
 
-          {/* 알림 섹션 */}
-          <div>
-            <h2
-              className="text-[55.2px] font-normal text-center mb-4"
-              style={{ color: "black" }}
-            >
-              알림
-            </h2>
+          {/* 알림 섹션 - 내 프로필일 때만 표시 */}
+          {!isViewingOtherUser && (
+            <div>
+              <h2
+                className="text-[55.2px] font-normal text-center mb-4"
+                style={{ color: "black" }}
+              >
+                알림
+              </h2>
             <div
               className="rounded-lg overflow-hidden"
               style={{ background: "#D9D9D9" }}
@@ -398,7 +448,8 @@ export default function PRF_10() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
