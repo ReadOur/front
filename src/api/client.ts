@@ -6,6 +6,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { ApiResponse, ApiError } from "@/types";
+import { getAccessToken } from "@/utils/auth";
 
 // ===== 환경변수 =====
 // 개발 환경에서는 Vite 프록시를 사용하므로 "/api"만 사용
@@ -35,16 +36,8 @@ const axiosInstance: AxiosInstance = axios.create({
 // ===== 요청 인터셉터 =====
 axiosInstance.interceptors.request.use(
   (config) => {
-    // 로컬스토리지에서 액세스 토큰 가져오기
-    const rawToken = localStorage.getItem("accessToken");
-    // JSON.parse로 감싸진 토큰 언래핑
-    let accessToken: string | null = null;
-    try {
-      accessToken = rawToken ? JSON.parse(rawToken) : null;
-    } catch {
-      // JSON이 아니면 그대로 사용
-      accessToken = rawToken;
-    }
+    // getAccessToken() 유틸리티를 사용하여 토큰 가져오기 (JSON.parse 자동 처리)
+    const accessToken = getAccessToken();
 
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
