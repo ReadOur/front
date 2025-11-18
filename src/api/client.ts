@@ -124,13 +124,9 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // 401 Unauthorized - 토큰 만료 또는 인증 실패
+    // 자동 로그아웃하지 않고 에러만 반환 (컴포넌트에서 처리)
     if (error.response?.status === 401) {
-      console.warn('⚠️ 인증 실패 (401): 토큰이 만료되었거나 유효하지 않습니다.');
-
-      // refreshToken이 없는 경우, 로그아웃 처리
-      // 사용자에게 알림을 보여주고 로그인 페이지로 이동
-      handleLogout();
-      return Promise.reject(error);
+      console.warn('⚠️ 인증 필요 (401):', error.config?.url);
     }
 
     // 403 Forbidden - 권한 없음
