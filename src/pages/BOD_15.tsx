@@ -258,8 +258,8 @@ export default function BOD_15() {
     );
   }
 
-  const highlights = highlightsData?.content || [];
-  const relatedPosts = relatedPostsData?.content || [];
+  const highlights = highlightsData?.items || [];
+  const relatedPosts = relatedPostsData?.items || [];
 
   return (
     <div className="w-full min-h-screen p-8" style={{ background: "#FFF9F2" }}>
