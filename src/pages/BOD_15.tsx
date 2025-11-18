@@ -9,6 +9,10 @@ import {
   useBookHighlights,
   useCreateBookHighlight,
   useDeleteBookHighlight,
+  useBookReviews,
+  useCreateBookReview,
+  useUpdateBookReview,
+  useDeleteBookReview,
 } from "@/hooks/api";
 
 export default function BOD_15() {
@@ -19,6 +23,13 @@ export default function BOD_15() {
   const [newHighlightContent, setNewHighlightContent] = useState("");
   const [newHighlightPage, setNewHighlightPage] = useState<number | undefined>();
   const [activeTab, setActiveTab] = useState<"summary" | "reviews" | "highlights">("summary");
+
+  // 리뷰 관련 상태
+  const [newReviewContent, setNewReviewContent] = useState("");
+  const [newReviewRating, setNewReviewRating] = useState<number>(5);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editReviewContent, setEditReviewContent] = useState("");
+  const [editReviewRating, setEditReviewRating] = useState<number>(5);
 
   // API 호출
   const { data: book, isLoading: isLoadingBook } = useBookDetail(bookId || "");
@@ -33,6 +44,7 @@ export default function BOD_15() {
     bookId || "",
     { page: 0, size: 20 }
   );
+  const { data: reviews, isLoading: isLoadingReviews } = useBookReviews(bookId || "");
 
   // 위시리스트 mutation
   const wishlistMutation = useToggleWishlist();
@@ -40,6 +52,11 @@ export default function BOD_15() {
   // 하이라이트 mutation
   const createHighlightMutation = useCreateBookHighlight();
   const deleteHighlightMutation = useDeleteBookHighlight();
+
+  // 리뷰 mutation
+  const createReviewMutation = useCreateBookReview();
+  const updateReviewMutation = useUpdateBookReview();
+  const deleteReviewMutation = useDeleteBookReview();
 
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
@@ -90,14 +107,106 @@ export default function BOD_15() {
     if (!bookId) return;
     if (!confirm("하이라이트를 삭제하시겠습니까?")) return;
 
+    console.log("하이라이트 삭제 요청:", { bookId, highlightId });
+
     deleteHighlightMutation.mutate(
       {
         bookId,
         highlightId: highlightId.toString(),
       },
       {
+        onSuccess: () => {
+          console.log("하이라이트 삭제 성공");
+        },
+        onError: (error: any) => {
+          console.error("하이라이트 삭제 실패:", error);
+          console.error("에러 응답:", error.response);
+          const errorMessage = error.response?.data?.message || error.message || "하이라이트 삭제에 실패했습니다.";
+          alert(errorMessage);
+        },
+      }
+    );
+  };
+
+  const handleAddReview = () => {
+    if (!bookId || !newReviewContent.trim()) {
+      alert("리뷰 내용을 입력해주세요.");
+      return;
+    }
+
+    if (newReviewRating < 1 || newReviewRating > 5) {
+      alert("평점은 1~5 사이로 선택해주세요.");
+      return;
+    }
+
+    createReviewMutation.mutate(
+      {
+        bookId,
+        content: newReviewContent.trim(),
+        rating: newReviewRating,
+      },
+      {
+        onSuccess: () => {
+          setNewReviewContent("");
+          setNewReviewRating(5);
+        },
         onError: () => {
-          alert("하이라이트 삭제에 실패했습니다.");
+          alert("리뷰 작성에 실패했습니다.");
+        },
+      }
+    );
+  };
+
+  const handleStartEditReview = (reviewId: string, content: string, rating: number) => {
+    setEditingReviewId(reviewId);
+    setEditReviewContent(content);
+    setEditReviewRating(rating);
+  };
+
+  const handleCancelEditReview = () => {
+    setEditingReviewId(null);
+    setEditReviewContent("");
+    setEditReviewRating(5);
+  };
+
+  const handleUpdateReview = (reviewId: string) => {
+    if (!bookId || !editReviewContent.trim()) {
+      alert("리뷰 내용을 입력해주세요.");
+      return;
+    }
+
+    updateReviewMutation.mutate(
+      {
+        bookId,
+        reviewId,
+        content: editReviewContent.trim(),
+        rating: editReviewRating,
+      },
+      {
+        onSuccess: () => {
+          setEditingReviewId(null);
+          setEditReviewContent("");
+          setEditReviewRating(5);
+        },
+        onError: () => {
+          alert("리뷰 수정에 실패했습니다.");
+        },
+      }
+    );
+  };
+
+  const handleDeleteReview = (reviewId: string) => {
+    if (!bookId) return;
+    if (!confirm("리뷰를 삭제하시겠습니까?")) return;
+
+    deleteReviewMutation.mutate(
+      {
+        bookId,
+        reviewId,
+      },
+      {
+        onError: () => {
+          alert("리뷰 삭제에 실패했습니다.");
         },
       }
     );
@@ -339,9 +448,178 @@ export default function BOD_15() {
 
         {/* 리뷰 탭 */}
         {activeTab === "reviews" && (
-          <div className="p-6 rounded-lg" style={{ background: "#E9E5DC" }}>
-            <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-              리뷰 기능은 추후 구현 예정입니다.
+          <div>
+            {/* 리뷰 목록 */}
+            {isLoadingReviews ? (
+              <div className="text-xl mb-6" style={{ color: "#999" }}>
+                로딩 중...
+              </div>
+            ) : reviews && reviews.length > 0 ? (
+              <div className="space-y-4 mb-6">
+                {reviews.map((review) => (
+                  <div
+                    key={review.reviewId}
+                    className="p-5 rounded"
+                    style={{ background: "#E9E5DC" }}
+                  >
+                    {editingReviewId === review.reviewId ? (
+                      // 수정 모드
+                      <div>
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
+                              평점:
+                            </span>
+                            <select
+                              value={editReviewRating}
+                              onChange={(e) => setEditReviewRating(parseInt(e.target.value))}
+                              className="px-3 py-1 rounded outline-none text-base"
+                              style={{
+                                background: "white",
+                                border: "1px solid #E9E5DC",
+                                color: "#6B4F3F",
+                              }}
+                            >
+                              {[5, 4, 3, 2, 1].map((rating) => (
+                                <option key={rating} value={rating}>
+                                  {"⭐".repeat(rating)} ({rating}점)
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <textarea
+                          value={editReviewContent}
+                          onChange={(e) => setEditReviewContent(e.target.value)}
+                          placeholder="리뷰 내용을 입력하세요"
+                          className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
+                          rows={4}
+                          style={{
+                            color: "#6B4F3F",
+                            fontSize: "18px",
+                            background: "white",
+                            border: "1px solid #E9E5DC",
+                          }}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleUpdateReview(review.reviewId)}
+                            disabled={updateReviewMutation.isPending}
+                            className="px-4 py-2 rounded text-base hover:opacity-90 transition"
+                            style={{ background: "#90BE6D", color: "white", fontWeight: 600 }}
+                          >
+                            {updateReviewMutation.isPending ? "수정 중..." : "수정 완료"}
+                          </button>
+                          <button
+                            onClick={handleCancelEditReview}
+                            className="px-4 py-2 rounded text-base hover:opacity-90 transition"
+                            style={{ background: "#999", color: "white" }}
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // 보기 모드
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="text-xl" style={{ color: "#F4A261" }}>
+                                {"⭐".repeat(review.rating)}
+                              </span>
+                              <span className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
+                                {review.userNickname}
+                              </span>
+                              <span className="text-sm" style={{ color: "#999" }}>
+                                {new Date(review.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-lg whitespace-pre-wrap" style={{ color: "#1E1E1E" }}>
+                              {review.content}
+                            </p>
+                          </div>
+                          <div className="ml-4 flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleStartEditReview(review.reviewId, review.content, review.rating)
+                              }
+                              className="px-3 py-1 rounded hover:opacity-70 transition text-base"
+                              style={{ background: "#90BE6D", color: "white" }}
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview(review.reviewId)}
+                              className="px-3 py-1 rounded hover:opacity-70 transition text-base"
+                              style={{ background: "#F4A261", color: "white" }}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-xl mb-6" style={{ color: "#999" }}>
+                아직 작성된 리뷰가 없습니다.
+              </div>
+            )}
+
+            {/* 리뷰 작성 폼 */}
+            <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
+              <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
+                리뷰 작성
+              </h3>
+              <div className="mb-3">
+                <label className="text-base font-semibold mb-2 block" style={{ color: "#6B4F3F" }}>
+                  평점
+                </label>
+                <select
+                  value={newReviewRating}
+                  onChange={(e) => setNewReviewRating(parseInt(e.target.value))}
+                  className="px-4 py-2 rounded text-lg outline-none"
+                  style={{
+                    background: "white",
+                    border: "1px solid #E9E5DC",
+                    color: "#6B4F3F",
+                  }}
+                >
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <option key={rating} value={rating}>
+                      {"⭐".repeat(rating)} ({rating}점)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                value={newReviewContent}
+                onChange={(e) => setNewReviewContent(e.target.value)}
+                placeholder="이 책에 대한 리뷰를 작성해주세요"
+                className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
+                rows={4}
+                style={{
+                  color: "#6B4F3F",
+                  fontSize: "18px",
+                  background: "white",
+                  border: "1px solid #E9E5DC",
+                }}
+              />
+              <button
+                onClick={handleAddReview}
+                disabled={createReviewMutation.isPending}
+                className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
+                style={{
+                  background: "#90BE6D",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              >
+                {createReviewMutation.isPending ? "작성 중..." : "리뷰 작성"}
+              </button>
             </div>
           </div>
         )}
