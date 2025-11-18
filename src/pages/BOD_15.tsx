@@ -683,8 +683,8 @@ export default function BOD_15() {
                           "{highlight.content}"
                         </p>
                         <div className="flex items-center gap-4 text-base" style={{ color: "#6B4F3F" }}>
-                          {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
                           <span>{highlight.userNickname}</span>
+                          {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
                         </div>
                       </div>
                       {isAuthenticated && (

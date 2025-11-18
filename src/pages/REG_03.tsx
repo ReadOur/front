@@ -159,8 +159,13 @@ export default function REG_03() {
         birthDate: formState.birthDate,
       });
 
-      setSuccessMessage('회원가입이 완료되었습니다. 로그인 페이지에서 로그인해 주세요.');
+      setSuccessMessage('회원가입이 완료되었습니다. 메인 페이지로 이동합니다.');
       setFormState(defaultFormState);
+
+      // 1초 후 메인 페이지로 리다이렉션
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     } catch (error) {
       if (isAxiosError(error)) {
         // 409 에러: 중복 (이메일 또는 닉네임)
