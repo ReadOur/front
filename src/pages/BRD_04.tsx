@@ -5,6 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
 import { searchPosts, SearchType } from "@/services/postService";
 import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
+import { useCreateRoom } from "@/hooks/api/useChat";
+import { useChatContext } from "@/contexts/ChatContext";
+import Modal from "@/components/Modal/Modal";
 
 // 날짜 포맷 함수 (ISO -> yyyy.MM.dd)
 function formatDate(dateString: string): string {
@@ -70,6 +73,42 @@ export const BRD_List: React.FC = () => {
 
   // 검색 타입 상태
   const [searchType, setSearchType] = useState<SearchType>(searchTypeParam);
+
+  // 모임모집 모달 상태
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [roomName, setRoomName] = useState("");
+  const [roomDescription, setRoomDescription] = useState("");
+  const { openThread } = useChatContext();
+
+  // 채팅방 생성 mutation
+  const createRoomMutation = useCreateRoom({
+    onSuccess: (data) => {
+      alert(`"${data.name}" 채팅방이 생성되었습니다!`);
+      setIsCreateRoomModalOpen(false);
+      setRoomName("");
+      setRoomDescription("");
+      // 생성된 채팅방 열기
+      openThread(data.roomId.toString());
+      // 채팅 페이지로 이동
+      navigate("/chat");
+    },
+    onError: (error) => {
+      alert(`채팅방 생성 실패: ${error.message}`);
+    },
+  });
+
+  const handleCreateRoom = () => {
+    if (!roomName.trim()) {
+      alert("채팅방 이름을 입력해주세요.");
+      return;
+    }
+
+    createRoomMutation.mutate({
+      name: roomName.trim(),
+      description: roomDescription.trim() || undefined,
+      category: "GROUP",
+    });
+  };
 
   // 메인 게시글 목록
   const { data, isLoading, error } = useQuery({
@@ -387,6 +426,18 @@ export const BRD_List: React.FC = () => {
                 </button>
               )}
 
+              {/* 모임모집 버튼 (모임 카테고리일 때만 표시) */}
+              {category === "NOTI" && (
+                <button
+                  className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 whitespace-nowrap"
+                  onClick={() => setIsCreateRoomModalOpen(true)}
+                  aria-label="모임모집"
+                >
+                  <span className="hidden sm:inline">📢 모임모집</span>
+                  <span className="sm:hidden">📢 모임</span>
+                </button>
+              )}
+
               {/* 글 쓰기 버튼 */}
               <button
                 className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
@@ -613,6 +664,60 @@ export const BRD_List: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 채팅방 생성 모달 */}
+      <Modal
+        isOpen={isCreateRoomModalOpen}
+        onClose={() => setIsCreateRoomModalOpen(false)}
+        title="모임 채팅방 만들기"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
+              채팅방 이름 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="예: 독서 모임, 스터디 그룹 등"
+              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)]"
+              maxLength={50}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
+              채팅방 설명 (선택)
+            </label>
+            <textarea
+              value={roomDescription}
+              onChange={(e) => setRoomDescription(e.target.value)}
+              placeholder="채팅방에 대한 간단한 설명을 입력해주세요"
+              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)] resize-none"
+              rows={4}
+              maxLength={200}
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setIsCreateRoomModalOpen(false)}
+              className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg-subtle)] text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-muted)] transition-colors"
+              disabled={createRoomMutation.isPending}
+            >
+              취소
+            </button>
+            <button
+              onClick={handleCreateRoom}
+              disabled={createRoomMutation.isPending || !roomName.trim()}
+              className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {createRoomMutation.isPending ? "생성 중..." : "채팅방 만들기"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
