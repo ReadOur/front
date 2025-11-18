@@ -51,6 +51,7 @@ export const POST_ENDPOINTS = {
   LIKE: (postId: string) => `/community/posts/${postId}/like`,
   UNLIKE: (postId: string) => `/community/posts/${postId}/unlike`,
   VIEW: (postId: string) => `/community/posts/${postId}/view`, // 조회수 증가 API
+  TOGGLE_RECRUITMENT_APPLY: (postId: string) => `/community/recruitments/${postId}/apply-toggle`, // 모임 참여 토글
 } as const;
 
 export const GET_ALL = {

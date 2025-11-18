@@ -192,3 +192,68 @@ export function useViewPost() {
     // 조회수는 별도로 캐시 무효화 하지 않음 (서버에서만 관리)
   });
 }
+
+/**
+ * 모임 참여 토글
+ * - 참여 중이면 참여 취소, 미참여면 참여
+ * - 낙관적 업데이트로 즉시 UI 반영
+ */
+export function useToggleRecruitmentApply(
+  options?: UseMutationOptions<
+    { isApplied: boolean },
+    Error,
+    string,
+    { previousPost?: Post }
+  >
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { isApplied: boolean },
+    Error,
+    string,
+    { previousPost?: Post }
+  >({
+    ...options,
+    mutationFn: postService.toggleRecruitmentApply,
+    onMutate: async (postId) => {
+      // 낙관적 업데이트: 즉시 UI 반영
+      await queryClient.cancelQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
+
+      const previousPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(postId));
+
+      if (previousPost) {
+        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
+          ...previousPost,
+          isApplied: !previousPost.isApplied,
+          currentMemberCount: previousPost.isApplied
+            ? (previousPost.currentMemberCount || 1) - 1
+            : (previousPost.currentMemberCount || 0) + 1,
+        });
+      }
+
+      return { previousPost };
+    },
+    onError: (err, postId, context) => {
+      // 에러 시 롤백
+      if (context?.previousPost) {
+        queryClient.setQueryData(POST_QUERY_KEYS.detail(postId), context.previousPost);
+      }
+      if (options?.onError) {
+        (options.onError as any)(err, postId, context);
+      }
+    },
+    onSuccess: (data, postId, context) => {
+      // 서버 응답으로 최종 업데이트
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
+
+      // 게시글 목록도 업데이트 (참여 인원 변경)
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, postId, context);
+      }
+    },
+  });
+}

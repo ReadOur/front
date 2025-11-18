@@ -8,6 +8,7 @@ import {
   useCreateComment,
   useUpdateComment,
   useDeleteComment,
+  useToggleRecruitmentApply,
 } from "@/hooks/api";
 import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
@@ -142,6 +143,22 @@ export default function PostShow() {
 
   // 조회수 증가 API 호출 여부를 추적하는 ref
   const hasCalledViewApi = useRef<string | null>(null);
+
+  // 8. 모임 참여 토글 mutation
+  const toggleRecruitmentMutation = useToggleRecruitmentApply({
+    onSuccess: () => {
+      toast.show({
+        title: post?.isApplied ? "모임 참여가 취소되었습니다." : "모임에 참여했습니다.",
+        variant: "success"
+      });
+    },
+    onError: (error) => {
+      toast.show({
+        title: `참여 처리 실패: ${error.message}`,
+        variant: "error"
+      });
+    },
+  });
 
   // 스포일러 게시글이 로드될 때마다 가림막 초기화
   useEffect(() => {
@@ -325,6 +342,22 @@ export default function PostShow() {
   function confirmPostDelete() {
     if (!postId) return;
     deletePostMutation.mutate(postId);
+  }
+
+  /**
+   * 모임 참여 토글 핸들러
+   */
+  function handleToggleRecruitment() {
+    if (!postId) return;
+
+    // 로그인 확인
+    if (!isLoggedIn()) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+      return;
+    }
+
+    toggleRecruitmentMutation.mutate(postId);
   }
 
   // ===== 로딩 및 에러 처리 =====
@@ -635,20 +668,45 @@ export default function PostShow() {
                   )}
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!isLoggedIn()) {
-                    toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-                    navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-                    return;
-                  }
-                  navigate(`/chat?roomId=${post.chatRoomId}`);
-                }}
-                className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity"
-              >
-                채팅방 입장
-              </button>
+              <div className="flex gap-2">
+                {post.isApplied ? (
+                  <>
+                    {/* 참여 중일 때: 채팅방 입장 + 참여 취소 버튼 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isLoggedIn()) {
+                          toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+                          navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+                          return;
+                        }
+                        navigate(`/chat?roomId=${post.chatRoomId}`);
+                      }}
+                      className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      채팅방 입장
+                    </button>
+                    <button
+                      onClick={handleToggleRecruitment}
+                      disabled={toggleRecruitmentMutation.isPending}
+                      className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold hover:bg-[color:var(--color-error)] hover:text-white hover:border-[color:var(--color-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여 취소"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* 미참여일 때: 참여하기 버튼만 */}
+                    <button
+                      onClick={handleToggleRecruitment}
+                      disabled={toggleRecruitmentMutation.isPending}
+                      className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여하기"}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
