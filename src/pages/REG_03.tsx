@@ -7,7 +7,6 @@ import { signup } from '@/services/authService';
 
 interface RegisterFormState {
   email: string;
-  userId: string;
   nickname: string;
   password: string;
   passwordConfirm: string;
@@ -17,7 +16,6 @@ interface RegisterFormState {
 
 const defaultFormState: RegisterFormState = {
   email: '',
-  userId: '',
   nickname: '',
   password: '',
   passwordConfirm: '',
@@ -33,7 +31,6 @@ export default function REG_03() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState({
     email: '',
-    userId: '',
     nickname: '',
     password: '',
     passwordConfirm: '',
@@ -160,7 +157,6 @@ export default function REG_03() {
         nickname: formState.nickname,
         gender: formState.gender as 'MALE' | 'FEMALE',
         birthDate: formState.birthDate,
-        userId: formState.userId.trim() ? formState.userId.trim() : undefined,
       });
 
       setSuccessMessage('회원가입이 완료되었습니다. 로그인 페이지에서 로그인해 주세요.');
@@ -223,21 +219,6 @@ export default function REG_03() {
               {fieldErrors.email && (
                 <p className="text-sm text-red-600">{fieldErrors.email}</p>
               )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="userId" className="text-sm font-medium text-slate-800">
-                아이디 (선택)
-              </label>
-              <input
-                id="userId"
-                type="text"
-                value={formState.userId}
-                onChange={handleChange('userId')}
-                placeholder="로그인에 사용할 ID"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                autoComplete="username"
-              />
             </div>
 
             <div className="flex flex-col gap-2">
