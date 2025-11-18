@@ -26,20 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setToken] = useState<string | null>(null);
 
   // localStorage에서 토큰 읽어오기 (페이지 새로고침 시에도 유지)
-  // 기본적으로 로그아웃 상태로 시작하도록 비활성화
   useEffect(() => {
-    // 기존 토큰 제거 (로그아웃 상태로 시작)
-    removeAccessToken();
-
-    // 자동 로그인 비활성화
-    // const storedToken = getAccessToken();
-    // if (storedToken) {
-    //   setToken(storedToken);
-    //   setUser({
-    //     id: storedToken,
-    //     name: 'user',
-    //   });
-    // }
+    const storedToken = getAccessToken();
+    if (storedToken) {
+      setToken(storedToken);
+      setUser({
+        id: storedToken,
+        name: 'user',
+      });
+    }
   }, []);
 
   const login = (token: string) => {

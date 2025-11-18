@@ -43,8 +43,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
-      { path: "home", element: <Suspense fallback={<PageLoader />}><HOM_01 /></Suspense> },
+      { index: true, element: <Suspense fallback={<PageLoader />}><HOM_01 /></Suspense> },
       { path: "boards", element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
       { path: "boards/write", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
       { path: "boards/:postId/edit", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
