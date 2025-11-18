@@ -51,6 +51,48 @@
 
 ---
 
+### 2025-11-18: JWT 토큰 기반 인증으로 전면 전환
+
+#### 1. AuthContext 리팩토링
+- [x] **User 인터페이스 정리** (`src/contexts/AuthContext.tsx:16-19`)
+  - [x] `id` 필드 제거 (JWT 토큰에 userId 포함되므로 불필요)
+  - [x] UI 표시용 최소 정보만 유지: `name`, `email`
+  - [x] JWT 기반 인증 설명 주석 추가
+
+- [x] **login 함수 시그니처 변경** (`src/contexts/AuthContext.tsx:59-69`)
+  - [x] `login(token: string, userData?: Partial<User>)` 형태로 변경
+  - [x] userData를 optional 파라미터로 추가
+  - [x] 기본값: `{ name: 'user' }`
+
+#### 2. user.id 사용 코드 전면 제거
+- [x] **CAL_11.tsx 수정** (`src/pages/CAL_11.tsx`)
+  - [x] `user?.id === GUEST_USER_ID || !user` → `!isAuthenticated` 변경 (6곳)
+  - [x] 불필요한 `GUEST_USER_ID` 상수 제거
+  - [x] 인증 체크 로직 단순화
+
+- [x] **ChatDock.tsx 수정** (`src/features/message/ChatDock.tsx`)
+  - [x] `const { user } = useAuth()` → `const { user, accessToken } = useAuth()` 변경
+  - [x] `const accessToken = user?.id || ''` 코드 제거
+  - [x] accessToken을 useAuth에서 직접 가져오도록 수정
+
+**아키텍처 개선:**
+- 프론트엔드는 JWT 토큰만 관리 (localStorage + state)
+- userId는 백엔드에서 JWT 디코딩하여 자동 추출
+- axios interceptor가 자동으로 `Authorization: Bearer <token>` 헤더 추가
+- 인증 체크는 `isAuthenticated` 플래그 사용
+
+**커밋 정보:**
+- Commit: `3e80864` (JWT 토큰 기반 인증으로 전환)
+- 브랜치: `claude/add-chat-link-api-01NtKU5APwArCmnSdCNDjkKY`
+- 푸시 완료 ✅
+
+**변경 파일:**
+- `src/contexts/AuthContext.tsx` - User 인터페이스 정리, login 함수 시그니처 변경, 문서화
+- `src/pages/CAL_11.tsx` - 인증 체크 로직 변경, GUEST_USER_ID 제거
+- `src/features/message/ChatDock.tsx` - accessToken 가져오기 방식 변경
+
+---
+
 ### 2025-11-17: 마이페이지 & 내서재 API 연동
 
 #### 1. 마이페이지 API 연동
