@@ -160,75 +160,128 @@ export default function HOM_01() {
         </div>
       </section>
 
-      {/* 인기 게시글 */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-6 h-6 text-red-500" />
-            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">인기 게시글</h2>
+      {/* 인기 게시글 - 데이터가 있을 때만 표시 */}
+      {(isLoading || hotPosts.length > 0) && (
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-6 h-6 text-red-500" />
+              <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">인기 게시글</h2>
+            </div>
+            <button
+              onClick={() => navigate("/boards?sort=likeCount,desc")}
+              className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
+            >
+              더보기
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/boards?sort=likeCount,desc")}
-            className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
-          >
-            더보기
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
 
-        {isLoading ? (
-          <PostListSkeleton count={5} />
-        ) : hotPosts && hotPosts.length > 0 ? (
-          <div className="space-y-3">
-            {hotPosts.map((post) => (
-              <PostCard
-                key={post.postId}
-                post={post}
-                onClick={() => navigate(`/boards/${post.postId}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
-            아직 인기 게시글이 없습니다.
-          </div>
-        )}
-      </section>
+          {isLoading ? (
+            <PostListSkeleton count={5} />
+          ) : (
+            <div className="space-y-3">
+              {hotPosts.map((post) => (
+                <PostCard
+                  key={post.postId}
+                  post={post}
+                  onClick={() => navigate(`/boards/${post.postId}`)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-      {/* 모임 모집 */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Users className="w-6 h-6 text-purple-500" />
-            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">모임 모집</h2>
+      {/* 모임 모집 - 데이터가 있을 때만 표시 */}
+      {(isLoading || recentPosts.length > 0) && (
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-purple-500" />
+              <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">모임 모집</h2>
+            </div>
+            <button
+              onClick={() => navigate("/boards?category=NOTI")}
+              className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
+            >
+              더보기
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/boards?category=NOTI")}
-            className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
-          >
-            더보기
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
 
-        {isLoading ? (
-          <PostListSkeleton count={6} />
-        ) : recentPosts && recentPosts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recentPosts.map((post) => (
-              <PostCard
-                key={post.postId}
-                post={post}
-                onClick={() => navigate(`/boards/${post.postId}`)}
-              />
-            ))}
+          {isLoading ? (
+            <PostListSkeleton count={6} />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recentPosts.map((post) => (
+                <PostCard
+                  key={post.postId}
+                  post={post}
+                  onClick={() => navigate(`/boards/${post.postId}`)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 인기 도서 - 데이터가 있을 때만 표시 */}
+      {(isLoading || popularBooks.length > 0) && (
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-6 h-6 text-green-500" />
+              <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">인기 도서</h2>
+              {mainPageData?.popularBooks?.criteria && (
+                <span className="text-sm text-[color:var(--color-fg-muted)]">
+                  ({mainPageData.popularBooks.criteria})
+                </span>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
-            아직 모임 모집 게시글이 없습니다.
-          </div>
-        )}
-      </section>
+
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-[color:var(--color-bg-subtle)] aspect-[2/3] rounded-lg mb-2" />
+                  <div className="bg-[color:var(--color-bg-subtle)] h-4 rounded mb-1" />
+                  <div className="bg-[color:var(--color-bg-subtle)] h-3 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {popularBooks.map((book) => (
+                <div
+                  key={book.isbn13}
+                  onClick={() => navigate(`/books/${book.isbn13}`)}
+                  className="group cursor-pointer"
+                >
+                  <div className="relative aspect-[2/3] mb-3 rounded-lg overflow-hidden border border-[color:var(--color-border)] hover:border-[color:var(--color-accent-fg)] transition-all">
+                    <img
+                      src={book.bookImageURL}
+                      alt={book.bookname}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      loading="lazy"
+                    />
+                  </div>
+                  <h3 className="text-sm font-semibold text-[color:var(--color-fg)] line-clamp-2 mb-1 group-hover:text-[color:var(--color-accent-fg)] transition-colors">
+                    {book.bookname}
+                  </h3>
+                  <p className="text-xs text-[color:var(--color-fg-muted)] line-clamp-1 mb-1">
+                    {book.authors}
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-[color:var(--color-fg-muted)]">
+                    <span>📖 {book.loanCount.toLocaleString()}회</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="text-center py-12 px-6 rounded-2xl bg-[color:var(--color-bg-subtle)] border border-[color:var(--color-border)]">
