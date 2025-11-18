@@ -72,6 +72,15 @@ export async function viewPost(postId: string): Promise<void> {
 }
 
 /**
+ * 모임 참여 토글
+ * - 참여 중이면 참여 취소, 미참여면 참여
+ * - 백엔드에서 자동으로 토글 처리
+ */
+export async function toggleRecruitmentApply(postId: string): Promise<{ isApplied: boolean }> {
+  return apiClient.post<{ isApplied: boolean }>(POST_ENDPOINTS.TOGGLE_RECRUITMENT_APPLY(postId));
+}
+
+/**
  * 검색 타입
  */
 export type SearchType = "TITLE" | "TITLE-CONTENT" | "USERNAME" | "BOOK_TITLE";
@@ -206,6 +215,7 @@ export const postService = {
   likePost,
   unlikePost,
   viewPost,
+  toggleRecruitmentApply,
   searchPosts,
 };
 
