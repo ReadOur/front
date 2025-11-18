@@ -107,14 +107,22 @@ export default function BOD_15() {
     if (!bookId) return;
     if (!confirm("하이라이트를 삭제하시겠습니까?")) return;
 
+    console.log("하이라이트 삭제 요청:", { bookId, highlightId });
+
     deleteHighlightMutation.mutate(
       {
         bookId,
         highlightId: highlightId.toString(),
       },
       {
-        onError: () => {
-          alert("하이라이트 삭제에 실패했습니다.");
+        onSuccess: () => {
+          console.log("하이라이트 삭제 성공");
+        },
+        onError: (error: any) => {
+          console.error("하이라이트 삭제 실패:", error);
+          console.error("에러 응답:", error.response);
+          const errorMessage = error.response?.data?.message || error.message || "하이라이트 삭제에 실패했습니다.";
+          alert(errorMessage);
         },
       }
     );
