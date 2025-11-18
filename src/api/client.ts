@@ -127,9 +127,18 @@ axiosInstance.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
 
         if (!refreshToken) {
-          // 리프레시 토큰이 없으면 로그아웃 처리
-          handleLogout();
-          return Promise.reject(error);
+          // 리프레시 토큰이 없으면 토큰 삭제하고 재시도
+          console.warn("⚠️ Refresh token이 없습니다. Access token을 제거하고 재시도합니다.");
+          localStorage.removeItem("accessToken");
+
+          // Authorization 헤더 제거
+          if (originalRequest.headers) {
+            delete originalRequest.headers.Authorization;
+            delete originalRequest.headers["X-User-Id"];
+          }
+
+          // 토큰 없이 재시도 (공개 API의 경우 성공할 수 있음)
+          return axiosInstance(originalRequest);
         }
 
         // 토큰 갱신 요청
@@ -151,9 +160,19 @@ axiosInstance.interceptors.response.use(
         // 원래 요청 재시도
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // 토큰 갱신 실패 시 로그아웃
-        handleLogout();
-        return Promise.reject(refreshError);
+        // 토큰 갱신 실패 시 토큰 제거하고 재시도
+        console.warn("⚠️ Token refresh 실패. Access token을 제거하고 재시도합니다.");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
+        // Authorization 헤더 제거
+        if (originalRequest.headers) {
+          delete originalRequest.headers.Authorization;
+          delete originalRequest.headers["X-User-Id"];
+        }
+
+        // 토큰 없이 재시도 (공개 API의 경우 성공할 수 있음)
+        return axiosInstance(originalRequest);
       }
     }
 
