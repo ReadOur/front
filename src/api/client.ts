@@ -118,43 +118,14 @@ axiosInstance.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    // 401 Unauthorized - 토큰 만료
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    // 401 Unauthorized - 토큰 만료 또는 인증 실패
+    if (error.response?.status === 401) {
+      console.warn('⚠️ 인증 실패 (401): 토큰이 만료되었거나 유효하지 않습니다.');
 
-      try {
-        // 리프레시 토큰으로 액세스 토큰 갱신
-        const refreshToken = localStorage.getItem("refreshToken");
-
-        if (!refreshToken) {
-          // 리프레시 토큰이 없으면 로그아웃 처리
-          handleLogout();
-          return Promise.reject(error);
-        }
-
-        // 토큰 갱신 요청
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          { headers: { "Content-Type": "application/json" } }
-        );
-
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
-
-        // 새 토큰 저장
-        localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
-
-        // 원래 요청에 새 토큰 적용
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        // 원래 요청 재시도
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        // 토큰 갱신 실패 시 로그아웃
-        handleLogout();
-        return Promise.reject(refreshError);
-      }
+      // refreshToken이 없는 경우, 로그아웃 처리
+      // 사용자에게 알림을 보여주고 로그인 페이지로 이동
+      handleLogout();
+      return Promise.reject(error);
     }
 
     // 403 Forbidden - 권한 없음

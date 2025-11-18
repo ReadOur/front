@@ -41,10 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /**
    * 페이지 로드 시 초기화
-   * 현재는 자동 로그인 비활성화 (매번 로그아웃 상태로 시작)
+   * localStorage에서 JWT 토큰 복원하여 로그인 상태 유지
    */
   useEffect(() => {
-    removeAccessToken();
+    const storedToken = getAccessToken();
+    if (storedToken) {
+      setToken(storedToken);
+      // 사용자 정보는 최소한으로 설정 (실제 정보는 JWT에서 추출)
+      setUser({
+        name: 'user',
+      });
+    }
   }, []);
 
   /**
