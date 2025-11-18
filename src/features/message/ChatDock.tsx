@@ -614,7 +614,7 @@ function ChatWindow({
 export default function ChatDock() {
   const navigate = useNavigate();
   const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
@@ -626,9 +626,6 @@ export default function ChatDock() {
 
   // User data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
-
-  // accessToken이 user.id에 저장되어 있음
-  const accessToken = user?.id || '';
 
   // React Query client
   const queryClient = useQueryClient();

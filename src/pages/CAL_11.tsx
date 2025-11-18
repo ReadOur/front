@@ -3,9 +3,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 
-// 게스트 사용자 ID
-const GUEST_USER_ID = 0;
-
 export default function CAL_11() {
   const { user, isAuthenticated } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -82,8 +79,8 @@ export default function CAL_11() {
       } catch (error: any) {
         console.error("일정을 가져오는데 실패했습니다:", error);
         if (error.response?.status === 404) {
-          // userId가 -1(게스트)일 때만 로그인 요구
-          if (user?.id === GUEST_USER_ID || !user) {
+          // 인증되지 않은 사용자일 때만 로그인 요구
+          if (!isAuthenticated) {
             console.warn("로그인이 필요합니다.");
           } else {
             console.warn("권한이 없어 일정을 조회할 수 없습니다.");
@@ -184,8 +181,8 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 추가 실패:", error);
       if (error.response?.status === 404) {
-        // userId가 -1(게스트)일 때만 로그인 요구
-        if (user?.id === GUEST_USER_ID || !user) {
+        // 인증되지 않은 사용자일 때만 로그인 요구
+        if (!isAuthenticated) {
           alert("로그인이 필요합니다. 일정을 추가하려면 로그인하세요.");
         } else {
           alert("권한이 없습니다. 일정을 추가할 수 없습니다.");
@@ -318,8 +315,8 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 수정 실패:", error);
       if (error.response?.status === 404) {
-        // userId가 -1(게스트)일 때만 로그인 요구
-        if (user?.id === GUEST_USER_ID || !user) {
+        // 인증되지 않은 사용자일 때만 로그인 요구
+        if (!isAuthenticated) {
           alert("로그인이 필요합니다. 일정을 수정하려면 로그인하세요.");
         } else {
           alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
@@ -372,8 +369,8 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 수정 실패:", error);
       if (error.response?.status === 404) {
-        // userId가 -1(게스트)일 때만 로그인 요구
-        if (user?.id === GUEST_USER_ID || !user) {
+        // 인증되지 않은 사용자일 때만 로그인 요구
+        if (!isAuthenticated) {
           alert("로그인이 필요합니다. 일정을 수정하려면 로그인하세요.");
         } else {
           alert("권한이 없습니다. 일정을 수정할 수 없습니다.");
@@ -404,8 +401,8 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정 삭제 실패:", error);
       if (error.response?.status === 404) {
-        // userId가 -1(게스트)일 때만 로그인 요구
-        if (user?.id === GUEST_USER_ID || !user) {
+        // 인증되지 않은 사용자일 때만 로그인 요구
+        if (!isAuthenticated) {
           alert("로그인이 필요합니다. 일정을 삭제하려면 로그인하세요.");
         } else {
           alert("권한이 없습니다. 일정을 삭제할 수 없습니다.");
@@ -429,8 +426,8 @@ export default function CAL_11() {
     } catch (error: any) {
       console.error("일정을 가져오는데 실패했습니다:", error);
       if (error.response?.status === 404) {
-        // userId가 -1(게스트)일 때만 로그인 요구
-        if (user?.id === GUEST_USER_ID || !user) {
+        // 인증되지 않은 사용자일 때만 로그인 요구
+        if (!isAuthenticated) {
           console.warn("로그인이 필요합니다.");
         } else {
           console.warn("권한이 없어 일정을 조회할 수 없습니다.");
