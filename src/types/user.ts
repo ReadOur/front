@@ -147,15 +147,44 @@ export interface MyPagePreview {
 }
 
 /**
- * 사용자 프로필 미리보기 (다른 사용자 조회용)
- * TODO: 백엔드 API 확인 필요
+ * 특정 사용자 프로필 미리보기 (다른 사용자 조회용)
+ * 백엔드 GET /api/users/{userId}/my-page 응답 형식
+ * - myPosts, myComments, likedPosts는 각각 최대 5개씩 반환
  */
 export interface UserProfilePreview {
   userId: number;
   nickname: string;
-  avatarUrl?: string;
-  bio?: string;
-  postCount: number;
-  commentCount: number;
-  likedPostCount: number;
+  myPosts: import("./post").PostListItem[];
+  myComments: import("./post").PostListItem[];
+  likedPosts: import("./post").PostListItem[];
+}
+
+/**
+ * 특정 사용자 작성 게시글 전체 조회 응답
+ * 백엔드 GET /api/users/{userId}/my-page/posts 응답 형식
+ */
+export interface UserProfilePostsResponse {
+  userId: number;
+  nickname: string;
+  postPage: import("./api").SpringPage<import("./post").PostListItem>;
+}
+
+/**
+ * 특정 사용자 좋아요 게시글 전체 조회 응답
+ * 백엔드 GET /api/users/{userId}/my-page/liked-posts 응답 형식
+ */
+export interface UserProfileLikedPostsResponse {
+  userId: number;
+  nickname: string;
+  likedPostsPage: import("./api").SpringPage<import("./post").PostListItem>;
+}
+
+/**
+ * 특정 사용자 작성 댓글 전체 조회 응답
+ * 백엔드 GET /api/users/{userId}/my-page/comments 응답 형식
+ */
+export interface UserProfileCommentsResponse {
+  userId: number;
+  nickname: string;
+  commentPage: import("./api").SpringPage<import("./post").PostListItem>;
 }

@@ -26,10 +26,16 @@ export const USER_ENDPOINTS = {
   FIND_ID: "/users/find-id",
   RESET_PASSWORD: "/users/reset-password",
   CHANGE_PASSWORD: "/users/change-password",
-  // 마이페이지
+  // 마이페이지 - 내 프로필
   MY_PAGE: "/my-page", // 내 프로필 + 최근 글/댓글/좋아요 5개씩
-  // 마이페이지 - 특정 사용자 (TODO: 백엔드 API 확인 필요)
-  USER_PROFILE: (userId: string) => `/users/${userId}/profile`,
+  MY_POSTS: "/my-page/posts", // 내가 작성한 게시글 전체 (페이징)
+  MY_LIKED_POSTS: "/my-page/liked-posts", // 좋아요 누른 글 전체 (페이징)
+  MY_COMMENTS: "/my-page/comments", // 내가 작성한 댓글 전체 (페이징)
+  // 마이페이지 - 특정 사용자 프로필
+  USER_MY_PAGE: (userId: number | string) => `/users/${userId}/my-page`, // 특정 사용자 프로필 미리보기
+  USER_MY_PAGE_POSTS: (userId: number | string) => `/users/${userId}/my-page/posts`, // 특정 사용자 작성 게시글 (페이징)
+  USER_MY_PAGE_LIKED_POSTS: (userId: number | string) => `/users/${userId}/my-page/liked-posts`, // 특정 사용자 좋아요 게시글 (페이징)
+  USER_MY_PAGE_COMMENTS: (userId: number | string) => `/users/${userId}/my-page/comments`, // 특정 사용자 작성 댓글 (페이징)
 } as const;
 
 /**

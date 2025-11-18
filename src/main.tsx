@@ -50,6 +50,7 @@ const router = createBrowserRouter([
       { path: "boards/:postId", element: <Suspense fallback={<PageLoader />}><BRD_05 /></Suspense> },
       { path: "calendar", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><CAL_11 /></Suspense></ProtectedRoute> },
       { path: "mypage", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><PRF_10 /></Suspense></ProtectedRoute> },
+      { path: "users/:userId", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><PRF_10 /></Suspense></ProtectedRoute> },
       { path: "settings", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><SET_13 /></Suspense></ProtectedRoute> },
       { path: "library", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MYB_14 /></Suspense></ProtectedRoute> },
       { path: "library/search", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><LibrarySearch /></Suspense></ProtectedRoute> },
