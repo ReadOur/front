@@ -64,9 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * 모든 API 요청에 자동으로 Authorization 헤더 포함됨
    */
   const login = (token: string, userData?: Partial<User>) => {
+    console.log('🔐 로그인 시도:', { token: token.substring(0, 20) + '...', userData });
+
     // JWT 토큰 저장
     setAccessToken(token);  // localStorage
     setToken(token);        // state
+
+    // 저장 확인
+    const savedToken = getAccessToken();
+    console.log('✅ 토큰 저장 확인:', {
+      original: token.substring(0, 20) + '...',
+      saved: savedToken?.substring(0, 20) + '...',
+      match: token === savedToken
+    });
 
     // 사용자 UI 표시용 정보 저장
     setUser({

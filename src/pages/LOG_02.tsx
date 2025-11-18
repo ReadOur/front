@@ -78,21 +78,32 @@ export default function LOG_02() {
       // Access Token을 AuthContext에 저장
       login(response.accessToken);
 
-      // 로그인 후 원래 가려던 페이지로 이동 (없으면 게시판으로)
-      const from = (location.state as any)?.from?.pathname || '/boards';
+      // 로그인 후 원래 가려던 페이지로 이동 (없으면 메인 페이지로)
+      const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
     } catch (error: any) {
       console.error('로그인 실패:', error);
 
-      // 에러 처리
-      if (error.response?.status === 404) {
-        setLoginError('존재하지 않는 사용자입니다.');
-      } else if (error.response?.status === 401) {
-        setLoginError('이메일 또는 비밀번호가 올바르지 않습니다.');
-      } else if (error.code === 'ERR_NETWORK') {
+      // 서버에서 반환한 에러 메시지 추출
+      const serverMessage = error.response?.data?.message || error.response?.data?.error?.message;
+
+      // 에러 처리 - 서버 메시지 우선, 없으면 기본 메시지 사용
+      if (error.code === 'ERR_NETWORK') {
         setLoginError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else if (error.response?.status === 400) {
+        setLoginError(serverMessage || '잘못된 요청입니다. 입력 정보를 확인해주세요.');
+      } else if (error.response?.status === 401) {
+        setLoginError(serverMessage || '이메일 또는 비밀번호가 올바르지 않습니다.');
+      } else if (error.response?.status === 404) {
+        setLoginError(serverMessage || '존재하지 않는 사용자입니다.');
+      } else if (error.response?.status === 500) {
+        setLoginError(serverMessage || '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } else if (error.response?.status) {
+        // 기타 HTTP 에러
+        setLoginError(serverMessage || `로그인 실패: ${error.response.status} 오류`);
       } else {
-        setLoginError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
+        // 알 수 없는 에러
+        setLoginError(serverMessage || '로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
     } finally {
       setIsLoading(false);
