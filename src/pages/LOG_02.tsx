@@ -18,7 +18,7 @@ export default function LOG_02() {
 
   const validateUsername = (value: string) => {
     if (!value.trim()) {
-      return '아이디 또는 이메일을 입력해주세요.';
+      return '이메일을 입력해주세요.';
     }
     // 이메일 형식이면 이메일 검증
     if (value.includes('@') && !isEmail(value)) {
@@ -124,14 +124,14 @@ export default function LOG_02() {
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
           <div className="flex flex-col gap-2">
             <label htmlFor="username" className="text-sm font-medium text-slate-800">
-              아이디 또는 이메일
+              이메일
             </label>
             <input
               id="username"
               type="text"
               value={username}
               onChange={(event) => handleUsernameChange(event.target.value)}
-              placeholder="아이디 또는 이메일을 입력하세요"
+              placeholder="이메일을 입력하세요"
               className={`w-full rounded-xl border ${errors.username ? 'border-red-500' : 'border-slate-200'} bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200`}
               autoComplete="username"
             />
