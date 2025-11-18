@@ -2,7 +2,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getPosts, Post } from "@/api/posts";
+import { getMainPageData } from "@/api/mainPage";
+import { Post } from "@/api/posts";
 import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
 import { BookOpen, TrendingUp, Clock, ArrowRight, PenSquare } from "lucide-react";
 
@@ -95,29 +96,15 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, showStats = true }) 
 export default function HOM_01() {
   const navigate = useNavigate();
 
-  // 인기 게시글 조회 (좋아요 많은 순)
-  const { data: hotPosts, isLoading: isLoadingHot } = useQuery({
-    queryKey: ["posts", "hot"],
-    queryFn: () =>
-      getPosts({
-        page: 1,
-        size: 5,
-        sort: "likeCount,desc",
-      }),
+  // 메인 페이지 데이터 조회 (인기 게시글 + 최근 게시글)
+  const { data: mainPageData, isLoading } = useQuery({
+    queryKey: ["main-page"],
+    queryFn: getMainPageData,
     staleTime: 1000 * 60 * 5,
   });
 
-  // 최근 게시글 조회
-  const { data: recentPosts, isLoading: isLoadingRecent } = useQuery({
-    queryKey: ["posts", "recent"],
-    queryFn: () =>
-      getPosts({
-        page: 1,
-        size: 6,
-        sort: "createdAt,desc",
-      }),
-    staleTime: 1000 * 60 * 5,
-  });
+  const hotPosts = mainPageData?.hotPosts || [];
+  const recentPosts = mainPageData?.recentPosts || [];
 
   return (
     <div className="max-w-7xl mx-auto space-y-12">
@@ -187,11 +174,11 @@ export default function HOM_01() {
           </button>
         </div>
 
-        {isLoadingHot ? (
+        {isLoading ? (
           <PostListSkeleton count={5} />
-        ) : hotPosts && hotPosts.items.length > 0 ? (
+        ) : hotPosts && hotPosts.length > 0 ? (
           <div className="space-y-3">
-            {hotPosts.items.map((post) => (
+            {hotPosts.map((post) => (
               <PostCard
                 key={post.postId}
                 post={post}
@@ -222,11 +209,11 @@ export default function HOM_01() {
           </button>
         </div>
 
-        {isLoadingRecent ? (
+        {isLoading ? (
           <PostListSkeleton count={6} />
-        ) : recentPosts && recentPosts.items.length > 0 ? (
+        ) : recentPosts && recentPosts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recentPosts.items.map((post) => (
+            {recentPosts.map((post) => (
               <PostCard
                 key={post.postId}
                 post={post}
