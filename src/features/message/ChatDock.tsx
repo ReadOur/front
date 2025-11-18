@@ -630,8 +630,11 @@ export default function ChatDock() {
   // React Query client
   const queryClient = useQueryClient();
 
-  // 채팅방 목록 API 연결
-  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ page: 0, size: 20 });
+  // 채팅방 목록 API 연결 (로그인된 경우에만)
+  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms(
+    { page: 0, size: 20 },
+    { enabled: !!user }
+  );
 
   // 메시지 전송 mutation
   const sendMessageMutation = useSendRoomMessage({
