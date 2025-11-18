@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getMainPageData } from "@/api/mainPage";
 import { Post } from "@/api/posts";
 import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
-import { BookOpen, TrendingUp, Clock, ArrowRight, PenSquare } from "lucide-react";
+import { BookOpen, TrendingUp, Clock, ArrowRight, PenSquare, Users } from "lucide-react";
 
 // 날짜 포맷 함수
 function formatDate(dateString: string): string {
@@ -96,15 +96,17 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, showStats = true }) 
 export default function HOM_01() {
   const navigate = useNavigate();
 
-  // 메인 페이지 데이터 조회 (인기 게시글 + 최근 게시글)
+  // 메인 페이지 데이터 조회
   const { data: mainPageData, isLoading } = useQuery({
     queryKey: ["main-page"],
     queryFn: getMainPageData,
     staleTime: 1000 * 60 * 5,
   });
 
-  const hotPosts = mainPageData?.hotPosts || [];
-  const recentPosts = mainPageData?.recentPosts || [];
+  // 백엔드 응답 구조에 맞게 매핑
+  const hotPosts = mainPageData?.popularPosts || [];        // 인기 게시글
+  const recentPosts = mainPageData?.recruitmentPosts || []; // 모임 모집 게시글
+  const popularBooks = mainPageData?.popularBooks?.popularBooks?.content || []; // 인기 도서
 
   return (
     <div className="max-w-7xl mx-auto space-y-12">
@@ -193,15 +195,15 @@ export default function HOM_01() {
         )}
       </section>
 
-      {/* 최근 게시글 */}
+      {/* 모임 모집 */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Clock className="w-6 h-6 text-blue-500" />
-            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">최근 게시글</h2>
+            <Users className="w-6 h-6 text-purple-500" />
+            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">모임 모집</h2>
           </div>
           <button
-            onClick={() => navigate("/boards")}
+            onClick={() => navigate("/boards?category=NOTI")}
             className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
           >
             더보기
@@ -223,7 +225,7 @@ export default function HOM_01() {
           </div>
         ) : (
           <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
-            아직 게시글이 없습니다.
+            아직 모임 모집 게시글이 없습니다.
           </div>
         )}
       </section>
