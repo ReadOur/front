@@ -5,7 +5,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, usePinThread, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -655,6 +655,19 @@ export default function ChatDock() {
     },
   });
 
+  // 핀 토글 mutation
+  const pinThreadMutation = usePinThread({
+    onSuccess: () => {
+      // 채팅방 목록 갱신
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.myRooms(0)
+      });
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomsOverview()
+      });
+    },
+  });
+
   // 백엔드 응답을 UI 형식으로 변환
   const threads = useMemo(() => {
     if (!myRoomsData) return [];
@@ -684,10 +697,15 @@ export default function ChatDock() {
   }, [myRoomsData, openThreadIds]);
 
   // 핀 토글 함수
-  // TODO: 백엔드 API에 핀 토글 엔드포인트 추가 후 구현 필요
   const togglePin = (threadId: string) => {
-    console.log("Pin toggle requested for room:", threadId);
-    // 백엔드 API 연동 필요: PUT /chat/rooms/{roomId}/pin
+    const thread = threads.find(t => t.id === threadId);
+    if (!thread) return;
+
+    // 핀 토글 API 호출
+    pinThreadMutation.mutate({
+      threadId,
+      isPinned: !thread.isPinned, // 현재 상태의 반대로 토글
+    });
   };
 
   // 핀된 채팅방을 상단에 표시하도록 정렬
