@@ -614,7 +614,7 @@ function ChatWindow({
 export default function ChatDock() {
   const navigate = useNavigate();
   const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
@@ -627,14 +627,14 @@ export default function ChatDock() {
   // User data
   const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
 
-  // accessToken이 user.id에 저장되어 있음
-  const accessToken = user?.id || '';
-
   // React Query client
   const queryClient = useQueryClient();
 
-  // 채팅방 목록 API 연결
-  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms({ page: 0, size: 20 });
+  // 채팅방 목록 API 연결 (로그인된 경우에만)
+  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms(
+    { page: 0, size: 20 },
+    { enabled: !!user }
+  );
 
   // 메시지 전송 mutation
   const sendMessageMutation = useSendRoomMessage({

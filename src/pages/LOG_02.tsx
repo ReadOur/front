@@ -78,8 +78,8 @@ export default function LOG_02() {
       // Access Token을 AuthContext에 저장
       login(response.accessToken);
 
-      // 로그인 후 원래 가려던 페이지로 이동 (없으면 게시판으로)
-      const from = (location.state as any)?.from?.pathname || '/boards';
+      // 로그인 후 원래 가려던 페이지로 이동 (없으면 메인 페이지로)
+      const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
     } catch (error: any) {
       console.error('로그인 실패:', error);

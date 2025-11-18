@@ -36,7 +36,15 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     // 로컬스토리지에서 액세스 토큰 가져오기
-    const accessToken = localStorage.getItem("accessToken");
+    const rawToken = localStorage.getItem("accessToken");
+    // JSON.parse로 감싸진 토큰 언래핑
+    let accessToken: string | null = null;
+    try {
+      accessToken = rawToken ? JSON.parse(rawToken) : null;
+    } catch {
+      // JSON이 아니면 그대로 사용
+      accessToken = rawToken;
+    }
 
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -115,93 +123,37 @@ axiosInstance.interceptors.response.use(
 
     const originalRequest = error.config;
 
-    // 401 Unauthorized - 토큰 만료
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    // 401 Unauthorized - 토큰 만료 또는 인증 실패
+    if (error.response?.status === 401) {
+      console.warn('⚠️ 인증 실패 (401): 토큰이 만료되었거나 유효하지 않습니다.');
 
-      try {
-        // 리프레시 토큰으로 액세스 토큰 갱신
-        const refreshToken = localStorage.getItem("refreshToken");
-
-        if (!refreshToken) {
-          // 리프레시 토큰이 없으면 로그아웃 처리
-          handleLogout();
-          return Promise.reject(error);
-        }
-
-        // 토큰 갱신 요청
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          { headers: { "Content-Type": "application/json" } }
-        );
-
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
-
-        // 새 토큰 저장
-        localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
-
-        // 원래 요청에 새 토큰 적용
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        // 원래 요청 재시도
-        return axiosInstance(originalRequest);
-      } catch (refreshError) {
-        // 토큰 갱신 실패 시 로그아웃
-        handleLogout();
-        return Promise.reject(refreshError);
-      }
+      // refreshToken이 없는 경우, 로그아웃 처리
+      // 사용자에게 알림을 보여주고 로그인 페이지로 이동
+      handleLogout();
+      return Promise.reject(error);
     }
 
     // 403 Forbidden - 권한 없음
     if (error.response?.status === 403) {
-      console.error("접근 권한이 없습니다.");
-
-      // 에러 메시지 표시
-      const errorMessage = error.response?.data?.message || "접근 권한이 없습니다.";
-      alert(errorMessage);
-
-      // 메인 페이지로 리다이렉트 (권한 없음 페이지가 없는 경우)
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
+      console.error("❌ 403 Forbidden:", error.response?.data?.message || "접근 권한이 없습니다.");
     }
 
-    // 404 Not Found - 권한 없음 (백엔드 정책)
+    // 404 Not Found
     if (error.response?.status === 404) {
-      console.error("권한이 없거나 존재하지 않는 리소스입니다.");
-      // 에러 메시지를 확장하여 컴포넌트에서 처리할 수 있도록 함
+      console.error("❌ 404 Not Found:", error.response?.data?.message || "리소스를 찾을 수 없습니다.");
     }
 
     // 500 Internal Server Error
     if (error.response?.status === 500) {
-      console.error("서버 에러가 발생했습니다.");
-
-      // 에러 메시지 표시
-      const errorMessage = error.response?.data?.message || "서버 에러가 발생했습니다. 잠시 후 다시 시도해주세요.";
-      alert(errorMessage);
+      console.error("❌ 500 Internal Server Error:", error.response?.data?.message || "서버 오류가 발생했습니다.");
     }
 
+    // 모든 에러는 조용히 반환 (컴포넌트에서 처리)
     return Promise.reject(error);
   }
 );
 
-/**
- * 로그아웃 처리 (토큰 제거 및 로그인 페이지로 리다이렉트)
- */
-function handleLogout() {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-
-  console.warn("로그아웃 처리됨 - 로그인 페이지로 이동");
-
-  // 로그인 페이지로 리다이렉트
-  if (typeof window !== "undefined") {
-    window.location.href = "/login";
-  }
-}
+// handleLogout 함수 제거: 더 이상 강제 로그인 페이지 리다이렉트 안 함
 
 // ===== API 클라이언트 헬퍼 함수 =====
 

@@ -54,9 +54,12 @@ export const POST_ENDPOINTS = {
   TOGGLE_RECRUITMENT_APPLY: (postId: string) => `/community/recruitments/${postId}/apply-toggle`, // 모임 참여 토글
 } as const;
 
-export const GET_ALL = {
-
-}
+/**
+ * 메인 페이지 관련 엔드포인트
+ */
+export const MAIN_PAGE_ENDPOINTS = {
+  MAIN: "/main-page", // 메인 페이지 데이터 (인기 게시글, 최근 게시글 등)
+} as const;
 
 /**
  * 댓글 관련 엔드포인트
@@ -174,6 +177,7 @@ export const ENDPOINTS = {
   AUTH: AUTH_ENDPOINTS,
   USER: USER_ENDPOINTS,
   POST: POST_ENDPOINTS,
+  MAIN_PAGE: MAIN_PAGE_ENDPOINTS,
   COMMENT: COMMENT_ENDPOINTS,
   ATTACHMENT: ATTACHMENT_ENDPOINTS,
   CHAT: CHAT_ENDPOINTS,
