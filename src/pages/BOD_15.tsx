@@ -14,10 +14,12 @@ import {
   useUpdateBookReview,
   useDeleteBookReview,
 } from "@/hooks/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function BOD_15() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [newHighlightContent, setNewHighlightContent] = useState("");
@@ -80,6 +82,12 @@ export default function BOD_15() {
   };
 
   const handleAddHighlight = () => {
+    if (!isAuthenticated) {
+      alert("로그인이 필요한 기능입니다.");
+      navigate("/login");
+      return;
+    }
+
     if (!bookId || !newHighlightContent.trim()) {
       alert("하이라이트 내용을 입력해주세요.");
       return;
@@ -96,8 +104,9 @@ export default function BOD_15() {
           setNewHighlightContent("");
           setNewHighlightPage(undefined);
         },
-        onError: () => {
-          alert("하이라이트 추가에 실패했습니다.");
+        onError: (error: any) => {
+          const errorMessage = error.response?.data?.message || error.message || "하이라이트 추가에 실패했습니다.";
+          alert(errorMessage);
         },
       }
     );
@@ -129,6 +138,12 @@ export default function BOD_15() {
   };
 
   const handleAddReview = () => {
+    if (!isAuthenticated) {
+      alert("로그인이 필요한 기능입니다.");
+      navigate("/login");
+      return;
+    }
+
     if (!bookId || !newReviewContent.trim()) {
       alert("리뷰 내용을 입력해주세요.");
       return;
@@ -150,8 +165,9 @@ export default function BOD_15() {
           setNewReviewContent("");
           setNewReviewRating(5);
         },
-        onError: () => {
-          alert("리뷰 작성에 실패했습니다.");
+        onError: (error: any) => {
+          const errorMessage = error.response?.data?.message || error.message || "리뷰 작성에 실패했습니다.";
+          alert(errorMessage);
         },
       }
     );
@@ -539,24 +555,26 @@ export default function BOD_15() {
                               {review.content}
                             </p>
                           </div>
-                          <div className="ml-4 flex gap-2">
-                            <button
-                              onClick={() =>
-                                handleStartEditReview(review.reviewId, review.content, review.rating)
-                              }
-                              className="px-3 py-1 rounded hover:opacity-70 transition text-base"
-                              style={{ background: "#90BE6D", color: "white" }}
-                            >
-                              수정
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReview(review.reviewId)}
-                              className="px-3 py-1 rounded hover:opacity-70 transition text-base"
-                              style={{ background: "#F4A261", color: "white" }}
-                            >
-                              삭제
-                            </button>
-                          </div>
+                          {isAuthenticated && (
+                            <div className="ml-4 flex gap-2">
+                              <button
+                                onClick={() =>
+                                  handleStartEditReview(review.reviewId, review.content, review.rating)
+                                }
+                                className="px-3 py-1 rounded hover:opacity-70 transition text-base"
+                                style={{ background: "#90BE6D", color: "white" }}
+                              >
+                                수정
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReview(review.reviewId)}
+                                className="px-3 py-1 rounded hover:opacity-70 transition text-base"
+                                style={{ background: "#F4A261", color: "white" }}
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -570,57 +588,76 @@ export default function BOD_15() {
             )}
 
             {/* 리뷰 작성 폼 */}
-            <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
-              <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
-                리뷰 작성
-              </h3>
-              <div className="mb-3">
-                <label className="text-base font-semibold mb-2 block" style={{ color: "#6B4F3F" }}>
-                  평점
-                </label>
-                <select
-                  value={newReviewRating}
-                  onChange={(e) => setNewReviewRating(parseInt(e.target.value))}
-                  className="px-4 py-2 rounded text-lg outline-none"
+            {isAuthenticated ? (
+              <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
+                <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
+                  리뷰 작성
+                </h3>
+                <div className="mb-3">
+                  <label className="text-base font-semibold mb-2 block" style={{ color: "#6B4F3F" }}>
+                    평점
+                  </label>
+                  <select
+                    value={newReviewRating}
+                    onChange={(e) => setNewReviewRating(parseInt(e.target.value))}
+                    className="px-4 py-2 rounded text-lg outline-none"
+                    style={{
+                      background: "white",
+                      border: "1px solid #E9E5DC",
+                      color: "#6B4F3F",
+                    }}
+                  >
+                    {[5, 4, 3, 2, 1].map((rating) => (
+                      <option key={rating} value={rating}>
+                        {"⭐".repeat(rating)} ({rating}점)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <textarea
+                  value={newReviewContent}
+                  onChange={(e) => setNewReviewContent(e.target.value)}
+                  placeholder="이 책에 대한 리뷰를 작성해주세요"
+                  className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
+                  rows={4}
                   style={{
+                    color: "#6B4F3F",
+                    fontSize: "18px",
                     background: "white",
                     border: "1px solid #E9E5DC",
-                    color: "#6B4F3F",
+                  }}
+                />
+                <button
+                  onClick={handleAddReview}
+                  disabled={createReviewMutation.isPending}
+                  className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
+                  style={{
+                    background: "#90BE6D",
+                    color: "white",
+                    fontWeight: 600,
                   }}
                 >
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <option key={rating} value={rating}>
-                      {"⭐".repeat(rating)} ({rating}점)
-                    </option>
-                  ))}
-                </select>
+                  {createReviewMutation.isPending ? "작성 중..." : "리뷰 작성"}
+                </button>
               </div>
-              <textarea
-                value={newReviewContent}
-                onChange={(e) => setNewReviewContent(e.target.value)}
-                placeholder="이 책에 대한 리뷰를 작성해주세요"
-                className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
-                rows={4}
-                style={{
-                  color: "#6B4F3F",
-                  fontSize: "18px",
-                  background: "white",
-                  border: "1px solid #E9E5DC",
-                }}
-              />
-              <button
-                onClick={handleAddReview}
-                disabled={createReviewMutation.isPending}
-                className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
-                style={{
-                  background: "#90BE6D",
-                  color: "white",
-                  fontWeight: 600,
-                }}
-              >
-                {createReviewMutation.isPending ? "작성 중..." : "리뷰 작성"}
-              </button>
-            </div>
+            ) : (
+              <div className="p-6 rounded text-center" style={{ background: "#E9E5DC" }}>
+                <p className="text-lg mb-4" style={{ color: "#6B4F3F" }}>
+                  리뷰를 작성하려면 로그인이 필요합니다.
+                </p>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
+                  style={{
+                    background: "#90BE6D",
+                    color: "white",
+                    fontWeight: 600,
+                  }}
+                >
+                  로그인하기
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -650,13 +687,15 @@ export default function BOD_15() {
                           <span>{highlight.userNickname}</span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDeleteHighlight(highlight.highlightId)}
-                        className="ml-4 px-3 py-1 rounded hover:opacity-70 transition text-base"
-                        style={{ background: "#F4A261", color: "white" }}
-                      >
-                        삭제
-                      </button>
+                      {isAuthenticated && (
+                        <button
+                          onClick={() => handleDeleteHighlight(highlight.highlightId)}
+                          className="ml-4 px-3 py-1 rounded hover:opacity-70 transition text-base"
+                          style={{ background: "#F4A261", color: "white" }}
+                        >
+                          삭제
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -668,42 +707,61 @@ export default function BOD_15() {
             )}
 
             {/* 하이라이트 입력 */}
-            <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
-              <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
-                하이라이트 추가
-              </h3>
-              <textarea
-                value={newHighlightContent}
-                onChange={(e) => setNewHighlightContent(e.target.value)}
-                placeholder="기억하고 싶은 문구를 입력하세요"
-                className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
-                rows={3}
-                style={{
-                  color: "#6B4F3F",
-                  fontSize: "18px",
-                  background: "white",
-                  border: "1px solid #E9E5DC",
-                }}
-              />
-              <div className="flex gap-3 items-center">
-                <input
-                  type="number"
-                  value={newHighlightPage || ""}
-                  onChange={(e) =>
-                    setNewHighlightPage(e.target.value ? parseInt(e.target.value) : undefined)
-                  }
-                  placeholder="페이지 번호 (선택)"
-                  className="px-4 py-2 rounded text-lg outline-none"
+            {isAuthenticated ? (
+              <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
+                <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
+                  하이라이트 추가
+                </h3>
+                <textarea
+                  value={newHighlightContent}
+                  onChange={(e) => setNewHighlightContent(e.target.value)}
+                  placeholder="기억하고 싶은 문구를 입력하세요"
+                  className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
+                  rows={3}
                   style={{
-                    width: "200px",
+                    color: "#6B4F3F",
+                    fontSize: "18px",
                     background: "white",
                     border: "1px solid #E9E5DC",
-                    color: "#6B4F3F",
                   }}
                 />
+                <div className="flex gap-3 items-center">
+                  <input
+                    type="number"
+                    value={newHighlightPage || ""}
+                    onChange={(e) =>
+                      setNewHighlightPage(e.target.value ? parseInt(e.target.value) : undefined)
+                    }
+                    placeholder="페이지 번호 (선택)"
+                    className="px-4 py-2 rounded text-lg outline-none"
+                    style={{
+                      width: "200px",
+                      background: "white",
+                      border: "1px solid #E9E5DC",
+                      color: "#6B4F3F",
+                    }}
+                  />
+                  <button
+                    onClick={handleAddHighlight}
+                    disabled={createHighlightMutation.isPending}
+                    className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
+                    style={{
+                      background: "#90BE6D",
+                      color: "white",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {createHighlightMutation.isPending ? "추가 중..." : "추가"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 rounded text-center" style={{ background: "#E9E5DC" }}>
+                <p className="text-lg mb-4" style={{ color: "#6B4F3F" }}>
+                  하이라이트를 추가하려면 로그인이 필요합니다.
+                </p>
                 <button
-                  onClick={handleAddHighlight}
-                  disabled={createHighlightMutation.isPending}
+                  onClick={() => navigate("/login")}
                   className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
                   style={{
                     background: "#90BE6D",
@@ -711,10 +769,10 @@ export default function BOD_15() {
                     fontWeight: 600,
                   }}
                 >
-                  {createHighlightMutation.isPending ? "추가 중..." : "추가"}
+                  로그인하기
                 </button>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

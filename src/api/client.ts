@@ -58,7 +58,7 @@ axiosInstance.interceptors.request.use(
       url: fullUrl + params,
       params: config.params,
       headers: {
-        Authorization: accessToken ? 'Bearer ***' : undefined,
+        Authorization: accessToken ? `Bearer ${accessToken.substring(0, 20)}...` : '❌ NO TOKEN',
       },
     });
 

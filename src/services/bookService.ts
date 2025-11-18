@@ -128,12 +128,11 @@ export async function createBookHighlight(
  * 책 하이라이트 수정
  */
 export async function updateBookHighlight(
-  bookId: string,
   highlightId: string,
   data: CreateHighlightRequest
 ): Promise<BookHighlight> {
   return apiClient.put<BookHighlight>(
-    BOOK_ENDPOINTS.UPDATE_HIGHLIGHT(bookId, highlightId),
+    BOOK_ENDPOINTS.UPDATE_HIGHLIGHT(highlightId),
     data
   );
 }
@@ -141,8 +140,8 @@ export async function updateBookHighlight(
 /**
  * 책 하이라이트 삭제
  */
-export async function deleteBookHighlight(bookId: string, highlightId: string): Promise<void> {
-  return apiClient.delete(BOOK_ENDPOINTS.DELETE_HIGHLIGHT(bookId, highlightId));
+export async function deleteBookHighlight(highlightId: string): Promise<void> {
+  return apiClient.delete(BOOK_ENDPOINTS.DELETE_HIGHLIGHT(highlightId));
 }
 
 /**
