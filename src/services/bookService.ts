@@ -113,18 +113,17 @@ export async function createBookReview(
  * 책 리뷰 수정
  */
 export async function updateBookReview(
-  bookId: string,
   reviewId: string,
   data: { content: string; rating: number }
 ): Promise<BookReview> {
-  return apiClient.put<BookReview>(BOOK_ENDPOINTS.UPDATE_REVIEW(bookId, reviewId), data);
+  return apiClient.put<BookReview>(BOOK_ENDPOINTS.UPDATE_REVIEW(reviewId), data);
 }
 
 /**
  * 책 리뷰 삭제
  */
-export async function deleteBookReview(bookId: string, reviewId: string): Promise<void> {
-  return apiClient.delete(BOOK_ENDPOINTS.DELETE_REVIEW(bookId, reviewId));
+export async function deleteBookReview(reviewId: string): Promise<void> {
+  return apiClient.delete(BOOK_ENDPOINTS.DELETE_REVIEW(reviewId));
 }
 
 /**

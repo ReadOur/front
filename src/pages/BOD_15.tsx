@@ -645,7 +645,7 @@ export default function BOD_15() {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <span className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
-                                {review.userNickname}
+                                {review.authorNickname}
                               </span>
                               <span className="text-xl" style={{ color: "#F4A261" }}>
                                 {"⭐".repeat(review.rating)}
@@ -853,7 +853,7 @@ export default function BOD_15() {
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2 text-base" style={{ color: "#6B4F3F" }}>
-                            <span className="font-semibold">{highlight.userNickname}</span>
+                            <span className="font-semibold">{highlight.authorNickname}</span>
                             {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
                           </div>
                           <div>

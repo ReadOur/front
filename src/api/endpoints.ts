@@ -137,8 +137,8 @@ export const BOOK_ENDPOINTS = {
   // 리뷰
   REVIEWS: (bookId: string) => `/books/${bookId}/reviews`,
   CREATE_REVIEW: (bookId: string) => `/books/${bookId}/reviews`,
-  UPDATE_REVIEW: (bookId: string, reviewId: string) => `/books/${bookId}/reviews/${reviewId}`,
-  DELETE_REVIEW: (bookId: string, reviewId: string) => `/books/${bookId}/reviews/${reviewId}`,
+  UPDATE_REVIEW: (reviewId: string) => `/books/reviews/${reviewId}`,
+  DELETE_REVIEW: (reviewId: string) => `/books/reviews/${reviewId}`,
   // 하이라이트
   HIGHLIGHTS: (bookId: string) => `/books/${bookId}/highlights`,
   CREATE_HIGHLIGHT: (bookId: string) => `/books/${bookId}/highlights`,

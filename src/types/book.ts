@@ -73,13 +73,13 @@ export interface WishlistItem extends Book {
  */
 export interface BookReview {
   reviewId: string;
-  bookId: string;
-  userId: string;
-  userNickname: string;
+  bookId: number;
+  authorId: number;
+  authorNickname: string; // 백엔드는 authorNickname 사용
   content: string;
   rating: number; // 1-5
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 /**
@@ -88,12 +88,12 @@ export interface BookReview {
 export interface BookHighlight {
   highlightId: number;
   bookId: number;
-  userId: number;
-  userNickname: string;
+  authorId: number;
+  authorNickname: string; // 백엔드는 authorNickname 사용
   content: string;
   pageNumber?: number;
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 /**
