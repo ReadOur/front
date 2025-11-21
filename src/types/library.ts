@@ -8,8 +8,9 @@
 export interface Library {
   libraryCode: string;
   libraryName: string;
-  address: string;
-  homepage: string;
+  address?: string;
+  homepage?: string;
+  createdAt?: string;
 }
 
 /**
@@ -48,7 +49,7 @@ export interface LibrarySearchResponse {
  * 지역 정보
  */
 export interface Region {
-  id: number;
+  code: string;
   name: string;
-  code?: string;
+  parentCode: string | null;
 }
