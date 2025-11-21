@@ -22,6 +22,9 @@ const CAL_11 = lazy(() => import("@/pages/CAL_11"));
 const PRF_10 = lazy(() => import("@/pages/PRF_10"));
 const SET_13 = lazy(() => import("@/pages/SET_13"));
 const MYB_14 = lazy(() => import("@/pages/MYB_14"));
+const MyLibraryWishlist = lazy(() => import("@/pages/MyLibraryWishlist"));
+const MyLibraryReviews = lazy(() => import("@/pages/MyLibraryReviews"));
+const MyLibraryHighlights = lazy(() => import("@/pages/MyLibraryHighlights"));
 const LibrarySearch = lazy(() => import("@/pages/LibrarySearch"));
 const BOD_15 = lazy(() => import("@/pages/BOD_15"));
 const CHT_17 = lazy(() => import("@/pages/CHT_17"));
@@ -53,6 +56,9 @@ const router = createBrowserRouter([
       { path: "users/:userId", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><PRF_10 /></Suspense></ProtectedRoute> },
       { path: "settings", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><SET_13 /></Suspense></ProtectedRoute> },
       { path: "my-library", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MYB_14 /></Suspense></ProtectedRoute> },
+      { path: "my-library/wishlist", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MyLibraryWishlist /></Suspense></ProtectedRoute> },
+      { path: "my-library/reviews", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MyLibraryReviews /></Suspense></ProtectedRoute> },
+      { path: "my-library/highlights", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MyLibraryHighlights /></Suspense></ProtectedRoute> },
       { path: "my-library/search", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><LibrarySearch /></Suspense></ProtectedRoute> },
       { path: "books/isbn/:isbn", element: <Suspense fallback={<PageLoader />}><BOD_15 /></Suspense> },
       { path: "books/:bookId", element: <Suspense fallback={<PageLoader />}><BOD_15 /></Suspense> },

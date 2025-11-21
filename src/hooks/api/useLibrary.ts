@@ -10,6 +10,10 @@ import {
   FavoriteLibrary,
   LibrarySearchParams,
   LibrarySearchResponse,
+  MyLibraryResponse,
+  MyLibraryWishlistPageResponse,
+  MyLibraryReviewPageResponse,
+  MyLibraryHighlightPageResponse,
 } from "@/types/library";
 
 // ===== Query Keys =====
@@ -20,6 +24,14 @@ export const LIBRARY_QUERY_KEYS = {
   favoriteLibraries: () => [...LIBRARY_QUERY_KEYS.all, "favoriteLibraries"] as const,
   librarySearch: (params: LibrarySearchParams) =>
     [...LIBRARY_QUERY_KEYS.all, "search", params] as const,
+  // 내 서재
+  myLibrary: () => [...LIBRARY_QUERY_KEYS.all, "myLibrary"] as const,
+  myLibraryWishlist: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...LIBRARY_QUERY_KEYS.all, "myLibrary", "wishlist", params] as const,
+  myLibraryReviews: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...LIBRARY_QUERY_KEYS.all, "myLibrary", "reviews", params] as const,
+  myLibraryHighlights: (params?: { page?: number; size?: number; sort?: string }) =>
+    [...LIBRARY_QUERY_KEYS.all, "myLibrary", "highlights", params] as const,
 };
 
 // ===== Queries =====
@@ -62,6 +74,47 @@ export function useLibrarySearch(params: LibrarySearchParams) {
     queryKey: LIBRARY_QUERY_KEYS.librarySearch(params),
     queryFn: () => libraryService.searchLibraries(params),
     enabled: !!(params.region || params.dtlRegion),
+  });
+}
+
+/**
+ * 내 서재 메인 페이지 조회
+ * 위시리스트, 리뷰, 하이라이트 미리보기 (각 최대 10개)
+ */
+export function useMyLibrary() {
+  return useQuery<MyLibraryResponse>({
+    queryKey: LIBRARY_QUERY_KEYS.myLibrary(),
+    queryFn: libraryService.getMyLibrary,
+  });
+}
+
+/**
+ * 내 서재 - 위시리스트 페이징 조회
+ */
+export function useMyLibraryWishlist(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<MyLibraryWishlistPageResponse>({
+    queryKey: LIBRARY_QUERY_KEYS.myLibraryWishlist(params),
+    queryFn: () => libraryService.getMyLibraryWishlist(params),
+  });
+}
+
+/**
+ * 내 서재 - 리뷰 페이징 조회
+ */
+export function useMyLibraryReviews(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<MyLibraryReviewPageResponse>({
+    queryKey: LIBRARY_QUERY_KEYS.myLibraryReviews(params),
+    queryFn: () => libraryService.getMyLibraryReviews(params),
+  });
+}
+
+/**
+ * 내 서재 - 하이라이트 페이징 조회
+ */
+export function useMyLibraryHighlights(params?: { page?: number; size?: number; sort?: string }) {
+  return useQuery<MyLibraryHighlightPageResponse>({
+    queryKey: LIBRARY_QUERY_KEYS.myLibraryHighlights(params),
+    queryFn: () => libraryService.getMyLibraryHighlights(params),
   });
 }
 

@@ -91,3 +91,110 @@ export interface Region {
   name: string;
   code?: string;
 }
+
+/**
+ * 내 서재 - 위시리스트 아이템
+ */
+export interface MyLibraryWishlistItem {
+  bookId: number;
+  bookname: string;
+  authors: string;
+  bookImageUrl: string;
+}
+
+/**
+ * 내 서재 - 리뷰 아이템
+ */
+export interface MyLibraryReviewItem {
+  reviewId: string;
+  bookId: number;
+  bookname: string;
+  bookImageUrl: string;
+  content: string;
+  rating: number;
+  createdAt: string;
+}
+
+/**
+ * 내 서재 - 하이라이트 아이템
+ */
+export interface MyLibraryHighlightItem {
+  highlightId: number;
+  bookId: number;
+  bookname: string;
+  bookImageUrl: string;
+  content: string;
+  pageNumber: number | null;
+  createdAt: string;
+}
+
+/**
+ * 내 서재 메인 페이지 응답
+ */
+export interface MyLibraryResponse {
+  userId: number;
+  nickname: string;
+  wishlist: MyLibraryWishlistItem[];
+  reviews: MyLibraryReviewItem[];
+  highlights: MyLibraryHighlightItem[];
+}
+
+/**
+ * 내 서재 - 위시리스트 페이징 응답
+ */
+export interface MyLibraryWishlistPageResponse {
+  userId: number;
+  nickname: string;
+  wishlistPage: {
+    content: MyLibraryWishlistItem[];
+    pageable: any;
+    last: boolean;
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    numberOfElements: number;
+    empty: boolean;
+  };
+}
+
+/**
+ * 내 서재 - 리뷰 페이징 응답
+ */
+export interface MyLibraryReviewPageResponse {
+  userId: number;
+  nickname: string;
+  reviewPage: {
+    content: MyLibraryReviewItem[];
+    pageable: any;
+    last: boolean;
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    numberOfElements: number;
+    empty: boolean;
+  };
+}
+
+/**
+ * 내 서재 - 하이라이트 페이징 응답
+ */
+export interface MyLibraryHighlightPageResponse {
+  userId: number;
+  nickname: string;
+  highlightPage: {
+    content: MyLibraryHighlightItem[];
+    pageable: any;
+    last: boolean;
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    numberOfElements: number;
+    empty: boolean;
+  };
+}
