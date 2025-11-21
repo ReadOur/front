@@ -1,5 +1,5 @@
 /**
- * 도서관 관련 타입 정의
+ * 도서관 및 내서재 관련 타입 정의
  */
 
 /**
@@ -11,6 +11,45 @@ export interface Library {
   address?: string;
   homepage?: string;
   createdAt?: string;
+}
+
+/**
+ * 북마크 (책갈피)
+ */
+export interface Bookmark {
+  bookmarkId: string;
+  postId: number;
+  postTitle: string;
+  postCategory: string;
+  authorNickname: string;
+  createdAt: string;
+  bookmarkedAt: string;
+}
+
+/**
+ * 저장한 게시글
+ */
+export interface SavedPost {
+  savedPostId: string;
+  postId: number;
+  postTitle: string;
+  postCategory: string;
+  authorNickname: string;
+  createdAt: string;
+  savedAt: string;
+}
+
+/**
+ * 관심 도서관
+ */
+export interface FavoriteLibrary {
+  libraryName: string;
+  address: string;
+  tel?: string;
+  homepage?: string;
+  latitude?: number;
+  longitude?: number;
+  addedAt: string;
 }
 
 /**

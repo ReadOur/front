@@ -6,6 +6,8 @@ import { apiClient } from "@/api/client";
 import { BOOK_ENDPOINTS, LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import {
   BookDetail,
+  BookSearchItem,
+  BookSearchType,
   WishlistResponse,
   WishlistItem,
   BookReview,
@@ -16,6 +18,27 @@ import {
   PaginatedResponse,
   PostListItem,
 } from "@/types";
+import { SpringPage } from "@/types/spring";
+
+/**
+ * 책 검색
+ * GET /api/books/search?type=TITLE&keyword={keyword}&page=0&size=10
+ */
+export async function searchBooks(params: {
+  type: BookSearchType;
+  keyword: string;
+  page?: number;
+  size?: number;
+}): Promise<SpringPage<BookSearchItem>> {
+  return apiClient.get<SpringPage<BookSearchItem>>(BOOK_ENDPOINTS.SEARCH, {
+    params: {
+      type: params.type,
+      keyword: params.keyword,
+      page: params.page || 0,
+      size: params.size || 10,
+    },
+  });
+}
 
 /**
  * 책 상세 정보 조회
@@ -163,6 +186,7 @@ export async function getMyReviews(params?: {
 }
 
 export const bookService = {
+  searchBooks,
   getBookDetail,
   getBookDetailByISBN,
   getRelatedPosts,

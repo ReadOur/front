@@ -17,6 +17,27 @@ export interface Book {
 }
 
 /**
+ * 책 검색 결과 아이템
+ * GET /api/books/search
+ */
+export interface BookSearchItem {
+  bookId: number | null;
+  bookname: string;
+  authors: string;
+  publisher: string;
+  publicationYear: string;
+  isbn13: string;
+  bookImageURL: string;
+  averageRating: number | null;
+  reviewCount: number;
+}
+
+/**
+ * 책 검색 타입
+ */
+export type BookSearchType = "TITLE" | "AUTHOR" | "PUBLISHER" | "ISBN";
+
+/**
  * 책 상세 정보 (API 응답)
  */
 export interface BookDetail {
