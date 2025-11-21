@@ -49,7 +49,16 @@ export default function BOD_15() {
   const isLoadingBook = isbn ? isLoadingBookByISBN : isLoadingBookById;
 
   // book.bookId를 문자열로 변환하여 사용
-  const actualBookId = book?.bookId?.toString() || bookId || "";
+  const actualBookId = book?.bookId ? book.bookId.toString() : bookId || "";
+
+  console.log("BOD_15 debug:", {
+    isbn,
+    bookId,
+    "book?.bookId": book?.bookId,
+    actualBookId,
+    "bookByISBN": bookByISBN,
+    "bookById": bookById,
+  });
 
   const { data: relatedPostsData, isLoading: isLoadingPosts } = useRelatedPosts(actualBookId, {
     page: 0,
@@ -63,6 +72,14 @@ export default function BOD_15() {
     { page: 0, size: 20 }
   );
   const { data: reviews, isLoading: isLoadingReviews } = useBookReviews(actualBookId);
+
+  console.log("BOD_15 data:", {
+    actualBookId,
+    "highlightsData": highlightsData,
+    "reviews": reviews,
+    "isLoadingHighlights": isLoadingHighlights,
+    "isLoadingReviews": isLoadingReviews,
+  });
 
   // 위시리스트 mutation
   const wishlistMutation = useToggleWishlist();
