@@ -9,7 +9,7 @@ import { PaginationParams } from "./api";
 /**
  * 게시글 카테고리
  */
-export type PostCategory = "NOTICE" | "GENERAL" | "QNA" | "FREE" | "REVIEW" | "DISCUSSION" | "QUESTION" | "GATHERING";
+export type PostCategory = "NOTICE" | "GENERAL" | "QNA" | "FREE" | "REVIEW" | "DISCUSSION" | "QUESTION" | "GROUP";
 
 /**
  * 게시글 경고/주의사항 (백엔드 응답 형식)
