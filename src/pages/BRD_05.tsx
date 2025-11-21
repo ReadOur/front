@@ -152,9 +152,11 @@ export default function PostShow() {
         variant: "success"
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // 백엔드 응답에서 message 추출
+      const errorMessage = error.response?.data?.message || error.message || "참여 처리에 실패했습니다.";
       toast.show({
-        title: `참여 처리 실패: ${error.message}`,
+        title: errorMessage,
         variant: "error"
       });
     },
