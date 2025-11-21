@@ -430,8 +430,8 @@ export const BRD_List: React.FC = () => {
                 </button>
               )}
 
-              {/* 모임모집 버튼 (모임 카테고리일 때만 표시) */}
-              {category === "GROUP" && (
+              {/* 모임모집 버튼 (전체 또는 모임 카테고리일 때 표시) */}
+              {(category === "" || category === "GROUP") && (
                 <button
                   className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 whitespace-nowrap"
                   onClick={() => setIsCreateGroupModalOpen(true)}
