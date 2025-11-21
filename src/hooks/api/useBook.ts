@@ -239,6 +239,8 @@ export function useCreateBookReview(
     onSuccess: (data, variables, context) => {
       // 리뷰 목록 무효화
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.reviewList(variables.bookId) });
+      // 책 상세 정보도 무효화 (reviewCount, averageRating 업데이트)
+      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
 
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, variables, context);
@@ -272,6 +274,8 @@ export function useUpdateBookReview(
     onSuccess: (data, variables, context) => {
       // 리뷰 목록 무효화
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.reviewList(variables.bookId) });
+      // 책 상세 정보도 무효화 (reviewCount, averageRating 업데이트)
+      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
 
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, variables, context);
@@ -294,6 +298,8 @@ export function useDeleteBookReview(
     onSuccess: (data, variables, context) => {
       // 리뷰 목록 무효화
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.reviewList(variables.bookId) });
+      // 책 상세 정보도 무효화 (reviewCount, averageRating 업데이트)
+      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
 
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, variables, context);
