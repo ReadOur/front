@@ -205,7 +205,6 @@ export const BRD_06 = (): React.JSX.Element => {
                 <option value="REVIEW">리뷰</option>
                 <option value="DISCUSSION">토의</option>
                 <option value="QUESTION">질문</option>
-                <option value="GROUP">모임</option>
               </select>
             </div>
 

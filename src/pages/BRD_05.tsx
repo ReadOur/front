@@ -624,34 +624,9 @@ export default function PostShow() {
           </div>
         )}
 
-        {/* 본문 내용 */}
-        {/* API의 content 필드를 표시 */}
-        {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
-        {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
-        <div className="relative mt-3 sm:mt-4">
-          <div
-            className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
-              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
-            }`}
-            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
-          />
-
-          {post.isSpoiler && !isSpoilerRevealed && (
-            <button
-              type="button"
-              onClick={() => setIsSpoilerRevealed(true)}
-              className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
-              aria-label="스포일러 가림막 해제"
-            >
-              스포일러 방지. 클릭하면 해제합니다.
-            </button>
-          )}
-        </div>
-
-        {/* ========== 모임 게시판 채팅방 입장 (GROUP 카테고리인 경우) ========== */}
+        {/* ========== 모임 참여 섹션 (GROUP 카테고리인 경우) ========== */}
         {post.category === "GROUP" && post.chatRoomId && (
-          <div className="mt-6 pt-6 border-t border-[color:var(--color-border-subtle)]">
+          <div className="mt-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[color:var(--color-bg-elev-2)] rounded-lg border border-[color:var(--color-border-subtle)]">
               <div className="flex-1">
                 <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-2">💬 모임 채팅방</h3>
@@ -710,6 +685,31 @@ export default function PostShow() {
             </div>
           </div>
         )}
+
+        {/* 본문 내용 */}
+        {/* API의 content 필드를 표시 */}
+        {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
+        {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
+        <div className="relative mt-3 sm:mt-4">
+          <div
+            className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
+              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
+            }`}
+            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+          />
+
+          {post.isSpoiler && !isSpoilerRevealed && (
+            <button
+              type="button"
+              onClick={() => setIsSpoilerRevealed(true)}
+              className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
+              aria-label="스포일러 가림막 해제"
+            >
+              스포일러 방지. 클릭하면 해제합니다.
+            </button>
+          )}
+        </div>
         </div>
       </article>
 
