@@ -269,10 +269,10 @@ export function useUpdateBookReview(
     unknown
   >({
     ...options,
-    mutationFn: ({ bookId, reviewId, content, rating }) =>
-      bookService.updateBookReview(bookId, reviewId, { content, rating }),
+    mutationFn: ({ reviewId, content, rating }) =>
+      bookService.updateBookReview(reviewId, { content, rating }),
     onSuccess: (data, variables, context) => {
-      // 리뷰 목록 무효화
+      // 리뷰 목록 무효화 (bookId로 쿼리 무효화)
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.reviewList(variables.bookId) });
       // 책 상세 정보도 무효화 (reviewCount, averageRating 업데이트)
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
@@ -294,9 +294,9 @@ export function useDeleteBookReview(
 
   return useMutation<void, Error, { bookId: string; reviewId: string }, unknown>({
     ...options,
-    mutationFn: ({ bookId, reviewId }) => bookService.deleteBookReview(bookId, reviewId),
+    mutationFn: ({ reviewId }) => bookService.deleteBookReview(reviewId),
     onSuccess: (data, variables, context) => {
-      // 리뷰 목록 무효화
+      // 리뷰 목록 무효화 (bookId로 쿼리 무효화)
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.reviewList(variables.bookId) });
       // 책 상세 정보도 무효화 (reviewCount, averageRating 업데이트)
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
