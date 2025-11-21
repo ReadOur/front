@@ -184,7 +184,7 @@ export default function PostShow() {
   function handleLike() {
     // 로그인 확인
     if (!isLoggedIn()) {
-      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      alert("권한이 필요합니다.");
       navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
       return;
     }
@@ -352,7 +352,7 @@ export default function PostShow() {
 
     // 로그인 확인
     if (!isLoggedIn()) {
-      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      alert("권한이 필요합니다.");
       navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
       return;
     }
@@ -676,7 +676,7 @@ export default function PostShow() {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (!isLoggedIn()) {
-                          toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+                          alert("권한이 필요합니다.");
                           navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
                           return;
                         }
