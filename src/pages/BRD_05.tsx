@@ -625,7 +625,7 @@ export default function PostShow() {
         )}
 
         {/* ========== 모임 참여 섹션 (GROUP 카테고리인 경우) ========== */}
-        {post.category === "GROUP" && post.chatRoomId && (
+        {post.category === "GROUP" && (
           <div className="mt-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[color:var(--color-bg-elev-2)] rounded-lg border border-[color:var(--color-border-subtle)]">
               <div className="flex-1">
