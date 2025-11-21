@@ -5,8 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { getPosts, Post } from "@/api/posts";
 import { searchPosts, SearchType } from "@/services/postService";
 import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
-import { useCreatePost } from "@/hooks/api";
-import Modal from "@/components/Modal/Modal";
 
 // 날짜 포맷 함수 (ISO -> yyyy.MM.dd)
 function formatDate(dateString: string): string {
@@ -73,46 +71,6 @@ export const BRD_List: React.FC = () => {
 
   // 검색 타입 상태
   const [searchType, setSearchType] = useState<SearchType>(searchTypeParam);
-
-  // 모임모집 모달 상태
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-  const [groupTitle, setGroupTitle] = useState(""); // 모임 제목 (게시글 제목)
-  const [recruitmentLimit, setRecruitmentLimit] = useState<number>(10); // 모집 인원
-  const [groupDescription, setGroupDescription] = useState(""); // 모임 설명 (게시글 내용)
-
-  // 모임 게시글 생성 mutation (백엔드에서 채팅방도 자동 생성)
-  const createGroupMutation = useCreatePost({
-    onSuccess: (data) => {
-      alert("모임이 생성되었습니다!");
-      setIsCreateGroupModalOpen(false);
-      setGroupTitle("");
-      setRecruitmentLimit(10);
-      setGroupDescription("");
-      // 생성된 모임 게시글로 이동
-      navigate(`/boards/${data.postId}`);
-    },
-    onError: (error) => {
-      alert(`모임 생성 실패: ${error.message}`);
-    },
-  });
-
-  const handleCreateGroup = () => {
-    if (!groupTitle.trim()) {
-      alert("모임 제목을 입력해주세요.");
-      return;
-    }
-    if (!recruitmentLimit || recruitmentLimit < 2) {
-      alert("모집 인원은 최소 2명 이상이어야 합니다.");
-      return;
-    }
-
-    createGroupMutation.mutate({
-      title: groupTitle.trim(),
-      content: groupDescription.trim() || "모임에 참여해보세요!",
-      category: "GROUP",
-      recruitmentLimit: recruitmentLimit,
-    });
-  };
 
   // 메인 게시글 목록
   const { data, isLoading, error } = useQuery({
@@ -290,11 +248,11 @@ export const BRD_List: React.FC = () => {
                 </button>
               )}
 
-              {/* 모임모집 버튼 (모임 카테고리일 때만 표시) */}
-              {category === "GROUP" && (
+              {/* 모임모집 버튼 (전체 또는 모임 카테고리일 때 표시) */}
+              {(category === "" || category === "GROUP") && (
                 <button
                   className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 whitespace-nowrap"
-                  onClick={() => setIsCreateGroupModalOpen(true)}
+                  onClick={() => navigate("/boards/group/create")}
                   aria-label="모임모집"
                 >
                   <span className="hidden sm:inline">📢 모임모집</span>
@@ -528,76 +486,6 @@ export const BRD_List: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* 모임 생성 모달 */}
-      <Modal
-        isOpen={isCreateGroupModalOpen}
-        onClose={() => setIsCreateGroupModalOpen(false)}
-        title="모임 만들기"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
-              모임 제목 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={groupTitle}
-              onChange={(e) => setGroupTitle(e.target.value)}
-              placeholder="예: 함께 읽는 독서 모임"
-              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)]"
-              maxLength={100}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
-              모집 인원 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={recruitmentLimit}
-              onChange={(e) => setRecruitmentLimit(Number(e.target.value))}
-              placeholder="예: 10"
-              min={2}
-              max={100}
-              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)]"
-            />
-            <p className="text-xs text-[color:var(--color-fg-muted)] mt-1">최소 2명 ~ 최대 100명</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
-              모임 설명
-            </label>
-            <textarea
-              value={groupDescription}
-              onChange={(e) => setGroupDescription(e.target.value)}
-              placeholder="모임에 대한 간단한 설명을 입력해주세요"
-              className="w-full px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg)] border border-[color:var(--color-border-subtle)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]/40 text-[color:var(--color-fg-primary)] resize-none"
-              rows={4}
-              maxLength={500}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              onClick={() => setIsCreateGroupModalOpen(false)}
-              className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg-subtle)] text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-muted)] transition-colors"
-              disabled={createGroupMutation.isPending}
-            >
-              취소
-            </button>
-            <button
-              onClick={handleCreateGroup}
-              disabled={createGroupMutation.isPending || !groupTitle.trim()}
-              className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {createGroupMutation.isPending ? "생성 중..." : "모임 만들기"}
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
