@@ -8,8 +8,9 @@
 export interface Library {
   libraryCode: string;
   libraryName: string;
-  address: string;
-  homepage: string;
+  address?: string;
+  homepage?: string;
+  createdAt?: string;
 }
 
 /**

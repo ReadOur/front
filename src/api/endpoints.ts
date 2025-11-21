@@ -157,7 +157,7 @@ export const LIBRARY_ENDPOINTS = {
   // 관심 도서관
   FAVORITE_LIBRARIES: "/user/libraries",
   ADD_FAVORITE_LIBRARY: "/user/libraries",
-  REMOVE_FAVORITE_LIBRARY: (libraryName: string) => `/user/libraries/${encodeURIComponent(libraryName)}`,
+  REMOVE_FAVORITE_LIBRARY: (libraryCode: string) => `/user/libraries/${libraryCode}`,
   // 도서관 검색
   SEARCH_LIBRARIES: "/user/libraries/search",
 } as const;
