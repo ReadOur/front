@@ -344,12 +344,12 @@ export default function HOM_01() {
         <h2 className="text-2xl font-bold text-[color:var(--color-fg)] mb-6">
           카테고리
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="flex gap-4 overflow-x-auto pb-2">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.key}
               onClick={() => navigate(`/boards?category=${cat.key}`)}
-              className={`p-6 rounded-xl border border-[color:var(--color-border)] hover:border-[color:var(--color-accent-fg)] transition-all duration-200 hover:shadow-lg group ${cat.color}`}
+              className={`flex-shrink-0 w-[180px] p-6 rounded-xl border border-[color:var(--color-border)] hover:border-[color:var(--color-accent-fg)] transition-all duration-200 hover:shadow-lg group ${cat.color}`}
             >
               <div className="text-4xl mb-3">{cat.icon}</div>
               <div className="text-base font-semibold">{cat.label}</div>
