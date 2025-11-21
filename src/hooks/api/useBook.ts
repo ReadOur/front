@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient, UseMutationOptions } from "@tans
 import { bookService } from "@/services/bookService";
 import {
   BookDetail,
+  BookSearchItem,
+  BookSearchType,
   WishlistResponse,
   WishlistItem,
   BookReview,
@@ -15,10 +17,13 @@ import {
   PaginatedResponse,
   PostListItem,
 } from "@/types";
+import { SpringPage } from "@/types/spring";
 
 // ===== Query Keys =====
 export const BOOK_QUERY_KEYS = {
   all: ["books"] as const,
+  search: (params: { type: BookSearchType; keyword: string; page?: number; size?: number }) =>
+    [...BOOK_QUERY_KEYS.all, "search", params] as const,
   details: () => [...BOOK_QUERY_KEYS.all, "detail"] as const,
   detail: (bookId: string) => [...BOOK_QUERY_KEYS.details(), bookId] as const,
   relatedPosts: (bookId: string) => [...BOOK_QUERY_KEYS.all, "relatedPosts", bookId] as const,
@@ -34,6 +39,22 @@ export const BOOK_QUERY_KEYS = {
 };
 
 // ===== Queries =====
+
+/**
+ * 책 검색
+ */
+export function useBookSearch(params: {
+  type: BookSearchType;
+  keyword: string;
+  page?: number;
+  size?: number;
+}) {
+  return useQuery<SpringPage<BookSearchItem>>({
+    queryKey: BOOK_QUERY_KEYS.search(params),
+    queryFn: () => bookService.searchBooks(params),
+    enabled: !!params.keyword && params.keyword.trim().length > 0,
+  });
+}
 
 /**
  * 책 상세 정보 조회

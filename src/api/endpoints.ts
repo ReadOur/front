@@ -124,6 +124,8 @@ export const CALENDAR_ENDPOINTS = {
  * 책 관련 엔드포인트
  */
 export const BOOK_ENDPOINTS = {
+  // 책 검색
+  SEARCH: "/books/search", // 책 검색 (쿼리: type, keyword, page, size)
   // 책 정보
   DETAIL: (bookId: string) => `/books/${bookId}`, // 책 상세 정보 조회
   DETAIL_BY_ISBN: (isbn13: string) => `/books/isbn/${isbn13}`, // ISBN으로 책 조회

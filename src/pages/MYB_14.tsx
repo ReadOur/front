@@ -7,20 +7,13 @@ import {
   useBookmarks,
   useSavedPosts,
   useFavoriteLibraries,
+  useBookSearch,
 } from "@/hooks/api";
-
-// 목업 연관 검색어 (책 검색 API 추가 시 제거)
-const mockSuggestions = [
-  "연관 검색 1",
-  "연관 검색 2",
-  "연관 검색 3",
-  "연관 검색 4",
-];
 
 export default function MYB_14() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // API 호출: 위시리스트, 리뷰, 북마크, 저장한 게시글, 관심 도서관
@@ -35,11 +28,19 @@ export default function MYB_14() {
   const { data: favoriteLibrariesData, isLoading: isLoadingFavoriteLibraries } =
     useFavoriteLibraries();
 
+  // 책 검색 API 호출
+  const { data: searchResults, isLoading: isSearching } = useBookSearch({
+    type: "TITLE",
+    keyword: searchQuery,
+    page: 0,
+    size: 10,
+  });
+
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
+        setShowResults(false);
       }
     };
 
@@ -47,22 +48,11 @@ export default function MYB_14() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSearch = (query?: string) => {
-    const searchTerm = query || searchQuery;
-    if (!searchTerm.trim()) return;
-
-    console.log("검색:", searchTerm);
-    navigate(`/my-library/search?q=${encodeURIComponent(searchTerm)}`);
-    setShowSuggestions(false);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    handleSearch(suggestion);
-  };
-
-  const handleBookClick = (bookId: string) => {
-    navigate(`/books/${bookId}`);
+  const handleBookClick = (isbn: string) => {
+    // ISBN으로 책 상세 페이지로 이동
+    navigate(`/books/isbn/${isbn}`);
+    setShowResults(false);
+    setSearchQuery("");
   };
 
   const wishlist = wishlistData || [];
@@ -95,20 +85,16 @@ export default function MYB_14() {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                setShowSuggestions(e.target.value.length > 0);
+                setShowResults(e.target.value.length > 0);
               }}
               onFocus={() => {
-                if (searchQuery.length > 0) setShowSuggestions(true);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSearch();
+                if (searchQuery.length > 0) setShowResults(true);
               }}
               placeholder="찾고싶은 제목, 저자명을 입력해주세요"
               className="flex-1 outline-none text-2xl"
               style={{ color: "#1E1E1E" }}
             />
             <button
-              onClick={() => handleSearch()}
               className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
             >
               <svg
@@ -125,27 +111,72 @@ export default function MYB_14() {
             </button>
           </div>
 
-          {/* 연관 검색어 드롭다운 */}
-          {showSuggestions && searchQuery.length > 0 && (
+          {/* 검색 결과 드롭다운 */}
+          {showResults && searchQuery.length > 0 && (
             <div
-              className="absolute top-full mt-4 w-full rounded-[30px] p-6 z-10"
-              style={{ background: "#E9E5DC" }}
+              className="absolute top-full mt-4 w-full rounded-[30px] p-6 z-10 max-h-[500px] overflow-y-auto"
+              style={{ background: "white", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
             >
-              {mockSuggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="py-3 px-4 cursor-pointer hover:bg-black/5 transition rounded"
-                  style={{
-                    opacity: 0.4,
-                    color: "black",
-                    fontSize: "24px",
-                    lineHeight: "24px",
-                  }}
-                >
-                  {suggestion}
+              {isSearching ? (
+                <div className="text-center py-8" style={{ color: "#999" }}>
+                  검색 중...
                 </div>
-              ))}
+              ) : searchResults && searchResults.content.length > 0 ? (
+                <div className="space-y-3">
+                  {searchResults.content.map((book, index) => (
+                    <div
+                      key={`${book.isbn13}-${index}`}
+                      onClick={() => handleBookClick(book.isbn13)}
+                      className="flex gap-4 p-4 cursor-pointer hover:bg-gray-50 rounded-lg transition"
+                    >
+                      {/* 책 이미지 */}
+                      <div className="w-[80px] h-[110px] flex-shrink-0 rounded overflow-hidden bg-gray-200">
+                        {book.bookImageURL ? (
+                          <img
+                            src={book.bookImageURL}
+                            alt={book.bookname}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            📚
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 책 정보 */}
+                      <div className="flex-1 min-w-0">
+                        <h3
+                          className="text-lg font-semibold mb-1 line-clamp-2"
+                          style={{ color: "#1E1E1E" }}
+                        >
+                          {book.bookname}
+                        </h3>
+                        <p className="text-sm mb-1" style={{ color: "#666" }}>
+                          {book.authors}
+                        </p>
+                        <p className="text-xs" style={{ color: "#999" }}>
+                          {book.publisher} · {book.publicationYear}
+                        </p>
+                        {book.averageRating != null && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-yellow-500 font-semibold">
+                              ⭐ {book.averageRating.toFixed(1)}
+                            </span>
+                            <span className="text-xs" style={{ color: "#999" }}>
+                              리뷰 {book.reviewCount}개
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8" style={{ color: "#999" }}>
+                  검색 결과가 없습니다.
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -194,7 +225,7 @@ export default function MYB_14() {
                     {wishlist.map((book) => (
                       <div
                         key={book.bookId}
-                        onClick={() => handleBookClick(book.bookId)}
+                        onClick={() => navigate(`/books/${book.bookId}`)}
                         className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
                         style={{ background: "#E9E5DC" }}
                       >
@@ -262,7 +293,7 @@ export default function MYB_14() {
                     {reviewedBooks.map((review) => (
                       <div
                         key={review.reviewId}
-                        onClick={() => handleBookClick(review.bookId.toString())}
+                        onClick={() => navigate(`/books/${review.bookId}`)}
                         className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
                         style={{ background: "#E9E5DC" }}
                       >
