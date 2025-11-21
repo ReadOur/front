@@ -27,8 +27,10 @@ export const GRP_Create = (): React.JSX.Element => {
       toast.show({ title: "모임이 생성되었습니다!", variant: "success" });
       navigate(`/boards/${data.postId}`);
     },
-    onError: (error) => {
-      toast.show({ title: `모임 생성 실패: ${error.message}`, variant: "error" });
+    onError: (error: any) => {
+      // 백엔드 응답에서 message 추출
+      const errorMessage = error.response?.data?.message || error.message || "모임 생성에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
     },
   });
 
