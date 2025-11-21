@@ -255,7 +255,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
 
           {/* 평점 및 리뷰 수 */}
           <div className="flex items-center gap-2 text-sm">
-            {book.averageRating !== null && (
+            {book.averageRating != null && (
               <span className="text-yellow-500 font-semibold">
                 ⭐ {book.averageRating.toFixed(1)}
               </span>
