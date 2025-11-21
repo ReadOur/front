@@ -68,6 +68,17 @@ export function useBookDetail(bookId: string) {
 }
 
 /**
+ * ISBN으로 책 상세 정보 조회
+ */
+export function useBookDetailByISBN(isbn13: string) {
+  return useQuery<BookDetail>({
+    queryKey: [...BOOK_QUERY_KEYS.all, "detailByISBN", isbn13] as const,
+    queryFn: () => bookService.getBookDetailByISBN(isbn13),
+    enabled: !!isbn13,
+  });
+}
+
+/**
  * 책 연관 게시글 목록 조회
  */
 export function useRelatedPosts(bookId: string, params?: { page?: number; size?: number }) {

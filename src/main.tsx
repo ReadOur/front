@@ -54,6 +54,7 @@ const router = createBrowserRouter([
       { path: "settings", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><SET_13 /></Suspense></ProtectedRoute> },
       { path: "my-library", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><MYB_14 /></Suspense></ProtectedRoute> },
       { path: "my-library/search", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><LibrarySearch /></Suspense></ProtectedRoute> },
+      { path: "books/isbn/:isbn", element: <Suspense fallback={<PageLoader />}><BOD_15 /></Suspense> },
       { path: "books/:bookId", element: <Suspense fallback={<PageLoader />}><BOD_15 /></Suspense> },
       { path: "chat", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><CHT_17 /></Suspense></ProtectedRoute> },
     ],
