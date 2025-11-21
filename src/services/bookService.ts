@@ -4,6 +4,7 @@
 
 import { apiClient } from "@/api/client";
 import { BOOK_ENDPOINTS, LIBRARY_ENDPOINTS } from "@/api/endpoints";
+import { SpringPage, convertSpringPage } from "@/types/spring";
 import {
   BookDetail,
   BookSearchItem,
@@ -94,7 +95,8 @@ export async function getWishlist(): Promise<WishlistItem[]> {
  * 책 리뷰 목록 조회
  */
 export async function getBookReviews(bookId: string): Promise<BookReview[]> {
-  return apiClient.get<BookReview[]>(BOOK_ENDPOINTS.REVIEWS(bookId));
+  const response = await apiClient.get<SpringPage<BookReview>>(BOOK_ENDPOINTS.REVIEWS(bookId));
+  return response.content; // SpringPage의 content 필드 반환
 }
 
 /**
@@ -132,9 +134,10 @@ export async function getBookHighlights(
   bookId: string,
   params?: { page?: number; size?: number }
 ): Promise<PaginatedResponse<BookHighlight>> {
-  return apiClient.get<PaginatedResponse<BookHighlight>>(BOOK_ENDPOINTS.HIGHLIGHTS(bookId), {
+  const response = await apiClient.get<SpringPage<BookHighlight>>(BOOK_ENDPOINTS.HIGHLIGHTS(bookId), {
     params: { page: params?.page || 0, size: params?.size || 20 },
   });
+  return convertSpringPage(response); // SpringPage를 PaginatedResponse로 변환
 }
 
 /**
