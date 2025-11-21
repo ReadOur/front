@@ -259,6 +259,7 @@ export default function SET_13() {
     try {
       // API 호출: 관심 도서관 추가
       await apiClient.post(LIBRARY_ENDPOINTS.ADD_FAVORITE_LIBRARY, {
+        libraryCode: library.libraryCode,
         libraryName: library.libraryName,
       });
 
@@ -268,6 +269,7 @@ export default function SET_13() {
         favoriteLibraries: [...userData.favoriteLibraries, library.libraryName],
       });
       console.log("관심 도서관 추가:", library.libraryName);
+      setIsLibrarySearchModalOpen(false);
     } catch (error) {
       console.error("관심 도서관 추가 실패:", error);
       alert("관심 도서관 추가에 실패했습니다. 다시 시도해주세요.");

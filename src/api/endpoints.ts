@@ -155,9 +155,9 @@ export const LIBRARY_ENDPOINTS = {
   // 내 서재 - 리뷰
   MY_REVIEWS: "/my-library/reviews", // 내가 작성한 리뷰 목록 (페이지네이션)
   // 관심 도서관
-  FAVORITE_LIBRARIES: "/users/me/favorite-libraries",
-  ADD_FAVORITE_LIBRARY: "/users/me/favorite-libraries",
-  REMOVE_FAVORITE_LIBRARY: (libraryName: string) => `/users/me/favorite-libraries/${encodeURIComponent(libraryName)}`,
+  FAVORITE_LIBRARIES: "/user/libraries",
+  ADD_FAVORITE_LIBRARY: "/user/libraries",
+  REMOVE_FAVORITE_LIBRARY: (libraryName: string) => `/user/libraries/${encodeURIComponent(libraryName)}`,
   // 도서관 검색
   SEARCH_LIBRARIES: "/user/libraries/search",
 } as const;
@@ -167,7 +167,7 @@ export const LIBRARY_ENDPOINTS = {
  */
 export const REGION_ENDPOINTS = {
   PROVINCES: "/regions", // 광역시/도 목록
-  CITIES: (regionId: number) => `/regions/${regionId}/details`, // 시/군/구 목록
+  CITIES: (regionCode: string) => `/regions/${regionCode}/details`, // 시/군/구 목록
   SEARCH: "/regions/search", // 지역 이름 검색
 } as const;
 

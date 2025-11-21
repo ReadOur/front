@@ -12,8 +12,8 @@ interface LibrarySearchModalProps {
 export function LibrarySearchModal({ isOpen, onClose, onSelectLibrary }: LibrarySearchModalProps) {
   const [provinces, setProvinces] = useState<Region[]>([]);
   const [cities, setCities] = useState<Region[]>([]);
-  const [selectedProvince, setSelectedProvince] = useState<number | null>(null);
-  const [selectedCity, setSelectedCity] = useState<number | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -51,24 +51,24 @@ export function LibrarySearchModal({ isOpen, onClose, onSelectLibrary }: Library
     }
   };
 
-  const loadCities = async (provinceId: number) => {
+  const loadCities = async (provinceCode: string) => {
     try {
-      const data = await apiClient.get<Region[]>(REGION_ENDPOINTS.CITIES(provinceId));
+      const data = await apiClient.get<Region[]>(REGION_ENDPOINTS.CITIES(provinceCode));
       setCities(data || []);
     } catch (error) {
       console.error("시/군/구 목록 로드 실패:", error);
     }
   };
 
-  const searchLibraries = async (provinceId: number, cityId: number, pageNum: number) => {
+  const searchLibraries = async (provinceCode: string, cityCode: string, pageNum: number) => {
     setIsLoading(true);
     try {
       const response = await apiClient.get<LibrarySearchResponse>(
         LIBRARY_ENDPOINTS.SEARCH_LIBRARIES,
         {
           params: {
-            region: provinceId,
-            dtlRegion: cityId,
+            region: provinceCode,
+            dtlRegion: cityCode,
             page: pageNum,
             size: 10,
           },
@@ -130,12 +130,12 @@ export function LibrarySearchModal({ isOpen, onClose, onSelectLibrary }: Library
             </label>
             <select
               value={selectedProvince || ""}
-              onChange={(e) => setSelectedProvince(Number(e.target.value) || null)}
+              onChange={(e) => setSelectedProvince(e.target.value || null)}
               className="w-full px-3 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
             >
               <option value="">선택하세요</option>
               {provinces.map((province) => (
-                <option key={province.id} value={province.id}>
+                <option key={province.code} value={province.code}>
                   {province.name}
                 </option>
               ))}
@@ -150,12 +150,12 @@ export function LibrarySearchModal({ isOpen, onClose, onSelectLibrary }: Library
               </label>
               <select
                 value={selectedCity || ""}
-                onChange={(e) => setSelectedCity(Number(e.target.value) || null)}
+                onChange={(e) => setSelectedCity(e.target.value || null)}
                 className="w-full px-3 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] text-[color:var(--color-fg-primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
               >
                 <option value="">선택하세요</option>
                 {cities.map((city) => (
-                  <option key={city.id} value={city.id}>
+                  <option key={city.code} value={city.code}>
                     {city.name}
                   </option>
                 ))}
