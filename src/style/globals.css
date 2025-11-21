@@ -85,13 +85,7 @@ video {
     border-radius: var(--radius-sm);
 }
 
-/* 6️⃣ Theming ---------------------------------- */
-[data-theme='dark'] {
-    background-color: var(--color-bg);
-    color: var(--color-text);
-}
-
-/* 7️⃣ Utility (선택) --------------------------- */
+/* 6️⃣ Utility (선택) --------------------------- */
 hr {
     border: none;
     height: 1px;
