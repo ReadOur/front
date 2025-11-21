@@ -17,6 +17,8 @@ export const GRP_Create = (): React.JSX.Element => {
   const [title, setTitle] = useState<string>("");
   const [recruitmentLimit, setRecruitmentLimit] = useState<number>(10);
   const [description, setDescription] = useState<string>("");
+  const [chatRoomName, setChatRoomName] = useState<string>("");
+  const [chatRoomDescription, setChatRoomDescription] = useState<string>("");
 
   // 모임 게시글 생성 mutation (백엔드에서 채팅방도 자동 생성)
   const createGroupMutation = useCreatePost({
@@ -55,6 +57,8 @@ export const GRP_Create = (): React.JSX.Element => {
       content: description.trim() || "모임에 참여해보세요!",
       category: "GROUP",
       recruitmentLimit: recruitmentLimit,
+      chatRoomName: chatRoomName.trim() || title.trim(),
+      chatRoomDescription: chatRoomDescription.trim() || description.trim() || "모임 채팅방입니다.",
     });
   };
 
@@ -133,11 +137,35 @@ export const GRP_Create = (): React.JSX.Element => {
               <p className="text-xs text-[color:var(--color-fg-muted)] mt-2">최소 2명 ~ 최대 100명</p>
             </div>
 
+            {/* 채팅방 이름 */}
+            <div className="px-6 pb-6">
+              <label htmlFor="chatroom-name-input" className="block mb-3 text-sm font-medium text-[color:var(--color-fg-primary)]">
+                채팅방 이름
+              </label>
+              <input
+                id="chatroom-name-input"
+                type="text"
+                value={chatRoomName}
+                onChange={(e) => setChatRoomName(e.target.value)}
+                placeholder="비워두면 모임 제목과 동일하게 설정됩니다"
+                maxLength={100}
+                className="
+                  w-full bg-[color:var(--color-bg-elev-2)] outline-none
+                  text-lg
+                  border border-[color:var(--color-border-subtle)]
+                  rounded-[var(--radius-md)]
+                  px-4 py-3
+                  focus:ring-2 focus:ring-[color:var(--color-accent)]
+                "
+                aria-label="채팅방 이름 입력"
+              />
+            </div>
+
             {/* 구분선 */}
             <div className="mx-6 h-px bg-[color:var(--color-border-subtle)]" />
 
             {/* 설명 영역 */}
-            <div className="px-6 pt-6 pb-8">
+            <div className="px-6 pt-6 pb-6">
               <label htmlFor="description-input" className="block mb-3 text-sm font-medium text-[color:var(--color-fg-primary)]">
                 모임 설명
               </label>
@@ -147,7 +175,7 @@ export const GRP_Create = (): React.JSX.Element => {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="모임에 대한 간단한 설명을 입력해주세요"
                 maxLength={1000}
-                rows={10}
+                rows={6}
                 className="
                   w-full bg-[color:var(--color-bg-elev-2)] outline-none
                   text-base leading-relaxed
@@ -162,6 +190,35 @@ export const GRP_Create = (): React.JSX.Element => {
               />
               <p className="text-xs text-[color:var(--color-fg-muted)] mt-2">
                 {description.length} / 1000자
+              </p>
+            </div>
+
+            {/* 채팅방 설명 */}
+            <div className="px-6 pb-8">
+              <label htmlFor="chatroom-description-input" className="block mb-3 text-sm font-medium text-[color:var(--color-fg-primary)]">
+                채팅방 설명
+              </label>
+              <textarea
+                id="chatroom-description-input"
+                value={chatRoomDescription}
+                onChange={(e) => setChatRoomDescription(e.target.value)}
+                placeholder="비워두면 모임 설명과 동일하게 설정됩니다"
+                maxLength={500}
+                rows={4}
+                className="
+                  w-full bg-[color:var(--color-bg-elev-2)] outline-none
+                  text-base leading-relaxed
+                  placeholder:text-[color:var(--color-fg-muted)]
+                  border border-[color:var(--color-border-subtle)]
+                  rounded-[var(--radius-md)]
+                  px-4 py-3
+                  focus:ring-2 focus:ring-[color:var(--color-accent)]
+                  resize-none
+                "
+                aria-label="채팅방 설명 입력"
+              />
+              <p className="text-xs text-[color:var(--color-fg-muted)] mt-2">
+                {chatRoomDescription.length} / 500자
               </p>
             </div>
           </div>
