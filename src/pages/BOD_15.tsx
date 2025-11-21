@@ -578,7 +578,7 @@ export default function BOD_15() {
               <div className="text-xl mb-6" style={{ color: "#999" }}>
                 로딩 중...
               </div>
-            ) : reviews && reviews.length > 0 ? (
+            ) : Array.isArray(reviews) && reviews.length > 0 ? (
               <div className="space-y-4 mb-6">
                 {reviews.map((review) => (
                   <div
