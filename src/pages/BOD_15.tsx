@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useBookDetail,
+  useBookDetailByISBN,
   useToggleWishlist,
   useRelatedPosts,
   useLibraryAvailability,
@@ -18,7 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function BOD_15() {
-  const { bookId } = useParams<{ bookId: string }>();
+  const { bookId, isbn } = useParams<{ bookId?: string; isbn?: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -39,9 +40,18 @@ export default function BOD_15() {
   const [editHighlightContent, setEditHighlightContent] = useState("");
   const [editHighlightPage, setEditHighlightPage] = useState<number | undefined>();
 
-  // API 호출
-  const { data: book, isLoading: isLoadingBook } = useBookDetail(bookId || "");
-  const { data: relatedPostsData, isLoading: isLoadingPosts } = useRelatedPosts(bookId || "", {
+  // API 호출 - ISBN 또는 bookId 중 하나를 사용
+  const { data: bookByISBN, isLoading: isLoadingBookByISBN } = useBookDetailByISBN(isbn || "");
+  const { data: bookById, isLoading: isLoadingBookById } = useBookDetail(bookId || "");
+
+  // ISBN 또는 bookId 중 하나로 가져온 책 정보 사용
+  const book = isbn ? bookByISBN : bookById;
+  const isLoadingBook = isbn ? isLoadingBookByISBN : isLoadingBookById;
+
+  // book.bookId를 문자열로 변환하여 사용
+  const actualBookId = book?.bookId?.toString() || bookId || "";
+
+  const { data: relatedPostsData, isLoading: isLoadingPosts } = useRelatedPosts(actualBookId, {
     page: 0,
     size: 6,
   });
@@ -49,10 +59,10 @@ export default function BOD_15() {
     book?.isbn13 || ""
   );
   const { data: highlightsData, isLoading: isLoadingHighlights } = useBookHighlights(
-    bookId || "",
+    actualBookId,
     { page: 0, size: 20 }
   );
-  const { data: reviews, isLoading: isLoadingReviews } = useBookReviews(bookId || "");
+  const { data: reviews, isLoading: isLoadingReviews } = useBookReviews(actualBookId);
 
   // 위시리스트 mutation
   const wishlistMutation = useToggleWishlist();
@@ -73,11 +83,11 @@ export default function BOD_15() {
   };
 
   const handleToggleWishlist = () => {
-    if (!bookId || !book) return;
+    if (!actualBookId || !book) return;
 
     wishlistMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         isWishlisted: book.isWishlisted,
       },
       {
@@ -95,14 +105,14 @@ export default function BOD_15() {
       return;
     }
 
-    if (!bookId || !newHighlightContent.trim()) {
+    if (!actualBookId || !newHighlightContent.trim()) {
       alert("하이라이트 내용을 입력해주세요.");
       return;
     }
 
     createHighlightMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         content: newHighlightContent.trim(),
         pageNumber: newHighlightPage,
       },
@@ -132,14 +142,14 @@ export default function BOD_15() {
   };
 
   const handleUpdateHighlight = (highlightId: number) => {
-    if (!bookId || !editHighlightContent.trim()) {
+    if (!actualBookId || !editHighlightContent.trim()) {
       alert("하이라이트 내용을 입력해주세요.");
       return;
     }
 
     updateHighlightMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         highlightId: highlightId.toString(),
         content: editHighlightContent.trim(),
         pageNumber: editHighlightPage,
@@ -159,14 +169,14 @@ export default function BOD_15() {
   };
 
   const handleDeleteHighlight = (highlightId: number) => {
-    if (!bookId) return;
+    if (!actualBookId) return;
     if (!confirm("하이라이트를 삭제하시겠습니까?")) return;
 
-    console.log("하이라이트 삭제 요청:", { bookId, highlightId });
+    console.log("하이라이트 삭제 요청:", { bookId: actualBookId, highlightId });
 
     deleteHighlightMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         highlightId: highlightId.toString(),
       },
       {
@@ -190,7 +200,7 @@ export default function BOD_15() {
       return;
     }
 
-    if (!bookId || !newReviewContent.trim()) {
+    if (!actualBookId || !newReviewContent.trim()) {
       alert("리뷰 내용을 입력해주세요.");
       return;
     }
@@ -202,7 +212,7 @@ export default function BOD_15() {
 
     createReviewMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         content: newReviewContent.trim(),
         rating: newReviewRating,
       },
@@ -232,14 +242,14 @@ export default function BOD_15() {
   };
 
   const handleUpdateReview = (reviewId: string) => {
-    if (!bookId || !editReviewContent.trim()) {
+    if (!actualBookId || !editReviewContent.trim()) {
       alert("리뷰 내용을 입력해주세요.");
       return;
     }
 
     updateReviewMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         reviewId,
         content: editReviewContent.trim(),
         rating: editReviewRating,
@@ -258,12 +268,12 @@ export default function BOD_15() {
   };
 
   const handleDeleteReview = (reviewId: string) => {
-    if (!bookId) return;
+    if (!actualBookId) return;
     if (!confirm("리뷰를 삭제하시겠습니까?")) return;
 
     deleteReviewMutation.mutate(
       {
-        bookId,
+        bookId: actualBookId,
         reviewId,
       },
       {
