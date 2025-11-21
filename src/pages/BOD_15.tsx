@@ -40,6 +40,10 @@ export default function BOD_15() {
   const [editHighlightContent, setEditHighlightContent] = useState("");
   const [editHighlightPage, setEditHighlightPage] = useState<number | undefined>();
 
+  // 펼치기/접기 상태
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const [expandedHighlights, setExpandedHighlights] = useState<Set<number>>(new Set());
+
   // API 호출 - ISBN 또는 bookId 중 하나를 사용
   const { data: bookByISBN, isLoading: isLoadingBookByISBN } = useBookDetailByISBN(isbn || "");
   const { data: bookById, isLoading: isLoadingBookById } = useBookDetail(bookId || "");
@@ -50,15 +54,6 @@ export default function BOD_15() {
 
   // book.bookId를 문자열로 변환하여 사용
   const actualBookId = book?.bookId ? book.bookId.toString() : bookId || "";
-
-  console.log("BOD_15 debug:", {
-    isbn,
-    bookId,
-    "book?.bookId": book?.bookId,
-    actualBookId,
-    "bookByISBN": bookByISBN,
-    "bookById": bookById,
-  });
 
   const { data: relatedPostsData, isLoading: isLoadingPosts } = useRelatedPosts(actualBookId, {
     page: 0,
@@ -72,18 +67,6 @@ export default function BOD_15() {
     { page: 0, size: 20 }
   );
   const { data: reviews, isLoading: isLoadingReviews } = useBookReviews(actualBookId);
-
-  console.log("BOD_15 data:", {
-    actualBookId,
-    "highlightsData": highlightsData,
-    "highlightsData?.items": highlightsData?.items,
-    "highlightsData?.items?.length": highlightsData?.items?.length,
-    "reviews": reviews,
-    "reviews?.length": reviews?.length,
-    "Array.isArray(reviews)": Array.isArray(reviews),
-    "isLoadingHighlights": isLoadingHighlights,
-    "isLoadingReviews": isLoadingReviews,
-  });
 
   // 위시리스트 mutation
   const wishlistMutation = useToggleWishlist();
@@ -193,20 +176,13 @@ export default function BOD_15() {
     if (!actualBookId) return;
     if (!confirm("하이라이트를 삭제하시겠습니까?")) return;
 
-    console.log("하이라이트 삭제 요청:", { bookId: actualBookId, highlightId });
-
     deleteHighlightMutation.mutate(
       {
         bookId: actualBookId,
         highlightId: highlightId.toString(),
       },
       {
-        onSuccess: () => {
-          console.log("하이라이트 삭제 성공");
-        },
         onError: (error: any) => {
-          console.error("하이라이트 삭제 실패:", error);
-          console.error("에러 응답:", error.response);
           const errorMessage = error.response?.data?.message || error.message || "하이라이트 삭제에 실패했습니다.";
           alert(errorMessage);
         },
@@ -309,6 +285,32 @@ export default function BOD_15() {
     navigate(`/boards/${postId}`);
   };
 
+  // 리뷰 펼치기/접기 토글
+  const toggleReviewExpand = (reviewId: string) => {
+    setExpandedReviews((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(reviewId)) {
+        newSet.delete(reviewId);
+      } else {
+        newSet.add(reviewId);
+      }
+      return newSet;
+    });
+  };
+
+  // 하이라이트 펼치기/접기 토글
+  const toggleHighlightExpand = (highlightId: number) => {
+    setExpandedHighlights((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(highlightId)) {
+        newSet.delete(highlightId);
+      } else {
+        newSet.add(highlightId);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoadingBook) {
     return (
       <div
@@ -337,13 +339,6 @@ export default function BOD_15() {
 
   const highlights = highlightsData?.items || [];
   const relatedPosts = relatedPostsData?.items || [];
-
-  console.log("BOD_15 render data:", {
-    "highlights": highlights,
-    "highlights.length": highlights.length,
-    "reviews": reviews,
-    "reviews?.length": reviews?.length,
-  });
 
   return (
     <div className="w-full min-h-screen p-8" style={{ background: "#FFF9F2" }}>
@@ -649,19 +644,32 @@ export default function BOD_15() {
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <span className="text-xl" style={{ color: "#F4A261" }}>
-                                {"⭐".repeat(review.rating)}
-                              </span>
                               <span className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
                                 {review.userNickname}
+                              </span>
+                              <span className="text-xl" style={{ color: "#F4A261" }}>
+                                {"⭐".repeat(review.rating)}
                               </span>
                               <span className="text-sm" style={{ color: "#999" }}>
                                 {new Date(review.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <p className="text-lg whitespace-pre-wrap" style={{ color: "#1E1E1E" }}>
-                              {review.content}
-                            </p>
+                            <div>
+                              <p className="text-lg whitespace-pre-wrap" style={{ color: "#1E1E1E" }}>
+                                {review.content.length > 100 && !expandedReviews.has(review.reviewId)
+                                  ? `${review.content.substring(0, 100)}...`
+                                  : review.content}
+                              </p>
+                              {review.content.length > 100 && (
+                                <button
+                                  onClick={() => toggleReviewExpand(review.reviewId)}
+                                  className="mt-2 text-sm hover:underline"
+                                  style={{ color: "#6B4F3F" }}
+                                >
+                                  {expandedReviews.has(review.reviewId) ? "접기" : "펼치기"}
+                                </button>
+                              )}
+                            </div>
                           </div>
                           {isAuthenticated && (
                             <div className="ml-4 flex gap-2">
@@ -844,12 +852,25 @@ export default function BOD_15() {
                       // 보기 모드
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <p className="text-xl mb-2" style={{ color: "#1E1E1E" }}>
-                            "{highlight.content}"
-                          </p>
-                          <div className="flex items-center gap-4 text-base" style={{ color: "#6B4F3F" }}>
-                            <span>{highlight.userNickname}</span>
+                          <div className="flex items-center gap-3 mb-2 text-base" style={{ color: "#6B4F3F" }}>
+                            <span className="font-semibold">{highlight.userNickname}</span>
                             {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
+                          </div>
+                          <div>
+                            <p className="text-xl mb-2" style={{ color: "#1E1E1E" }}>
+                              "{highlight.content.length > 100 && !expandedHighlights.has(highlight.highlightId)
+                                ? `${highlight.content.substring(0, 100)}...`
+                                : highlight.content}"
+                            </p>
+                            {highlight.content.length > 100 && (
+                              <button
+                                onClick={() => toggleHighlightExpand(highlight.highlightId)}
+                                className="text-sm hover:underline"
+                                style={{ color: "#6B4F3F" }}
+                              >
+                                {expandedHighlights.has(highlight.highlightId) ? "접기" : "펼치기"}
+                              </button>
+                            )}
                           </div>
                         </div>
                         {isAuthenticated && (
