@@ -649,8 +649,8 @@ export default function PostShow() {
           )}
         </div>
 
-        {/* ========== 모임 게시판 채팅방 입장 (DISCUSSION 카테고리인 경우) ========== */}
-        {post.category === "DISCUSSION" && post.chatRoomId && (
+        {/* ========== 모임 게시판 채팅방 입장 (GROUP 카테고리인 경우) ========== */}
+        {post.category === "GROUP" && post.chatRoomId && (
           <div className="mt-6 pt-6 border-t border-[color:var(--color-border-subtle)]">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[color:var(--color-bg-elev-2)] rounded-lg border border-[color:var(--color-border-subtle)]">
               <div className="flex-1">
