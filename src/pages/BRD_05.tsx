@@ -625,7 +625,7 @@ export default function PostShow() {
         )}
 
         {/* ========== 모임 참여 섹션 (GROUP 카테고리인 경우) ========== */}
-        {post.category === "GROUP" && post.chatRoomId && (
+        {post.category === "GROUP" && (
           <div className="mt-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[color:var(--color-bg-elev-2)] rounded-lg border border-[color:var(--color-border-subtle)]">
               <div className="flex-1">
@@ -646,21 +646,23 @@ export default function PostShow() {
               <div className="flex gap-2">
                 {post.isApplied ? (
                   <>
-                    {/* 참여 중일 때: 채팅방 입장 + 참여 취소 버튼 */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isLoggedIn()) {
-                          alert("권한이 필요합니다.");
-                          navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-                          return;
-                        }
-                        navigate(`/chat?roomId=${post.chatRoomId}`);
-                      }}
-                      className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                    >
-                      채팅방 입장
-                    </button>
+                    {/* 참여 중일 때: 채팅방이 생성되었으면 입장 버튼도 표시 */}
+                    {post.chatRoomId && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isLoggedIn()) {
+                            alert("권한이 필요합니다.");
+                            navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
+                            return;
+                          }
+                          navigate(`/chat?roomId=${post.chatRoomId}`);
+                        }}
+                        className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                      >
+                        채팅방 입장
+                      </button>
+                    )}
                     <button
                       onClick={handleToggleRecruitment}
                       disabled={toggleRecruitmentMutation.isPending}
