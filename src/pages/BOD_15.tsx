@@ -76,7 +76,11 @@ export default function BOD_15() {
   console.log("BOD_15 data:", {
     actualBookId,
     "highlightsData": highlightsData,
+    "highlightsData?.items": highlightsData?.items,
+    "highlightsData?.items?.length": highlightsData?.items?.length,
     "reviews": reviews,
+    "reviews?.length": reviews?.length,
+    "Array.isArray(reviews)": Array.isArray(reviews),
     "isLoadingHighlights": isLoadingHighlights,
     "isLoadingReviews": isLoadingReviews,
   });
@@ -333,6 +337,13 @@ export default function BOD_15() {
 
   const highlights = highlightsData?.items || [];
   const relatedPosts = relatedPostsData?.items || [];
+
+  console.log("BOD_15 render data:", {
+    "highlights": highlights,
+    "highlights.length": highlights.length,
+    "reviews": reviews,
+    "reviews?.length": reviews?.length,
+  });
 
   return (
     <div className="w-full min-h-screen p-8" style={{ background: "#FFF9F2" }}>
