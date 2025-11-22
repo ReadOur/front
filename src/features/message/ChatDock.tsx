@@ -1,6 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
-// Optional: npm i socket.io-client (when backend ready)
-// import { io, Socket } from "socket.io-client";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +8,8 @@ import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
 import { useToast } from "@/components/Toast/ToastProvider";
+import { useWebSocketManager } from "@/hooks/useWebSocketManager";
+import type { WebSocketMessage } from "@/hooks/useWebSocket";
 import AIDock from "@/features/ai/AIDock";
 import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
@@ -40,6 +40,7 @@ export interface ChatMessage {
   fromId: string;
   text: string;
   createdAt: number; // epoch ms
+  senderNickname?: string; // 발신자 닉네임
 }
 
 export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
@@ -51,63 +52,6 @@ export interface ChatThread {
   unreadCount?: number;
   category: ChatCategory; // 1:1, 단체, 모임
   isPinned?: boolean; // 상단 고정 여부
-}
-
-// ===== Mock socket (dev only) =====
-// Type-safe (no `any`) emit/on with event-specific payloads
-
-type TypingPayload = { threadId: string; userId: string; typing: boolean };
-
-type ListenerMap = {
-  message: Array<(m: ChatMessage) => void>;
-  typing: Array<(d: TypingPayload) => void>;
-};
-
-function useMockSocket() {
-  const listeners = useRef<ListenerMap>({ message: [], typing: [] });
-
-  function emit(event: "message", payload: ChatMessage): void;
-  function emit(event: "typing", payload: TypingPayload): void;
-  function emit(event: "message" | "typing", payload: ChatMessage | TypingPayload) {
-    if (event === "message") {
-      const fns = listeners.current.message;
-      for (const fn of fns) fn(payload as ChatMessage);
-    } else {
-      const fns = listeners.current.typing;
-      for (const fn of fns) fn(payload as TypingPayload);
-    }
-  }
-
-  function on(event: "message", fn: (m: ChatMessage) => void): () => void;
-  function on(event: "typing", fn: (d: TypingPayload) => void): () => void;
-  function on(
-    event: "message" | "typing",
-    fn: ((m: ChatMessage) => void) | ((d: TypingPayload) => void)
-  ) {
-    if (event === "message") {
-      const typed = fn as (m: ChatMessage) => void;
-      listeners.current.message.push(typed);
-      return () => {
-        listeners.current.message = listeners.current.message.filter((x) => x !== typed);
-      };
-    } else {
-      const typed = fn as (d: TypingPayload) => void;
-      listeners.current.typing.push(typed);
-      return () => {
-        listeners.current.typing = listeners.current.typing.filter((x) => x !== typed);
-      };
-    }
-  }
-
-  return {
-    on,
-    sendMessage: (m: ChatMessage) => {
-      setTimeout(() => emit("message", m), 200); // echo
-    },
-    setTyping: (threadId: string, userId: string, typing: boolean) => {
-      emit("typing", { threadId, userId, typing });
-    },
-  };
 }
 
 // ===== Chat window =====
@@ -746,6 +690,7 @@ export default function ChatDock() {
         fromId: data.senderId.toString(),
         text: data.body.text,
         createdAt: new Date(data.createdAt).getTime(),
+        senderNickname: data.senderNickname || user?.nickname,
       };
 
       setMessages((prev) => ({
@@ -1053,6 +998,7 @@ export default function ChatDock() {
           fromId: msg.senderId.toString(),
           text: msg.body.text,
           createdAt: new Date(msg.createdAt).getTime(),
+          senderNickname: msg.senderNickname,
         }));
 
         setMessages((prev) => ({
@@ -1073,25 +1019,44 @@ export default function ChatDock() {
     });
   }, [openThreadIds, queryClient]);
 
-  const socket = useMockSocket();
-  useEffect(() => {
-    const offMsg = socket.on("message", (m: ChatMessage) => {
-      setMessages((prev) => ({ ...prev, [m.threadId]: [...(prev[m.threadId] || []), m] }));
-      // TODO: 실시간 업데이트를 위해 React Query 캐시 무효화 또는 WebSocket 사용 필요
-    });
-    const offTyping = socket.on("typing", ({ threadId, userId, typing }: { threadId: string; userId: string; typing: boolean }) => {
-      setTyping((prev) => {
-        const list = new Set(prev[threadId] || []);
-        if (typing) list.add(userId);
-        else list.delete(userId);
-        return { ...prev, [threadId]: [...list] };
-      });
-    });
-    return () => {
-      offMsg?.();
-      offTyping?.();
+  // ===== 웹소켓 연결 관리 =====
+  // openThreadIds를 roomId(number)로 변환
+  const openRoomIds = useMemo(() => {
+    return openThreadIds.map((id) => parseInt(id, 10)).filter((id) => !isNaN(id));
+  }, [openThreadIds]);
+
+  // 웹소켓 메시지 수신 핸들러
+  const handleWebSocketMessage = useCallback((roomId: number, message: WebSocketMessage) => {
+    const threadId = roomId.toString();
+
+    // 백엔드 메시지를 UI 형식으로 변환
+    const convertedMessage: ChatMessage = {
+      id: message.id.toString(),
+      threadId: threadId,
+      fromId: message.senderId.toString(),
+      text: message.body.text || "",
+      createdAt: new Date(message.createdAt).getTime(),
+      senderNickname: message.senderNickname,
     };
-  }, []);
+
+    // 메시지 목록에 추가
+    setMessages((prev) => ({
+      ...prev,
+      [threadId]: [...(prev[threadId] || []), convertedMessage],
+    }));
+
+    // 채팅방 목록 업데이트 (lastMessage, unreadCount)
+    queryClient.invalidateQueries({
+      queryKey: CHAT_QUERY_KEYS.myRooms(0),
+    });
+  }, [queryClient]);
+
+  // 웹소켓 연결 (로그인된 경우에만)
+  useWebSocketManager({
+    roomIds: openRoomIds,
+    onMessage: handleWebSocketMessage,
+    enabled: !!user,
+  });
 
   const unreadTotal = Math.min(99, threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0));
 
