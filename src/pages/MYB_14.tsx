@@ -3,9 +3,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useMyLibrary,
-  useBookmarks,
-  useSavedPosts,
-  useFavoriteLibraries,
   useBookSearch,
 } from "@/hooks/api";
 
@@ -17,10 +14,6 @@ export default function MYB_14() {
 
   // API 호출: 내 서재 메인 페이지 (위시리스트, 리뷰, 하이라이트 미리보기)
   const { data: myLibraryData, isLoading: isLoadingMyLibrary } = useMyLibrary();
-  const { data: bookmarksData, isLoading: isLoadingBookmarks } = useBookmarks();
-  const { data: savedPostsData, isLoading: isLoadingSavedPosts } = useSavedPosts();
-  const { data: favoriteLibrariesData, isLoading: isLoadingFavoriteLibraries } =
-    useFavoriteLibraries();
 
   // 책 검색 API 호출
   const { data: searchResults, isLoading: isSearching } = useBookSearch({
@@ -52,13 +45,6 @@ export default function MYB_14() {
   const wishlist = myLibraryData?.wishlist || [];
   const reviewedBooks = myLibraryData?.reviews || [];
   const highlights = myLibraryData?.highlights || [];
-  const bookmarks = bookmarksData || [];
-  const savedPosts = savedPostsData || [];
-  const favoriteLibraries = favoriteLibrariesData || [];
-
-  const handlePostClick = (postId: number) => {
-    navigate(`/boards/${postId}`);
-  };
 
   return (
     <div
@@ -346,7 +332,7 @@ export default function MYB_14() {
         </div>
 
         {/* 하이라이트 남긴 책들 섹션 */}
-        <div className="mb-12">
+        <div>
           <div
             className="rounded-[30px] overflow-hidden"
             style={{ background: "#FFF9F2" }}
@@ -417,223 +403,6 @@ export default function MYB_14() {
               ) : (
                 <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
                   하이라이트 남긴 책이 없습니다.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 북마크 (책갈피) 섹션 */}
-        <div className="mb-12">
-          <div
-            className="rounded-[30px] overflow-hidden"
-            style={{ background: "#FFF9F2" }}
-          >
-            {/* 헤더 */}
-            <div
-              className="px-6 py-4 rounded-[30px]"
-              style={{ background: "#F4A261" }}
-            >
-              <h2
-                className="text-2xl text-center"
-                style={{ color: "#6B4F3F" }}
-              >
-                📑 북마크한 게시글
-              </h2>
-            </div>
-
-            {/* 게시글 목록 */}
-            <div className="p-8">
-              {isLoadingBookmarks ? (
-                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-                  로딩 중...
-                </div>
-              ) : bookmarks.length > 0 ? (
-                <div className="space-y-4">
-                  {bookmarks.map((bookmark) => (
-                    <div
-                      key={bookmark.bookmarkId}
-                      onClick={() => handlePostClick(bookmark.postId)}
-                      className="p-6 rounded-[20px] cursor-pointer hover:opacity-80 transition"
-                      style={{ background: "#E9E5DC" }}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span
-                              className="px-3 py-1 rounded-full text-sm"
-                              style={{ background: "#90BE6D", color: "white" }}
-                            >
-                              {bookmark.postCategory}
-                            </span>
-                            <span style={{ color: "#999", fontSize: "14px" }}>
-                              {bookmark.authorNickname}
-                            </span>
-                          </div>
-                          <h3
-                            className="text-xl mb-2"
-                            style={{ color: "#1E1E1E", fontWeight: "600" }}
-                          >
-                            {bookmark.postTitle}
-                          </h3>
-                          <p style={{ color: "#999", fontSize: "14px" }}>
-                            {new Date(bookmark.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-                  북마크한 게시글이 없습니다.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 저장한 게시글 섹션 */}
-        <div className="mb-12">
-          <div
-            className="rounded-[30px] overflow-hidden"
-            style={{ background: "#FFF9F2" }}
-          >
-            {/* 헤더 */}
-            <div
-              className="px-6 py-4 rounded-[30px]"
-              style={{ background: "#E76F51" }}
-            >
-              <h2
-                className="text-2xl text-center"
-                style={{ color: "white" }}
-              >
-                💾 저장한 게시글
-              </h2>
-            </div>
-
-            {/* 게시글 목록 */}
-            <div className="p-8">
-              {isLoadingSavedPosts ? (
-                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-                  로딩 중...
-                </div>
-              ) : savedPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {savedPosts.map((savedPost) => (
-                    <div
-                      key={savedPost.savedPostId}
-                      onClick={() => handlePostClick(savedPost.postId)}
-                      className="p-6 rounded-[20px] cursor-pointer hover:opacity-80 transition"
-                      style={{ background: "#E9E5DC" }}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span
-                              className="px-3 py-1 rounded-full text-sm"
-                              style={{ background: "#E76F51", color: "white" }}
-                            >
-                              {savedPost.postCategory}
-                            </span>
-                            <span style={{ color: "#999", fontSize: "14px" }}>
-                              {savedPost.authorNickname}
-                            </span>
-                          </div>
-                          <h3
-                            className="text-xl mb-2"
-                            style={{ color: "#1E1E1E", fontWeight: "600" }}
-                          >
-                            {savedPost.postTitle}
-                          </h3>
-                          <p style={{ color: "#999", fontSize: "14px" }}>
-                            {new Date(savedPost.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-                  저장한 게시글이 없습니다.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 관심 도서관 섹션 */}
-        <div>
-          <div
-            className="rounded-[30px] overflow-hidden"
-            style={{ background: "#FFF9F2" }}
-          >
-            {/* 헤더 */}
-            <div
-              className="px-6 py-4 rounded-[30px]"
-              style={{ background: "#2A9D8F" }}
-            >
-              <h2
-                className="text-2xl text-center"
-                style={{ color: "white" }}
-              >
-                📍 관심 도서관
-              </h2>
-            </div>
-
-            {/* 도서관 목록 */}
-            <div className="p-8">
-              {isLoadingFavoriteLibraries ? (
-                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-                  로딩 중...
-                </div>
-              ) : favoriteLibraries.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {favoriteLibraries.map((library, index) => (
-                    <div
-                      key={index}
-                      className="p-6 rounded-[20px]"
-                      style={{ background: "#E9E5DC" }}
-                    >
-                      <h3
-                        className="text-xl mb-3"
-                        style={{ color: "#1E1E1E", fontWeight: "600" }}
-                      >
-                        {library.libraryName}
-                      </h3>
-                      <p
-                        className="mb-2"
-                        style={{ color: "#666", fontSize: "16px" }}
-                      >
-                        📍 {library.address}
-                      </p>
-                      {library.tel && (
-                        <p
-                          className="mb-2"
-                          style={{ color: "#666", fontSize: "14px" }}
-                        >
-                          📞 {library.tel}
-                        </p>
-                      )}
-                      {library.homepage && (
-                        <a
-                          href={library.homepage}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-2 text-sm hover:underline"
-                          style={{ color: "#2A9D8F" }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          🔗 홈페이지 방문
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
-                  관심 도서관이 없습니다.
                 </div>
               )}
             </div>
