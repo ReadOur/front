@@ -3,7 +3,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, useHideMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -192,6 +192,9 @@ function ChatWindow({
   const [isAIDockOpen, setIsAIDockOpen] = useState(false);
   const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 메시지 숨기기 mutation
+  const hideMessageMutation = useHideMessage();
 
   const [newEvent, setNewEvent] = useState<CreateEventData>({
     title: "",
@@ -411,21 +414,22 @@ function ChatWindow({
         {messages.map((m) => {
           const mine = m.fromId === me.id;
           return (
-            <div key={m.id} className={cls("max-w-[75%] group relative", mine ? "ml-auto" : "")}>
+            <div key={m.id} className="max-w-[75%] group relative">
               <div className={cls("px-3 py-2 rounded-[var(--radius-lg)]", mine ? "bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]")}>
                 <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>
                 <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
               </div>
               {/* 메시지 메뉴 버튼 - 호버 시 표시 */}
               <button
-                className={cls(
-                  "absolute top-1 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full grid place-items-center text-[color:var(--chatdock-fg-muted)] hover:bg-[color:var(--chatdock-bg-hover)]",
-                  mine ? "right-1" : "left-1"
-                )}
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full grid place-items-center text-[color:var(--chatdock-fg-muted)] hover:bg-[color:var(--chatdock-bg-hover)]"
                 onClick={() => {
-                  // TODO: 메시지 숨기기 기능 구현
                   if (confirm("이 메시지를 숨기시겠습니까?")) {
-                    console.log("Hide message:", m.id);
+                    if (roomId) {
+                      hideMessageMutation.mutate({
+                        roomId,
+                        messageId: Number(m.id)
+                      });
+                    }
                   }
                 }}
                 title="메시지 숨기기"
