@@ -269,7 +269,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
               </span>
             )}
             <span className="text-[color:var(--color-fg-muted)]">
-              리뷰 {book.reviewCount}개
+              리뷰 {book.reviewCount ?? 0}개
             </span>
           </div>
         </div>
