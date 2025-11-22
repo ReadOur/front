@@ -566,3 +566,72 @@ export function useRequestAI(
     },
   });
 }
+
+/**
+ * 메시지 숨기기
+ */
+export function useHideMessage(
+  options?: UseMutationOptions<void, Error, { roomId: number; messageId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; messageId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, messageId }) => chatService.hideMessage(roomId, messageId),
+    onSuccess: (data, variables, context) => {
+      // 채팅방 메시지 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 메시지 숨김 해제
+ */
+export function useUnhideMessage(
+  options?: UseMutationOptions<void, Error, { roomId: number; messageId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; messageId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, messageId }) => chatService.unhideMessage(roomId, messageId),
+    onSuccess: (data, variables, context) => {
+      // 채팅방 메시지 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 메시지 삭제
+ */
+export function useDeleteMessage(
+  options?: UseMutationOptions<void, Error, { roomId: number; messageId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; messageId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, messageId }) => chatService.deleteMessage(roomId, messageId),
+    onSuccess: (data, variables, context) => {
+      // 채팅방 메시지 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}

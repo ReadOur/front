@@ -229,6 +229,29 @@ export async function requestAI(roomId: number, data: {
   return apiClient.post<any>(CHAT_ENDPOINTS.AI_JOB(roomId), data);
 }
 
+// ===== 메시지 관리 =====
+
+/**
+ * 메시지 숨기기
+ */
+export async function hideMessage(roomId: number, messageId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(roomId, messageId));
+}
+
+/**
+ * 메시지 숨김 해제
+ */
+export async function unhideMessage(roomId: number, messageId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(roomId, messageId));
+}
+
+/**
+ * 메시지 삭제
+ */
+export async function deleteMessage(roomId: number, messageId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.DELETE_MESSAGE(roomId, messageId));
+}
+
 /**
  * 채팅 서비스 객체
  */
@@ -268,6 +291,11 @@ export const chatService = {
   // 공지사항
   getAnnouncements,
   getAnnouncementDetail,
+
+  // 메시지 관리
+  hideMessage,
+  unhideMessage,
+  deleteMessage,
 };
 
 export default chatService;
