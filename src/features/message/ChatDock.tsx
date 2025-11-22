@@ -1044,6 +1044,40 @@ export default function ChatDock() {
 
   const unreadTotal = Math.min(99, threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0));
 
+  // ===== 브라우저 리사이즈 시 채팅 윈도우 위치 조정 =====
+  useEffect(() => {
+    const handleResize = () => {
+      setPositions((prev) => {
+        const updated = { ...prev };
+        let hasChanges = false;
+
+        Object.keys(updated).forEach((threadId) => {
+          const pos = updated[threadId];
+          const size = sizes[threadId] || { width: 320, height: 420 };
+          const margin = 8;
+
+          // 화면 크기에 맞게 최대 위치 계산
+          const maxX = Math.max(margin, window.innerWidth - size.width - margin);
+          const maxY = Math.max(margin, window.innerHeight - size.height - margin);
+
+          // 현재 위치가 화면 밖이면 조정
+          const newX = Math.min(Math.max(margin, pos.x), maxX);
+          const newY = Math.min(Math.max(margin, pos.y), maxY);
+
+          if (newX !== pos.x || newY !== pos.y) {
+            updated[threadId] = { x: newX, y: newY };
+            hasChanges = true;
+          }
+        });
+
+        return hasChanges ? updated : prev;
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sizes]);
+
   const openThread = (t: ChatThread) => {
     openThreadInContext(t.id);
 
