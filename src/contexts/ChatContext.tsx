@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { ChatThread } from "@/features/message/ChatDock";
+import { useToast } from "@/components/Toast/ToastProvider";
 
 /**
  * ChatContext
@@ -26,20 +27,21 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [openThreadIds, setOpenThreadIds] = useState<string[]>([]);
   const [minimizedThreadIds, setMinimizedThreadIds] = useState<string[]>([]);
+  const toast = useToast();
 
   const openThread = useCallback((threadId: string) => {
     setOpenThreadIds((prev) => {
       if (prev.includes(threadId)) return prev;
       // 최대 5개까지만 열기 (제한)
       if (prev.length >= 5) {
-        alert("최대 5개의 채팅창만 열 수 있습니다.");
+        toast.show({ title: "최대 5개의 채팅창만 열 수 있습니다.", variant: "warning" });
         return prev;
       }
       return [...prev, threadId];
     });
     // 열면 최소화 해제
     setMinimizedThreadIds((prev) => prev.filter((id) => id !== threadId));
-  }, []);
+  }, [toast]);
 
   const closeThread = useCallback((threadId: string) => {
     setOpenThreadIds((prev) => prev.filter((id) => id !== threadId));
