@@ -399,3 +399,170 @@ export function useCreateRoom(
     },
   });
 }
+
+/**
+ * 채팅방 나가기
+ */
+export function useLeaveRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.leaveRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 핀 고정
+ */
+export function usePinRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.pinRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 핀 해제
+ */
+export function useUnpinRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.unpinRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 삭제 (폭파) - 방장 전용
+ */
+export function useDeleteRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.deleteRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 알림 끄기/메시지 가리기
+ */
+export function useMuteRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.muteRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 알림 켜기/메시지 보이기
+ */
+export function useUnmuteRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.unmuteRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * AI 작업 요청
+ */
+export function useRequestAI(
+  options?: UseMutationOptions<any, Error, { roomId: number; command: string; messageLimit?: number; note?: string }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<any, Error, { roomId: number; command: string; messageLimit?: number; note?: string }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, ...data }) => chatService.requestAI(roomId, data),
+    onSuccess: (data, variables, context) => {
+      // 채팅방 메시지 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}

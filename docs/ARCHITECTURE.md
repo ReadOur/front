@@ -210,7 +210,6 @@ style/
 
 **디자인 토큰 시스템:**
 - 모든 컴포넌트는 `var(--color-*)`, `var(--spacing-*)` 등 토큰 사용
-- 다크모드 지원 (`[data-theme="dark"]`)
 - 하드코딩된 색상/크기 금지
 
 ---
@@ -310,12 +309,6 @@ main.tsx (RouterProvider)
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
-}
-
-[data-theme="dark"] {
-  --color-bg: #1a1a1a;
-  --color-fg-primary: #f0f0f0;
-  /* ... */
 }
 ```
 

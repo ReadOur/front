@@ -16,7 +16,7 @@ const mockUserData = {
   nickname: "독서왕",
   email: "hong@example.com",
   personalInfo: "개인정보",
-  favoriteLibraries: ["구미 도서관", "서울 중앙 도서관"],
+  favoriteLibraries: [] as Library[],
 };
 
 /**
@@ -68,14 +68,14 @@ export default function SET_13() {
     const fetchFavoriteLibraries = async () => {
       setIsLoadingLibraries(true);
       try {
-        const response = await apiClient.get<string[]>(LIBRARY_ENDPOINTS.FAVORITE_LIBRARIES);
+        const response = await apiClient.get<Library[]>(LIBRARY_ENDPOINTS.FAVORITE_LIBRARIES);
         setUserData(prevData => ({
           ...prevData,
           favoriteLibraries: response || [],
         }));
       } catch (error) {
         console.error("선호 도서관 목록 조회 실패:", error);
-        // 에러 발생 시 목업 데이터 유지
+        // 에러 발생 시 빈 배열 유지
       } finally {
         setIsLoadingLibraries(false);
       }
@@ -259,15 +259,17 @@ export default function SET_13() {
     try {
       // API 호출: 관심 도서관 추가
       await apiClient.post(LIBRARY_ENDPOINTS.ADD_FAVORITE_LIBRARY, {
+        libraryCode: library.libraryCode,
         libraryName: library.libraryName,
       });
 
       // 로컬 상태 업데이트
       setUserData({
         ...userData,
-        favoriteLibraries: [...userData.favoriteLibraries, library.libraryName],
+        favoriteLibraries: [...userData.favoriteLibraries, library],
       });
       console.log("관심 도서관 추가:", library.libraryName);
+      setIsLibrarySearchModalOpen(false);
     } catch (error) {
       console.error("관심 도서관 추가 실패:", error);
       alert("관심 도서관 추가에 실패했습니다. 다시 시도해주세요.");
@@ -275,17 +277,17 @@ export default function SET_13() {
   };
 
   // 도서관 삭제 핸들러
-  const handleRemoveLibrary = async (library: string) => {
+  const handleRemoveLibrary = async (libraryCode: string) => {
     try {
       // API 호출: 관심 도서관 삭제
-      await apiClient.delete(LIBRARY_ENDPOINTS.REMOVE_FAVORITE_LIBRARY(library));
+      await apiClient.delete(LIBRARY_ENDPOINTS.REMOVE_FAVORITE_LIBRARY(libraryCode));
 
       // 로컬 상태 업데이트
       setUserData({
         ...userData,
-        favoriteLibraries: userData.favoriteLibraries.filter((lib) => lib !== library),
+        favoriteLibraries: userData.favoriteLibraries.filter((lib) => lib.libraryCode !== libraryCode),
       });
-      console.log("관심 도서관 삭제:", library);
+      console.log("관심 도서관 삭제:", libraryCode);
     } catch (error) {
       console.error("관심 도서관 삭제 실패:", error);
       alert("관심 도서관 삭제에 실패했습니다. 다시 시도해주세요.");
@@ -646,73 +648,40 @@ export default function SET_13() {
 
                   {/* 도서관 태그들 */}
                   <div className="flex flex-wrap gap-3 mt-4">
-                    {userData.favoriteLibraries.map((library, index) => (
-                      <div
-                        key={index}
-                        className="px-6 py-2 rounded-[30px] flex items-center gap-2 group cursor-pointer hover:opacity-80 transition"
-                        style={{ background: "#D9D9D9" }}
-                      >
-                        <span
-                          style={{
-                            color: "black",
-                            fontSize: "16px",
-                            lineHeight: "16px",
-                          }}
-                        >
-                          {library}
-                        </span>
-                        <button
-                          onClick={() => handleRemoveLibrary(library)}
-                          className="opacity-0 group-hover:opacity-100 transition ml-2"
-                          style={{ color: "#6B4F3F" }}
-                        >
-                          ×
-                        </button>
+                    {isLoadingLibraries ? (
+                      <div className="text-sm" style={{ color: "#6B4F3F" }}>
+                        로딩 중...
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 다크모드 설정 */}
-                <div
-                  className="flex items-center gap-4 px-6 py-6 rounded"
-                  style={{ background: "#E9E5DC" }}
-                >
-                  <span
-                    style={{
-                      color: "black",
-                      fontSize: "36px",
-                      opacity: 0.6,
-                      lineHeight: "36px",
-                      minWidth: "240px",
-                    }}
-                  >
-                    다크모드
-                  </span>
-                  <div className="flex-1 flex items-center justify-between">
-                    <span
-                      style={{
-                        color: "black",
-                        fontSize: "28px",
-                        lineHeight: "36px",
-                      }}
-                    >
-                      {isDarkMode ? "켜짐" : "꺼짐"}
-                    </span>
-                    <button
-                      onClick={handleToggleDarkMode}
-                      className="relative inline-flex items-center h-[40px] w-[80px] rounded-full transition-colors duration-300"
-                      style={{
-                        background: isDarkMode ? "#6B4F3F" : "#D9D9D9",
-                      }}
-                    >
-                      <span
-                        className="inline-block h-[32px] w-[32px] transform rounded-full bg-white shadow-md transition-transform duration-300"
-                        style={{
-                          transform: isDarkMode ? "translateX(44px)" : "translateX(4px)",
-                        }}
-                      />
-                    </button>
+                    ) : userData.favoriteLibraries.length > 0 ? (
+                      userData.favoriteLibraries.map((library) => (
+                        <div
+                          key={library.libraryCode}
+                          className="px-6 py-2 rounded-[30px] flex items-center gap-2 group cursor-pointer hover:opacity-80 transition"
+                          style={{ background: "#D9D9D9" }}
+                        >
+                          <span
+                            style={{
+                              color: "black",
+                              fontSize: "16px",
+                              lineHeight: "16px",
+                            }}
+                          >
+                            {library.libraryName}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveLibrary(library.libraryCode)}
+                            className="opacity-0 group-hover:opacity-100 transition ml-2"
+                            style={{ color: "#6B4F3F" }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm" style={{ color: "#6B4F3F" }}>
+                        등록된 관심 도서관이 없습니다.
+                      </div>
+                    )}
                   </div>
                 </div>
 

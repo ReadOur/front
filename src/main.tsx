@@ -31,6 +31,7 @@ const CHT_17 = lazy(() => import("@/pages/CHT_17"));
 const LOG_02 = lazy(() => import("@/pages/LOG_02"));
 const REG_03 = lazy(() => import("@/pages/REG_03"));
 const FID_18 = lazy(() => import("@/pages/FID_18"));
+const GRP_Create = lazy(() => import("@/pages/GRP_Create").then(m => ({ default: m.GRP_Create })));
 
 // Suspense Fallback 컴포넌트
 const PageLoader = () => <Loading message="페이지를 불러오는 중..." />;
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
       { index: true, element: <Suspense fallback={<PageLoader />}><HOM_01 /></Suspense> },
       { path: "boards", element: <Suspense fallback={<PageLoader />}><BRD_04 /></Suspense> },
       { path: "boards/write", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
+      { path: "boards/group/create", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><GRP_Create /></Suspense></ProtectedRoute>},
       { path: "boards/:postId/edit", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><BRD_06 /></Suspense></ProtectedRoute>},
       { path: "boards/:postId", element: <Suspense fallback={<PageLoader />}><BRD_05 /></Suspense> },
       { path: "calendar", element: <ProtectedRoute><Suspense fallback={<PageLoader />}><CAL_11 /></Suspense></ProtectedRoute> },

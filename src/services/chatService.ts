@@ -177,6 +177,59 @@ export async function getAnnouncementDetail(roomId: number, announcementId: numb
 }
 
 /**
+ * 채팅방 나가기
+ */
+export async function leaveRoom(roomId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.LEAVE_ROOM(roomId));
+}
+
+/**
+ * 채팅방 핀 고정
+ */
+export async function pinRoom(roomId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.PIN_ROOM(roomId));
+}
+
+/**
+ * 채팅방 핀 해제
+ */
+export async function unpinRoom(roomId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.PIN_ROOM(roomId));
+}
+
+/**
+ * 채팅방 삭제 (폭파) - 방장 전용
+ */
+export async function deleteRoom(roomId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.DELETE_ROOM(roomId));
+}
+
+/**
+ * 채팅방 알림 끄기/메시지 가리기
+ */
+export async function muteRoom(roomId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.MUTE_ROOM(roomId));
+}
+
+/**
+ * 채팅방 알림 켜기/메시지 보이기
+ */
+export async function unmuteRoom(roomId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.MUTE_ROOM(roomId));
+}
+
+/**
+ * AI 작업 요청
+ */
+export async function requestAI(roomId: number, data: {
+  command: string;
+  messageLimit?: number;
+  note?: string;
+}): Promise<any> {
+  return apiClient.post<any>(CHAT_ENDPOINTS.AI_JOB(roomId), data);
+}
+
+/**
  * 채팅 서비스 객체
  */
 export const chatService = {
@@ -186,6 +239,17 @@ export const chatService = {
   getRoomMessages,
   sendRoomMessage,
   createRoom,
+
+  // 채팅방 관리
+  leaveRoom,
+  deleteRoom,
+  pinRoom,
+  unpinRoom,
+  muteRoom,
+  unmuteRoom,
+
+  // AI 기능
+  requestAI,
 
   // 스레드
   getThreads,

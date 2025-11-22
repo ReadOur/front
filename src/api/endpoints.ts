@@ -101,6 +101,13 @@ export const CHAT_ENDPOINTS = {
   // 공지사항 (백엔드 API)
   ANNOUNCEMENTS: (roomId: number) => `/chat/rooms/${roomId}/announcements`, // 공지사항 목록 조회
   ANNOUNCEMENT_DETAIL: (roomId: number, announcementId: number) => `/chat/rooms/${roomId}/announcements/${announcementId}`, // 공지사항 상세 조회
+  // 채팅방 관리 (백엔드 API)
+  LEAVE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/leave`, // 채팅방 나가기
+  DELETE_ROOM: (roomId: number) => `/chat/rooms/${roomId}`, // 채팅방 삭제(폭파) - 방장 전용
+  PIN_ROOM: (roomId: number) => `/chat/rooms/${roomId}/pin`, // 채팅방 핀 고정/해제
+  MUTE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/mute`, // 채팅방 알림 끄기/메시지 가리기
+  KICK_USER: (roomId: number) => `/chat/rooms/${roomId}/kick`, // 채팅방 강퇴
+  AI_JOB: (roomId: number) => `/chat/rooms/${roomId}/ai/jobs`, // AI 작업 요청
 
   // 기존 엔드포인트 (향후 사용)
   THREADS: "/chat/threads",
@@ -164,9 +171,9 @@ export const LIBRARY_ENDPOINTS = {
   MY_LIBRARY_REVIEWS: "/my-library/reviews", // 내 서재 - 리뷰 목록 (페이지네이션)
   MY_LIBRARY_HIGHLIGHTS: "/my-library/highlights", // 내 서재 - 하이라이트 목록 (페이지네이션)
   // 관심 도서관
-  FAVORITE_LIBRARIES: "/users/me/favorite-libraries",
-  ADD_FAVORITE_LIBRARY: "/users/me/favorite-libraries",
-  REMOVE_FAVORITE_LIBRARY: (libraryName: string) => `/users/me/favorite-libraries/${encodeURIComponent(libraryName)}`,
+  FAVORITE_LIBRARIES: "/user/libraries",
+  ADD_FAVORITE_LIBRARY: "/user/libraries",
+  REMOVE_FAVORITE_LIBRARY: (libraryCode: string) => `/user/libraries/${libraryCode}`,
   // 도서관 검색
   SEARCH_LIBRARIES: "/user/libraries/search",
 } as const;
@@ -176,7 +183,7 @@ export const LIBRARY_ENDPOINTS = {
  */
 export const REGION_ENDPOINTS = {
   PROVINCES: "/regions", // 광역시/도 목록
-  CITIES: (regionId: number) => `/regions/${regionId}/details`, // 시/군/구 목록
+  CITIES: (regionCode: string) => `/regions/${regionCode}/details`, // 시/군/구 목록
   SEARCH: "/regions/search", // 지역 이름 검색
 } as const;
 
