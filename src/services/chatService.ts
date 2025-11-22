@@ -26,6 +26,9 @@ import {
   RoomMessage,
   CreateRoomRequest,
   CreateRoomResponse,
+  AnnouncementsResponse,
+  GetAnnouncementsParams,
+  AnnouncementDetailResponse,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -149,6 +152,30 @@ export async function pinThread(data: PinThreadRequest): Promise<PinThreadRespon
   );
 }
 
+// ===== 공지사항 관련 =====
+
+/**
+ * 공지사항 목록 조회
+ */
+export async function getAnnouncements(params: GetAnnouncementsParams): Promise<AnnouncementsResponse> {
+  const { roomId, page = 0, size = 10 } = params;
+  return apiClient.get<AnnouncementsResponse>(
+    CHAT_ENDPOINTS.ANNOUNCEMENTS(roomId),
+    {
+      params: { page, size },
+    }
+  );
+}
+
+/**
+ * 공지사항 상세 조회
+ */
+export async function getAnnouncementDetail(roomId: number, announcementId: number): Promise<AnnouncementDetailResponse> {
+  return apiClient.get<AnnouncementDetailResponse>(
+    CHAT_ENDPOINTS.ANNOUNCEMENT_DETAIL(roomId, announcementId)
+  );
+}
+
 /**
  * 채팅방 나가기
  */
@@ -237,6 +264,10 @@ export const chatService = {
 
   // 핀 기능
   pinThread,
+
+  // 공지사항
+  getAnnouncements,
+  getAnnouncementDetail,
 };
 
 export default chatService;

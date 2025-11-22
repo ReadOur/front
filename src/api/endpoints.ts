@@ -98,6 +98,9 @@ export const CHAT_ENDPOINTS = {
   // 채팅방 메시지 (백엔드 API)
   ROOM_MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`, // 채팅방 메시지 조회
 
+  // 공지사항 (백엔드 API)
+  ANNOUNCEMENTS: (roomId: number) => `/chat/rooms/${roomId}/announcements`, // 공지사항 목록 조회
+  ANNOUNCEMENT_DETAIL: (roomId: number, announcementId: number) => `/chat/rooms/${roomId}/announcements/${announcementId}`, // 공지사항 상세 조회
   // 채팅방 관리 (백엔드 API)
   LEAVE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/leave`, // 채팅방 나가기
   DELETE_ROOM: (roomId: number) => `/chat/rooms/${roomId}`, // 채팅방 삭제(폭파) - 방장 전용

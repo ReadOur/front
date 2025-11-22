@@ -26,6 +26,9 @@ import {
   RoomMessage,
   CreateRoomRequest,
   CreateRoomResponse,
+  AnnouncementsResponse,
+  GetAnnouncementsParams,
+  AnnouncementDetailResponse,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -34,6 +37,8 @@ export const CHAT_QUERY_KEYS = {
   roomsOverview: () => [...CHAT_QUERY_KEYS.all, "rooms-overview"] as const,
   myRooms: (page: number) => [...CHAT_QUERY_KEYS.all, "my-rooms", page] as const,
   roomMessages: (roomId: number) => [...CHAT_QUERY_KEYS.all, "room-messages", roomId] as const,
+  announcements: (roomId: number, page: number) => [...CHAT_QUERY_KEYS.all, "announcements", roomId, page] as const,
+  announcementDetail: (roomId: number, announcementId: number) => [...CHAT_QUERY_KEYS.all, "announcement-detail", roomId, announcementId] as const,
   threads: () => [...CHAT_QUERY_KEYS.all, "threads"] as const,
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,
@@ -141,6 +146,32 @@ export function useUnreadCount() {
     queryKey: CHAT_QUERY_KEYS.unreadCount(),
     queryFn: () => chatService.getUnreadCount(),
     refetchInterval: 30000, // 30초마다 자동 갱신
+  });
+}
+
+/**
+ * 공지사항 목록 조회
+ */
+export function useAnnouncements(params: GetAnnouncementsParams, options?: { enabled?: boolean }) {
+  return useQuery<AnnouncementsResponse>({
+    queryKey: CHAT_QUERY_KEYS.announcements(params.roomId, params.page || 0),
+    queryFn: () => chatService.getAnnouncements(params),
+    enabled: options?.enabled !== false && !!params.roomId,
+  });
+}
+
+/**
+ * 공지사항 상세 조회
+ */
+export function useAnnouncementDetail(
+  roomId: number,
+  announcementId: number,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<AnnouncementDetailResponse>({
+    queryKey: CHAT_QUERY_KEYS.announcementDetail(roomId, announcementId),
+    queryFn: () => chatService.getAnnouncementDetail(roomId, announcementId),
+    enabled: options?.enabled !== false && !!roomId && !!announcementId,
   });
 }
 
