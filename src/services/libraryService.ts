@@ -11,6 +11,10 @@ import {
   Library,
   LibrarySearchParams,
   LibrarySearchResponse,
+  MyLibraryResponse,
+  MyLibraryWishlistPageResponse,
+  MyLibraryReviewPageResponse,
+  MyLibraryHighlightPageResponse,
 } from "@/types/library";
 
 // ===== 북마크 (책갈피) =====
@@ -96,6 +100,71 @@ export async function searchLibraries(
   });
 }
 
+// ===== 내 서재 메인 페이지 =====
+
+/**
+ * 내 서재 메인 페이지 조회
+ * GET /my-library
+ * 위시리스트, 리뷰, 하이라이트 미리보기 (각 최대 10개)
+ */
+export async function getMyLibrary(): Promise<MyLibraryResponse> {
+  return apiClient.get<MyLibraryResponse>(LIBRARY_ENDPOINTS.MY_LIBRARY);
+}
+
+/**
+ * 내 서재 - 위시리스트 페이징 조회
+ * GET /my-library/wishlist
+ */
+export async function getMyLibraryWishlist(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<MyLibraryWishlistPageResponse> {
+  return apiClient.get<MyLibraryWishlistPageResponse>(LIBRARY_ENDPOINTS.MY_LIBRARY_WISHLIST, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 10,
+      sort: params?.sort || "createdAt,ASC",
+    },
+  });
+}
+
+/**
+ * 내 서재 - 리뷰 페이징 조회
+ * GET /my-library/reviews
+ */
+export async function getMyLibraryReviews(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<MyLibraryReviewPageResponse> {
+  return apiClient.get<MyLibraryReviewPageResponse>(LIBRARY_ENDPOINTS.MY_LIBRARY_REVIEWS, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 10,
+      sort: params?.sort || "createdAt,ASC",
+    },
+  });
+}
+
+/**
+ * 내 서재 - 하이라이트 페이징 조회
+ * GET /my-library/highlights
+ */
+export async function getMyLibraryHighlights(params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<MyLibraryHighlightPageResponse> {
+  return apiClient.get<MyLibraryHighlightPageResponse>(LIBRARY_ENDPOINTS.MY_LIBRARY_HIGHLIGHTS, {
+    params: {
+      page: params?.page || 0,
+      size: params?.size || 10,
+      sort: params?.sort || "createdAt,ASC",
+    },
+  });
+}
+
 export const libraryService = {
   // 북마크
   getBookmarks,
@@ -109,4 +178,9 @@ export const libraryService = {
   removeFavoriteLibrary,
   // 도서관 검색
   searchLibraries,
+  // 내 서재
+  getMyLibrary,
+  getMyLibraryWishlist,
+  getMyLibraryReviews,
+  getMyLibraryHighlights,
 };

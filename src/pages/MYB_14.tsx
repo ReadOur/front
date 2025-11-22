@@ -2,8 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  useWishlist,
-  useMyReviews,
+  useMyLibrary,
   useBookmarks,
   useSavedPosts,
   useFavoriteLibraries,
@@ -16,13 +15,8 @@ export default function MYB_14() {
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // API 호출: 위시리스트, 리뷰, 북마크, 저장한 게시글, 관심 도서관
-  const { data: wishlistData, isLoading: isLoadingWishlist } = useWishlist();
-  const { data: myReviewsData, isLoading: isLoadingReviews } = useMyReviews({
-    page: 0,
-    size: 10,
-    sort: "createdAt,DESC",
-  });
+  // API 호출: 내 서재 메인 페이지 (위시리스트, 리뷰, 하이라이트 미리보기)
+  const { data: myLibraryData, isLoading: isLoadingMyLibrary } = useMyLibrary();
   const { data: bookmarksData, isLoading: isLoadingBookmarks } = useBookmarks();
   const { data: savedPostsData, isLoading: isLoadingSavedPosts } = useSavedPosts();
   const { data: favoriteLibrariesData, isLoading: isLoadingFavoriteLibraries } =
@@ -55,8 +49,9 @@ export default function MYB_14() {
     setSearchQuery("");
   };
 
-  const wishlist = wishlistData || [];
-  const reviewedBooks = myReviewsData?.reviewPage.content || [];
+  const wishlist = myLibraryData?.wishlist || [];
+  const reviewedBooks = myLibraryData?.reviews || [];
+  const highlights = myLibraryData?.highlights || [];
   const bookmarks = bookmarksData || [];
   const savedPosts = savedPostsData || [];
   const favoriteLibraries = favoriteLibrariesData || [];
@@ -187,22 +182,32 @@ export default function MYB_14() {
             className="rounded-[30px] overflow-hidden"
             style={{ background: "#FFF9F2" }}
           >
-            {/* 헤더 */}
+            {/* 헤더 with 버튼 */}
             <div
-              className="px-6 py-4 rounded-[30px]"
+              className="px-6 py-4 rounded-[30px] flex items-center justify-between"
               style={{ background: "#90BE6D" }}
             >
+              <div className="flex-1"></div>
               <h2
-                className="text-2xl text-center"
+                className="text-2xl text-center flex-1"
                 style={{ color: "#6B4F3F" }}
               >
                 위시리스트
               </h2>
+              <div className="flex-1 flex justify-end">
+                <button
+                  onClick={() => navigate("/my-library/wishlist")}
+                  className="px-6 py-2 rounded-full hover:opacity-80 transition"
+                  style={{ background: "#6B4F3F", color: "white" }}
+                >
+                  전체보기
+                </button>
+              </div>
             </div>
 
             {/* 책 목록 - 가로 스크롤 */}
             <div className="p-8">
-              {isLoadingWishlist ? (
+              {isLoadingMyLibrary ? (
                 <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
                   로딩 중...
                 </div>
@@ -229,10 +234,10 @@ export default function MYB_14() {
                         className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
                         style={{ background: "#E9E5DC" }}
                       >
-                        {book.thumbnail ? (
+                        {book.bookImageUrl ? (
                           <img
-                            src={book.thumbnail}
-                            alt={book.title}
+                            src={book.bookImageUrl}
+                            alt={book.bookname}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -245,7 +250,7 @@ export default function MYB_14() {
                                 lineHeight: "1.4",
                               }}
                             >
-                              {book.title}
+                              {book.bookname}
                             </p>
                           </div>
                         )}
@@ -268,22 +273,32 @@ export default function MYB_14() {
             className="rounded-[30px] overflow-hidden"
             style={{ background: "#FFF9F2" }}
           >
-            {/* 헤더 */}
+            {/* 헤더 with 버튼 */}
             <div
-              className="px-6 py-4 rounded-[30px]"
-              style={{ background: "#90BE6D" }}
+              className="px-6 py-4 rounded-[30px] flex items-center justify-between"
+              style={{ background: "#F4A261" }}
             >
+              <div className="flex-1"></div>
               <h2
-                className="text-2xl text-center"
+                className="text-2xl text-center flex-1"
                 style={{ color: "#6B4F3F" }}
               >
                 리뷰 남긴 책들
               </h2>
+              <div className="flex-1 flex justify-end">
+                <button
+                  onClick={() => navigate("/my-library/reviews")}
+                  className="px-6 py-2 rounded-full hover:opacity-80 transition"
+                  style={{ background: "#6B4F3F", color: "white" }}
+                >
+                  전체보기
+                </button>
+              </div>
             </div>
 
             {/* 책 목록 - 가로 스크롤 */}
             <div className="p-8">
-              {isLoadingReviews ? (
+              {isLoadingMyLibrary ? (
                 <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
                   로딩 중...
                 </div>
@@ -324,6 +339,84 @@ export default function MYB_14() {
               ) : (
                 <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
                   리뷰 남긴 책이 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 하이라이트 남긴 책들 섹션 */}
+        <div className="mb-12">
+          <div
+            className="rounded-[30px] overflow-hidden"
+            style={{ background: "#FFF9F2" }}
+          >
+            {/* 헤더 with 버튼 */}
+            <div
+              className="px-6 py-4 rounded-[30px] flex items-center justify-between"
+              style={{ background: "#E76F51" }}
+            >
+              <div className="flex-1"></div>
+              <h2
+                className="text-2xl text-center flex-1"
+                style={{ color: "white" }}
+              >
+                하이라이트 남긴 책들
+              </h2>
+              <div className="flex-1 flex justify-end">
+                <button
+                  onClick={() => navigate("/my-library/highlights")}
+                  className="px-6 py-2 rounded-full hover:opacity-80 transition"
+                  style={{ background: "white", color: "#E76F51" }}
+                >
+                  전체보기
+                </button>
+              </div>
+            </div>
+
+            {/* 책 목록 - 가로 스크롤 */}
+            <div className="p-8">
+              {isLoadingMyLibrary ? (
+                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
+                  로딩 중...
+                </div>
+              ) : highlights.length > 0 ? (
+                <div className="flex gap-6 overflow-x-auto pb-4">
+                  <div className="book-scroll flex gap-6">
+                    {highlights.map((highlight) => (
+                      <div
+                        key={highlight.highlightId}
+                        onClick={() => navigate(`/books/${highlight.bookId}`)}
+                        className="flex-shrink-0 w-[162px] h-[196px] rounded-lg cursor-pointer hover:opacity-80 transition overflow-hidden"
+                        style={{ background: "#E9E5DC" }}
+                      >
+                        {highlight.bookImageUrl ? (
+                          <img
+                            src={highlight.bookImageUrl}
+                            alt={highlight.bookname}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center p-4">
+                            <p
+                              className="text-center"
+                              style={{
+                                color: "black",
+                                fontSize: "18px",
+                                lineHeight: "1.4",
+                              }}
+                            >
+                              {highlight.bookname}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-xl" style={{ color: "#999" }}>
+                  하이라이트 남긴 책이 없습니다.
                 </div>
               )}
             </div>

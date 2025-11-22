@@ -169,10 +169,20 @@ export function useToggleWishlist(
     onMutate: async ({ bookId, isWishlisted }) => {
       // 낙관적 업데이트: 즉시 UI 반영
       await queryClient.cancelQueries({ queryKey: BOOK_QUERY_KEYS.wishlist() });
+      await queryClient.cancelQueries({ queryKey: BOOK_QUERY_KEYS.detail(bookId) });
 
       const previousWishlist = queryClient.getQueryData<WishlistItem[]>(
         BOOK_QUERY_KEYS.wishlist()
       );
+
+      // 책 상세 정보의 isWishlisted 상태도 즉시 토글
+      const previousBookDetail = queryClient.getQueryData(BOOK_QUERY_KEYS.detail(bookId));
+      if (previousBookDetail) {
+        queryClient.setQueryData(BOOK_QUERY_KEYS.detail(bookId), {
+          ...previousBookDetail,
+          isWishlisted: !isWishlisted,
+        });
+      }
 
       // 위시리스트 목록 낙관적 업데이트 (있으면 제거, 없으면 추가)
       if (previousWishlist) {
@@ -188,12 +198,15 @@ export function useToggleWishlist(
         }
       }
 
-      return { previousWishlist };
+      return { previousWishlist, previousBookDetail };
     },
     onError: (err, variables, context) => {
       // 에러 시 롤백
       if (context?.previousWishlist) {
         queryClient.setQueryData(BOOK_QUERY_KEYS.wishlist(), context.previousWishlist);
+      }
+      if (context?.previousBookDetail) {
+        queryClient.setQueryData(BOOK_QUERY_KEYS.detail(variables.bookId), context.previousBookDetail);
       }
       if (options?.onError) {
         (options.onError as any)(err, variables, context);
