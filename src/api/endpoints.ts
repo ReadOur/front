@@ -111,9 +111,7 @@ export const CHAT_ENDPOINTS = {
   AI_JOB: (roomId: number) => `/chat/rooms/${roomId}/ai/jobs`, // AI 작업 요청
 
   // 메시지 관리 (백엔드 API)
-  HIDE_MESSAGE: (roomId: number, messageId: number) => `/chat/rooms/${roomId}/messages/${messageId}/hide`, // 메시지 숨기기
-  UNHIDE_MESSAGE: (roomId: number, messageId: number) => `/chat/rooms/${roomId}/messages/${messageId}/unhide`, // 메시지 숨김 해제
-  DELETE_MESSAGE: (roomId: number, messageId: number) => `/chat/rooms/${roomId}/messages/${messageId}`, // 메시지 삭제
+  HIDE_MESSAGE: (roomId: number, messageId: number) => `/chat/rooms/${roomId}/messages/${messageId}/hide`, // 메시지 숨기기 (POST), 숨김 해제 (DELETE)
 
   // 기존 엔드포인트 (향후 사용)
   THREADS: "/chat/threads",

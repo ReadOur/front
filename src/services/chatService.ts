@@ -246,13 +246,6 @@ export async function unhideMessage(roomId: number, messageId: number): Promise<
 }
 
 /**
- * 메시지 삭제
- */
-export async function deleteMessage(roomId: number, messageId: number): Promise<void> {
-  return apiClient.delete<void>(CHAT_ENDPOINTS.DELETE_MESSAGE(roomId, messageId));
-}
-
-/**
  * 채팅 서비스 객체
  */
 export const chatService = {
@@ -295,7 +288,6 @@ export const chatService = {
   // 메시지 관리
   hideMessage,
   unhideMessage,
-  deleteMessage,
 };
 
 export default chatService;
