@@ -411,7 +411,7 @@ function ChatWindow({
         {messages.map((m) => {
           const mine = m.fromId === me.id;
           return (
-            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]") }>
+            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]") }>
               {!mine && m.senderNickname && (
                 <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
               )}
@@ -1044,6 +1044,40 @@ export default function ChatDock() {
   });
 
   const unreadTotal = Math.min(99, threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0));
+
+  // ===== 브라우저 리사이즈 시 채팅 윈도우 위치 조정 =====
+  useEffect(() => {
+    const handleResize = () => {
+      setPositions((prev) => {
+        const updated = { ...prev };
+        let hasChanges = false;
+
+        Object.keys(updated).forEach((threadId) => {
+          const pos = updated[threadId];
+          const size = sizes[threadId] || { width: 320, height: 420 };
+          const margin = 8;
+
+          // 화면 크기에 맞게 최대 위치 계산
+          const maxX = Math.max(margin, window.innerWidth - size.width - margin);
+          const maxY = Math.max(margin, window.innerHeight - size.height - margin);
+
+          // 현재 위치가 화면 밖이면 조정
+          const newX = Math.min(Math.max(margin, pos.x), maxX);
+          const newY = Math.min(Math.max(margin, pos.y), maxY);
+
+          if (newX !== pos.x || newY !== pos.y) {
+            updated[threadId] = { x: newX, y: newY };
+            hasChanges = true;
+          }
+        });
+
+        return hasChanges ? updated : prev;
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sizes]);
 
   const openThread = (t: ChatThread) => {
     openThreadInContext(t.id);
