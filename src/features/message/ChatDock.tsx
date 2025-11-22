@@ -605,6 +605,7 @@ function ChatWindow({
         onClose={() => setIsNoticeDockOpen(false)}
         onMinimize={() => setIsNoticeDockOpen(false)}
         hasPermission={false} // TODO: 실제 권한 체크 로직 추가
+        roomId={Number(thread.id)}
       />
     </div>
   );
