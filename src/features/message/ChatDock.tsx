@@ -411,7 +411,7 @@ function ChatWindow({
         {messages.map((m) => {
           const mine = m.fromId === me.id;
           return (
-            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]") }>
+            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]") }>
               {!mine && m.senderNickname && (
                 <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
               )}
