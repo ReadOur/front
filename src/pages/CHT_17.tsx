@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus } from "lucide-react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus, X, Pin, MoreVertical } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useRoomsOverview, useCreateRoom } from "@/hooks/api/useChat";
+import { useRoomsOverview, useCreateRoom, useLeaveRoom, usePinRoom, useUnpinRoom } from "@/hooks/api/useChat";
 import { MyRoomItem, PublicRoomItem } from "@/types/chat";
 import Modal from "@/components/Modal/Modal";
+import { useToast } from "@/components/Toast/ToastProvider";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -154,14 +155,87 @@ function formatRelativeTime(ms: number): string {
 
 function ThreadListItem({ thread }: { thread: ChatThread }) {
   const { openThread } = useChatContext();
+  const toast = useToast();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const isGroup = thread.users.length > 1;
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
     : thread.users[0]?.name || "알 수 없음";
 
+  // 채팅방 나가기 mutation
+  const leaveRoomMutation = useLeaveRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방에서 나갔습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 나가기에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 채팅방 핀 고정 mutation
+  const pinRoomMutation = usePinRoom({
+    onSuccess: () => {
+      setIsPinned(true);
+      toast.show({ title: "채팅방을 고정했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 고정에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 채팅방 핀 해제 mutation
+  const unpinRoomMutation = useUnpinRoom({
+    onSuccess: () => {
+      setIsPinned(false);
+      toast.show({ title: "채팅방 고정을 해제했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 고정 해제에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMenuOpen]);
+
+  const handleLeaveRoom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('채팅방을 나가시겠습니까?')) {
+      const roomId = Number(thread.id);
+      leaveRoomMutation.mutate(roomId);
+    }
+    setIsMenuOpen(false);
+  };
+
+  const handleTogglePin = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const roomId = Number(thread.id);
+    if (isPinned) {
+      unpinRoomMutation.mutate(roomId);
+    } else {
+      pinRoomMutation.mutate(roomId);
+    }
+    setIsMenuOpen(false);
+  };
+
   return (
     <div
-      className="flex items-start gap-3 p-4 hover:bg-[color:var(--color-bg-subtle)] cursor-pointer border-b border-[color:var(--color-border-subtle)] transition-colors"
+      className="flex items-start gap-3 p-4 hover:bg-[color:var(--color-bg-subtle)] cursor-pointer border-b border-[color:var(--color-border-subtle)] transition-colors relative"
       onClick={() => openThread(thread.id)}
     >
       {/* Avatar */}
@@ -183,9 +257,12 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2 mb-1">
-          <h3 className="font-medium text-[color:var(--color-fg-primary)] truncate">
-            {displayName}
-          </h3>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {isPinned && <Pin className="w-4 h-4 text-[color:var(--color-accent)] flex-shrink-0" />}
+            <h3 className="font-medium text-[color:var(--color-fg-primary)] truncate">
+              {displayName}
+            </h3>
+          </div>
           {thread.lastMessage && (
             <span className="text-xs text-[color:var(--color-fg-muted)] flex-shrink-0">
               {formatRelativeTime(thread.lastMessage.createdAt)}
@@ -204,6 +281,39 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
             </span>
           ) : null}
         </div>
+      </div>
+
+      {/* Menu Button */}
+      <div className="relative flex-shrink-0" ref={menuRef}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMenuOpen(!isMenuOpen);
+          }}
+          className="p-2 hover:bg-[color:var(--color-bg-hover)] rounded-full transition-colors"
+        >
+          <MoreVertical className="w-5 h-5 text-[color:var(--color-fg-muted)]" />
+        </button>
+
+        {/* Dropdown Menu */}
+        {isMenuOpen && (
+          <div className="absolute right-0 top-full mt-1 w-40 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg shadow-lg z-10 overflow-hidden">
+            <button
+              onClick={handleTogglePin}
+              className="w-full flex items-center gap-2 px-4 py-2 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors text-sm"
+            >
+              <Pin className="w-4 h-4" />
+              <span>{isPinned ? '핀 해제' : '핀 고정'}</span>
+            </button>
+            <button
+              onClick={handleLeaveRoom}
+              className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-500 hover:bg-[color:var(--color-bg-hover)] transition-colors text-sm"
+            >
+              <X className="w-4 h-4" />
+              <span>나가기</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -142,7 +142,7 @@ export default function PRF_10() {
 
         <div className="space-y-8">
           {/* 3개 섹션: 좋아요 누른 글, 내가 작성한 글, 댓글 단 글 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-6">
             {/* 좋아요 누른 글 */}
             <div
               className="rounded-[30px] overflow-hidden"
