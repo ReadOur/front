@@ -454,7 +454,7 @@ export default function CHT_17() {
               className="flex items-center gap-1 px-3 py-1.5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white hover:opacity-90 transition-opacity text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              모임모집
+              새 채팅방
             </button>
           </div>
           {/* 검색 */}
