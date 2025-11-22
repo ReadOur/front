@@ -5,7 +5,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -211,10 +211,17 @@ function ChatWindow({
                       onClose,
                       onMinimize,
                       onSend,
+                      onRequestAI,
+                      onDeleteRoom,
+                      onMuteRoom,
+                      onUnmuteRoom,
                       __onDragStart,
                       __onResizeStart,
                       width = 320,
                       height = 420,
+                      roomId,
+                      isOwner = false,
+                      isMuted = false,
                     }: {
   me: ChatUser;
   thread: ChatThread;
@@ -223,10 +230,17 @@ function ChatWindow({
   onClose: () => void;
   onMinimize: () => void;
   onSend: (text: string) => void;
+  onRequestAI?: (command: string, note?: string) => void;
+  onDeleteRoom?: () => void;
+  onMuteRoom?: () => void;
+  onUnmuteRoom?: () => void;
   __onDragStart?: (e: React.PointerEvent) => void;
   __onResizeStart?: (direction: string, e: React.PointerEvent) => void;
   width?: number;
   height?: number;
+  roomId?: number;
+  isOwner?: boolean;
+  isMuted?: boolean;
 }) {
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -330,14 +344,14 @@ function ChatWindow({
             {typingUserIds.length > 0 ? "입력 중…" : "대화 중"}
           </div>
         </div>
-        {/* 메뉴 버튼 */}
+        {/* 메뉴 버튼 - 투명도 추가 */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={(e) => {
               e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}
-            className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)]"
+            className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] opacity-60 hover:opacity-100 transition-opacity"
             title="메뉴"
           >
             <MoreVertical className="w-4 h-4" />
@@ -345,33 +359,98 @@ function ChatWindow({
           {/* 메뉴 드롭다운 */}
           {isMenuOpen && (
             <div className="absolute right-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
-              <button
-                onClick={handleOpenEventModal}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-              >
-                <Calendar className="w-4 h-4" />
-                일정 추가
-              </button>
-              <button
-                onClick={() => {
-                  setIsAIDockOpen(true);
-                  setIsMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-              >
-                <MessageCircle className="w-4 h-4" />
-                AI 기능창 열기
-              </button>
-              <button
-                onClick={() => {
-                  setIsNoticeDockOpen(true);
-                  setIsMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-              >
-                <Bell className="w-4 h-4" />
-                공지 목록 조회
-              </button>
+              {/* AI 명령어 섹션 */}
+              <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
+                <div className="px-3 py-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
+                  AI 명령
+                </div>
+                <button
+                  onClick={() => {
+                    onRequestAI?.("SUMMARY", "");
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  대화 요약
+                </button>
+                <button
+                  onClick={() => {
+                    onRequestAI?.("SUMMARY", "합의되지 않은 지점을 강조해줘");
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  합의 지점 분석
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAIDockOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  AI 기능창 열기
+                </button>
+              </div>
+
+              {/* 일반 기능 섹션 */}
+              <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
+                <button
+                  onClick={handleOpenEventModal}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <Calendar className="w-4 h-4" />
+                  일정 추가
+                </button>
+                <button
+                  onClick={() => {
+                    setIsNoticeDockOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <Bell className="w-4 h-4" />
+                  공지 목록 조회
+                </button>
+                <button
+                  onClick={() => {
+                    if (isMuted) {
+                      onUnmuteRoom?.();
+                    } else {
+                      onMuteRoom?.();
+                    }
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <Bell className="w-4 h-4" />
+                  {isMuted ? "메시지 보이기" : "메시지 가리기"}
+                </button>
+              </div>
+
+              {/* 방장 전용 기능 섹션 */}
+              {isOwner && (
+                <div className="py-1">
+                  <div className="px-3 py-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
+                    방장 전용
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (confirm("정말로 채팅방을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+                        onDeleteRoom?.();
+                        setIsMenuOpen(false);
+                      }
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--color-error)]/10 text-left text-sm text-[color:var(--color-error)]"
+                  >
+                    <X className="w-4 h-4" />
+                    방 폭파
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -678,6 +757,41 @@ export default function ChatDock() {
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || error.message || "AI 요청에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 방 삭제 mutation
+  const deleteRoomMutation = useDeleteRoom({
+    onSuccess: (data, roomId) => {
+      toast.show({ title: "채팅방이 삭제되었습니다.", variant: "success" });
+      // 삭제된 방 닫기
+      closeThreadInContext(roomId.toString());
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 삭제에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 방 알림 끄기 mutation
+  const muteRoomMutation = useMuteRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방 알림을 껐습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "알림 끄기에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 방 알림 켜기 mutation
+  const unmuteRoomMutation = useUnmuteRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방 알림을 켰습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "알림 켜기에 실패했습니다.";
       toast.show({ title: errorMessage, variant: "error" });
     },
   });
@@ -1191,10 +1305,34 @@ export default function ChatDock() {
                 onClose={() => closeThread(id)}
                 onMinimize={() => minimizeThread(id)}
                 onSend={(text) => sendMessage(id, text)}
+                onRequestAI={(command, note) => {
+                  const roomId = parseInt(id, 10);
+                  requestAIMutation.mutate({
+                    roomId,
+                    command,
+                    messageLimit: 30,
+                    note,
+                  });
+                }}
+                onDeleteRoom={() => {
+                  const roomId = parseInt(id, 10);
+                  deleteRoomMutation.mutate(roomId);
+                }}
+                onMuteRoom={() => {
+                  const roomId = parseInt(id, 10);
+                  muteRoomMutation.mutate(roomId);
+                }}
+                onUnmuteRoom={() => {
+                  const roomId = parseInt(id, 10);
+                  unmuteRoomMutation.mutate(roomId);
+                }}
                 __onDragStart={(e: React.PointerEvent) => onDragStart(id, e)}
                 __onResizeStart={(direction: string, e: React.PointerEvent) => onResizeStart(id, direction, e)}
                 width={sizes[id]?.width || 320}
                 height={sizes[id]?.height || 420}
+                roomId={parseInt(id, 10)}
+                isOwner={false} // TODO: 백엔드에서 방장 정보 받아오기
+                isMuted={false} // TODO: 백엔드에서 뮤트 상태 받아오기
               />
             </div>
           );
