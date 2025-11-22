@@ -411,27 +411,12 @@ function ChatWindow({
         {messages.map((m) => {
           const mine = m.fromId === me.id;
           return (
-            <div key={m.id} className={cls("max-w-[75%] group relative", mine ? "ml-auto" : "")}>
-              <div className={cls("px-3 py-2 rounded-[var(--radius-lg)]", mine ? "bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]")}>
-                <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>
-                <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
-              </div>
-              {/* 메시지 메뉴 버튼 - 호버 시 표시 */}
-              <button
-                className={cls(
-                  "absolute top-1 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full grid place-items-center text-[color:var(--chatdock-fg-muted)] hover:bg-[color:var(--chatdock-bg-hover)]",
-                  mine ? "right-1" : "left-1"
-                )}
-                onClick={() => {
-                  // TODO: 메시지 숨기기 기능 구현
-                  if (confirm("이 메시지를 숨기시겠습니까?")) {
-                    console.log("Hide message:", m.id);
-                  }
-                }}
-                title="메시지 숨기기"
-              >
-                <MoreVertical className="w-3.5 h-3.5" />
-              </button>
+            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]") }>
+              {!mine && m.senderNickname && (
+                <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
+              )}
+              <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>
+              <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
             </div>
           );
         })}
