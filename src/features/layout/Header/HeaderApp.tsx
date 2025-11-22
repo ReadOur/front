@@ -9,9 +9,7 @@ type User = { name: string; } | null;
 
 interface HeaderAppProps {
   navItems: NavItem[];
-  unreadCount: number;
   chatUnreadCount?: number;
-  onClickNotifications: () => void;
   onClickChat?: () => void;
   user: User;
   onLogin?: () => void;
@@ -22,9 +20,7 @@ interface HeaderAppProps {
 
 export default function HeaderApp({
                                     navItems,
-                                    unreadCount,
                                     chatUnreadCount = 0,
-                                    onClickNotifications,
                                     onClickChat,
                                     user,
                                     onLogin,
@@ -96,20 +92,6 @@ export default function HeaderApp({
               {chatUnreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 min-w-5 h-5 sm:min-w-6 sm:h-6 px-1 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
                   {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* 알림 버튼 */}
-            <button
-              onClick={onClickNotifications}
-              className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 grid place-items-center rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] bg-[color:var(--color-bg-elev-1)] hover:bg-[color:var(--color-bg-hover)] transition-colors cursor-pointer"
-              aria-label="알림"
-            >
-              <span role="img" aria-hidden="true" className="text-lg sm:text-xl md:text-2xl">🔔</span>
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 h-5 sm:min-w-6 sm:h-6 px-1 grid place-items-center rounded-full text-xs font-bold bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)]">
-                  {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </button>
