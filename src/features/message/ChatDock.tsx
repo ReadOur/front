@@ -666,24 +666,7 @@ export default function ChatDock() {
   );
 
   // 메시지 전송 mutation
-  const sendMessageMutation = useSendRoomMessage({
-    onSuccess: (data) => {
-      // 전송 성공 시 로컬 메시지 목록에 추가
-      const convertedMessage: ChatMessage = {
-        id: data.id.toString(),
-        threadId: data.roomId.toString(),
-        fromId: data.senderId.toString(),
-        text: data.body.text,
-        createdAt: new Date(data.createdAt).getTime(),
-        senderNickname: data.senderNickname || user?.nickname,
-      };
-
-      setMessages((prev) => ({
-        ...prev,
-        [data.roomId.toString()]: [...(prev[data.roomId.toString()] || []), convertedMessage],
-      }));
-    },
-  });
+  const sendMessageMutation = useSendRoomMessage();
 
   // AI 요청 mutation
   const requestAIMutation = useRequestAI({
