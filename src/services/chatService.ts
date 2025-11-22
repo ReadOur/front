@@ -171,6 +171,17 @@ export async function unpinRoom(roomId: number): Promise<void> {
 }
 
 /**
+ * AI 작업 요청
+ */
+export async function requestAI(roomId: number, data: {
+  command: string;
+  messageLimit?: number;
+  note?: string;
+}): Promise<any> {
+  return apiClient.post<any>(CHAT_ENDPOINTS.AI_JOB(roomId), data);
+}
+
+/**
  * 채팅 서비스 객체
  */
 export const chatService = {
@@ -185,6 +196,9 @@ export const chatService = {
   leaveRoom,
   pinRoom,
   unpinRoom,
+
+  // AI 기능
+  requestAI,
 
   // 스레드
   getThreads,

@@ -440,3 +440,26 @@ export function useUnpinRoom(
     },
   });
 }
+
+/**
+ * AI 작업 요청
+ */
+export function useRequestAI(
+  options?: UseMutationOptions<any, Error, { roomId: number; command: string; messageLimit?: number; note?: string }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<any, Error, { roomId: number; command: string; messageLimit?: number; note?: string }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, ...data }) => chatService.requestAI(roomId, data),
+    onSuccess: (data, variables, context) => {
+      // 채팅방 메시지 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}

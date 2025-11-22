@@ -5,10 +5,11 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
+import { useToast } from "@/components/Toast/ToastProvider";
 import AIDock from "@/features/ai/AIDock";
 import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
@@ -615,6 +616,7 @@ export default function ChatDock() {
   const navigate = useNavigate();
   const { openThreadIds, minimizedThreadIds, openThread: openThreadInContext, closeThread: closeThreadInContext, minimizeThread: minimizeThreadInContext, restoreThread } = useChatContext();
   const { user, accessToken } = useAuth();
+  const toast = useToast();
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
@@ -652,6 +654,31 @@ export default function ChatDock() {
         ...prev,
         [data.roomId.toString()]: [...(prev[data.roomId.toString()] || []), convertedMessage],
       }));
+    },
+  });
+
+  // AI 요청 mutation
+  const requestAIMutation = useRequestAI({
+    onSuccess: (data, variables) => {
+      // AI 응답을 채팅 메시지로 표시
+      const aiMessage: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        threadId: variables.roomId.toString(),
+        fromId: "ai",
+        text: data.result || "AI 응답을 받았습니다.",
+        createdAt: Date.now(),
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [variables.roomId.toString()]: [...(prev[variables.roomId.toString()] || []), aiMessage],
+      }));
+
+      toast.show({ title: "AI 작업이 완료되었습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "AI 요청에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
     },
   });
 
@@ -957,7 +984,43 @@ export default function ChatDock() {
   const sendMessage = (threadId: string, text: string) => {
     const roomId = parseInt(threadId, 10);
 
-    // API 호출로 메시지 전송
+    // @ai 메시지 감지 및 처리
+    if (text.trim().startsWith("@ai")) {
+      // @ai 제거하고 나머지 파싱
+      const aiContent = text.trim().substring(3).trim();
+
+      // 명령어와 노트 파싱
+      // 형식: @ai COMMAND note...
+      const parts = aiContent.split(/\s+/);
+      const command = parts[0] || "SUMMARY"; // 기본 명령어는 SUMMARY
+      const note = parts.slice(1).join(" ") || undefined;
+
+      // AI 요청 전송
+      requestAIMutation.mutate({
+        roomId,
+        command,
+        messageLimit: 30,
+        note,
+      });
+
+      // 사용자 메시지도 채팅에 표시 (선택적)
+      const userMessage: ChatMessage = {
+        id: `user-ai-${Date.now()}`,
+        threadId: threadId,
+        fromId: me.id,
+        text: text,
+        createdAt: Date.now(),
+      };
+
+      setMessages((prev) => ({
+        ...prev,
+        [threadId]: [...(prev[threadId] || []), userMessage],
+      }));
+
+      return;
+    }
+
+    // 일반 메시지 전송
     sendMessageMutation.mutate({
       senderId: accessToken,
       roomId,
