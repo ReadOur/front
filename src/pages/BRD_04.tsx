@@ -252,7 +252,7 @@ export const BRD_List: React.FC = () => {
               {(category === "" || category === "GROUP") && (
                 <button
                   className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 whitespace-nowrap"
-                  onClick={() => navigate("/boards/group/create")}
+                  onClick={() => navigate("/boards/write?category=GROUP")}
                   aria-label="모임모집"
                 >
                   <span className="hidden sm:inline">📢 모임모집</span>
@@ -413,6 +413,15 @@ export const BRD_List: React.FC = () => {
                       <span>{post.authorNickname}</span>
                       <span>·</span>
                       <span>{formatDate(post.createdAt)}</span>
+                      {/* GROUP 카테고리일 때 참여 인원수 표시 */}
+                      {post.category === "GROUP" && post.currentMemberCount !== undefined && post.recruitmentLimit !== undefined && (
+                        <>
+                          <span>·</span>
+                          <span className="text-[color:var(--color-accent)]">
+                            👥 {post.currentMemberCount}/{post.recruitmentLimit}
+                          </span>
+                        </>
+                      )}
                       <span className="ml-auto flex items-center gap-2">
                         <span>❤️ {post.likeCount}</span>
                         <span>👁 {post.hit}</span>

@@ -146,11 +146,13 @@ export default function PostShow() {
 
   // 8. 모임 참여 토글 mutation
   const toggleRecruitmentMutation = useToggleRecruitmentApply({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.show({
         title: post?.isApplied ? "모임 참여가 취소되었습니다." : "모임에 참여했습니다.",
         variant: "success"
       });
+      // 게시글 데이터 다시 불러오기 (참여 상태 및 인원수 업데이트)
+      await refetch();
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출
