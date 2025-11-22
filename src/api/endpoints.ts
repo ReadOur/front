@@ -109,6 +109,14 @@ export const CHAT_ENDPOINTS = {
   KICK_USER: (roomId: number) => `/chat/rooms/${roomId}/kick`, // 채팅방 강퇴
   AI_JOB: (roomId: number) => `/chat/rooms/${roomId}/ai/jobs`, // AI 작업 요청
 
+  // 채팅방 관리 (백엔드 API)
+  LEAVE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/leave`, // 채팅방 나가기
+  DELETE_ROOM: (roomId: number) => `/chat/rooms/${roomId}`, // 채팅방 삭제(폭파) - 방장 전용
+  PIN_ROOM: (roomId: number) => `/chat/rooms/${roomId}/pin`, // 채팅방 핀 고정/해제
+  MUTE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/mute`, // 채팅방 알림 끄기/메시지 가리기
+  KICK_USER: (roomId: number) => `/chat/rooms/${roomId}/kick`, // 채팅방 강퇴
+  AI_JOB: (roomId: number) => `/chat/rooms/${roomId}/ai/jobs`, // AI 작업 요청
+
   // 기존 엔드포인트 (향후 사용)
   THREADS: "/chat/threads",
   THREAD_DETAIL: (threadId: string) => `/chat/threads/${threadId}`,
