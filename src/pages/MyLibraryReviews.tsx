@@ -66,17 +66,17 @@ export default function MyLibraryReviews() {
               로딩 중...
             </div>
           ) : reviews.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-3">
               {reviews.map((review) => (
                 <div
                   key={review.reviewId}
-                  className="p-6 rounded-[20px]"
+                  className="p-3 rounded-[20px]"
                   style={{ background: "white", border: "1px solid #E9E5DC" }}
                 >
-                  <div className="flex gap-6">
+                  <div className="flex gap-3">
                     {/* 책 이미지 */}
                     <div
-                      className="flex-shrink-0 w-[120px] h-[160px] rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition"
+                      className="flex-shrink-0 w-[60px] h-[80px] rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition"
                       style={{ background: "#E9E5DC" }}
                       onClick={() => navigate(`/books/${review.bookId}`)}
                     >
@@ -87,10 +87,10 @@ export default function MyLibraryReviews() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center p-3">
+                        <div className="w-full h-full flex items-center justify-center p-1">
                           <p
-                            className="text-center text-sm"
-                            style={{ color: "black", lineHeight: "1.4" }}
+                            className="text-center text-xs line-clamp-4"
+                            style={{ color: "black", lineHeight: "1.2" }}
                           >
                             {review.bookname}
                           </p>
@@ -101,7 +101,7 @@ export default function MyLibraryReviews() {
                     {/* 리뷰 내용 */}
                     <div className="flex-1 min-w-0">
                       <h3
-                        className="text-2xl font-semibold mb-2 cursor-pointer hover:underline"
+                        className="text-base font-semibold mb-1 cursor-pointer hover:underline line-clamp-1"
                         style={{ color: "#1E1E1E" }}
                         onClick={() => navigate(`/books/${review.bookId}`)}
                       >
@@ -109,26 +109,26 @@ export default function MyLibraryReviews() {
                       </h3>
 
                       {/* 평점 */}
-                      <div className="mb-3">
-                        <span className="text-2xl" style={{ color: "#F4A261" }}>
+                      <div className="mb-1">
+                        <span className="text-sm" style={{ color: "#F4A261" }}>
                           {"⭐".repeat(review.rating)}
                         </span>
                       </div>
 
                       {/* 리뷰 내용 */}
-                      <div className="mb-3">
+                      <div className="mb-1">
                         <p
-                          className="text-lg whitespace-pre-wrap"
-                          style={{ color: "#1E1E1E", lineHeight: "1.6" }}
+                          className="text-sm whitespace-pre-wrap"
+                          style={{ color: "#1E1E1E", lineHeight: "1.4" }}
                         >
-                          {review.content.length > 200 && !expandedReviews.has(review.reviewId)
-                            ? `${review.content.substring(0, 200)}...`
+                          {review.content.length > 100 && !expandedReviews.has(review.reviewId)
+                            ? `${review.content.substring(0, 100)}...`
                             : review.content}
                         </p>
-                        {review.content.length > 200 && (
+                        {review.content.length > 100 && (
                           <button
                             onClick={() => toggleReviewExpand(review.reviewId)}
-                            className="mt-2 text-sm hover:underline"
+                            className="mt-1 text-xs hover:underline"
                             style={{ color: "#6B4F3F" }}
                           >
                             {expandedReviews.has(review.reviewId) ? "접기" : "펼치기"}
@@ -137,7 +137,7 @@ export default function MyLibraryReviews() {
                       </div>
 
                       {/* 작성일 */}
-                      <p className="text-sm" style={{ color: "#999" }}>
+                      <p className="text-xs" style={{ color: "#999" }}>
                         {new Date(review.createdAt).toLocaleDateString()}
                       </p>
                     </div>

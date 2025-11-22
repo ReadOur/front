@@ -54,7 +54,7 @@ export default function MyLibraryWishlist() {
               로딩 중...
             </div>
           ) : wishlist.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
               {wishlist.map((book) => (
                 <div
                   key={book.bookId}
@@ -63,7 +63,7 @@ export default function MyLibraryWishlist() {
                 >
                   {/* 책 이미지 */}
                   <div
-                    className="w-full aspect-[3/4] rounded-lg overflow-hidden mb-3"
+                    className="w-full aspect-[3/4] rounded-lg overflow-hidden mb-1"
                     style={{ background: "#E9E5DC" }}
                   >
                     {book.bookImageUrl ? (
@@ -73,13 +73,12 @@ export default function MyLibraryWishlist() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center p-4">
+                      <div className="w-full h-full flex items-center justify-center p-1">
                         <p
-                          className="text-center"
+                          className="text-center text-xs line-clamp-3"
                           style={{
                             color: "black",
-                            fontSize: "16px",
-                            lineHeight: "1.4",
+                            lineHeight: "1.2",
                           }}
                         >
                           {book.bookname}
@@ -90,12 +89,12 @@ export default function MyLibraryWishlist() {
 
                   {/* 책 정보 */}
                   <h3
-                    className="text-lg font-semibold mb-1 line-clamp-2"
+                    className="text-xs font-semibold mb-0.5 line-clamp-2"
                     style={{ color: "#1E1E1E" }}
                   >
                     {book.bookname}
                   </h3>
-                  <p className="text-sm" style={{ color: "#666" }}>
+                  <p className="text-xs line-clamp-1" style={{ color: "#666" }}>
                     {book.authors}
                   </p>
                 </div>
