@@ -186,8 +186,10 @@ export interface PublicRoomItem {
  * 페이지 정보
  */
 export interface PageInfo {
-  number: number;
+  page: number;
   size: number;
+  totalPages: number;
+  totalElements: number;
   hasNext: boolean;
 }
 
@@ -324,7 +326,7 @@ export interface CreateRoomResponse {
 export interface AnnouncementAuthor {
   id: number;
   username: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
+  role: "OWNER" | "ADMIN" | "MEMBER" | "MANAGER";
 }
 
 /**
