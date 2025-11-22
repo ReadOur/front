@@ -315,3 +315,58 @@ export interface CreateRoomResponse {
   category: RoomCategory;
   createdAt: string;
 }
+
+// ===== 공지사항 API =====
+
+/**
+ * 공지사항 작성자 정보
+ */
+export interface AnnouncementAuthor {
+  id: number;
+  username: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+}
+
+/**
+ * 공지사항 아이템
+ */
+export interface Announcement {
+  id: number;
+  roomId: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  author: AnnouncementAuthor;
+}
+
+/**
+ * 공지사항 목록 응답
+ */
+export interface AnnouncementsResponse {
+  items: Announcement[];
+  page: PageInfo;
+}
+
+/**
+ * 공지사항 목록 조회 파라미터
+ */
+export interface GetAnnouncementsParams {
+  roomId: number;
+  page?: number;
+  size?: number;
+}
+
+/**
+ * 공지사항 상세 응답
+ */
+export interface AnnouncementDetailResponse {
+  id: number;
+  roomId: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  author: AnnouncementAuthor;
+}
+
