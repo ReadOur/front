@@ -32,7 +32,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (prev.includes(threadId)) return prev;
       // 최대 5개까지만 열기 (제한)
       if (prev.length >= 5) {
-        console.warn("최대 5개의 채팅창만 열 수 있습니다.");
+        alert("최대 5개의 채팅창만 열 수 있습니다.");
         return prev;
       }
       return [...prev, threadId];
