@@ -367,10 +367,14 @@ export default function CHT_17() {
       return;
     }
 
+    // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
+    const currentUserId = parseInt(userId);
+
     createRoomMutation.mutate({
+      scope: "PUBLIC",
       name: roomName.trim(),
       description: roomDescription.trim() || undefined,
-      category: "GROUP",
+      memberIds: [currentUserId], // 그룹 채팅방은 현재 사용자만 포함
     });
   };
 
