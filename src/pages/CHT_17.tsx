@@ -3,9 +3,10 @@ import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus, X, Pin, 
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useRoomsOverview, useCreateRoom } from "@/hooks/api/useChat";
+import { useRoomsOverview, useCreateRoom, useLeaveRoom, usePinRoom, useUnpinRoom } from "@/hooks/api/useChat";
 import { MyRoomItem, PublicRoomItem } from "@/types/chat";
 import Modal from "@/components/Modal/Modal";
+import { useToast } from "@/components/Toast/ToastProvider";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -154,6 +155,7 @@ function formatRelativeTime(ms: number): string {
 
 function ThreadListItem({ thread }: { thread: ChatThread }) {
   const { openThread } = useChatContext();
+  const toast = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -162,6 +164,41 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
     : thread.users[0]?.name || "알 수 없음";
+
+  // 채팅방 나가기 mutation
+  const leaveRoomMutation = useLeaveRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방에서 나갔습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 나가기에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 채팅방 핀 고정 mutation
+  const pinRoomMutation = usePinRoom({
+    onSuccess: () => {
+      setIsPinned(true);
+      toast.show({ title: "채팅방을 고정했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 고정에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 채팅방 핀 해제 mutation
+  const unpinRoomMutation = useUnpinRoom({
+    onSuccess: () => {
+      setIsPinned(false);
+      toast.show({ title: "채팅방 고정을 해제했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 고정 해제에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
 
   // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
@@ -179,15 +216,20 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
   const handleLeaveRoom = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('채팅방을 나가시겠습니까?')) {
-      // TODO: 채팅방 나가기 API 호출
-      alert('채팅방 나가기 기능은 준비 중입니다.');
+      const roomId = Number(thread.id);
+      leaveRoomMutation.mutate(roomId);
     }
     setIsMenuOpen(false);
   };
 
   const handleTogglePin = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsPinned(!isPinned);
+    const roomId = Number(thread.id);
+    if (isPinned) {
+      unpinRoomMutation.mutate(roomId);
+    } else {
+      pinRoomMutation.mutate(roomId);
+    }
     setIsMenuOpen(false);
   };
 

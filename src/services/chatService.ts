@@ -150,6 +150,27 @@ export async function pinThread(data: PinThreadRequest): Promise<PinThreadRespon
 }
 
 /**
+ * 채팅방 나가기
+ */
+export async function leaveRoom(roomId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.LEAVE_ROOM(roomId));
+}
+
+/**
+ * 채팅방 핀 고정
+ */
+export async function pinRoom(roomId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.PIN_ROOM(roomId));
+}
+
+/**
+ * 채팅방 핀 해제
+ */
+export async function unpinRoom(roomId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.PIN_ROOM(roomId));
+}
+
+/**
  * 채팅 서비스 객체
  */
 export const chatService = {
@@ -159,6 +180,11 @@ export const chatService = {
   getRoomMessages,
   sendRoomMessage,
   createRoom,
+
+  // 채팅방 관리
+  leaveRoom,
+  pinRoom,
+  unpinRoom,
 
   // 스레드
   getThreads,
