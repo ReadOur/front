@@ -40,6 +40,7 @@ export interface ChatMessage {
   fromId: string;
   text: string;
   createdAt: number; // epoch ms
+  senderNickname?: string; // 발신자 닉네임
 }
 
 export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
@@ -411,6 +412,9 @@ function ChatWindow({
           const mine = m.fromId === me.id;
           return (
             <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-2)] text-[color:var(--chatdock-fg-primary)]") }>
+              {!mine && m.senderNickname && (
+                <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
+              )}
               <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>
               <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
             </div>
@@ -671,6 +675,7 @@ export default function ChatDock() {
         fromId: data.senderId.toString(),
         text: data.body.text,
         createdAt: new Date(data.createdAt).getTime(),
+        senderNickname: data.senderNickname || user?.nickname,
       };
 
       setMessages((prev) => ({
@@ -978,6 +983,7 @@ export default function ChatDock() {
           fromId: msg.senderId.toString(),
           text: msg.body.text,
           createdAt: new Date(msg.createdAt).getTime(),
+          senderNickname: msg.senderNickname,
         }));
 
         setMessages((prev) => ({
@@ -1015,6 +1021,7 @@ export default function ChatDock() {
       fromId: message.senderId.toString(),
       text: message.body.text || "",
       createdAt: new Date(message.createdAt).getTime(),
+      senderNickname: message.senderNickname,
     };
 
     // 메시지 목록에 추가
