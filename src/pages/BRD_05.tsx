@@ -156,9 +156,10 @@ export default function PostShow() {
   // 8. 모임 참여 토글 mutation
   const toggleRecruitmentMutation = useToggleRecruitmentApply({
     onSuccess: async () => {
-      // 먼저 데이터 다시 불러오기
+      // 게시글 쿼리 무효화 및 재요청
+      await queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      // 추가로 refetch 호출하여 확실하게 최신 데이터 가져오기
       await refetch();
-      // refetch 후 업데이트된 상태는 자동으로 post에 반영됨
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출
@@ -769,55 +770,43 @@ export default function PostShow() {
                       참여 중
                     </span>
                   )}
+                  {/* 모집 마감 상태 표시 (참여 중인 사용자도 볼 수 있음) */}
+                  {post.currentMemberCount !== undefined &&
+                   post.recruitmentLimit !== undefined &&
+                   post.currentMemberCount >= post.recruitmentLimit && (
+                    <span className="px-2 py-1 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-full text-xs font-medium">
+                      모집 마감
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
-                {post.isApplied ? (
-                  <>
-                    {/* 참여 중일 때: 채팅방이 생성되었으면 입장 버튼도 표시 */}
-                    {post.chatRoomId && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLoggedIn()) {
-                            alert("권한이 필요합니다.");
-                            navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-                            return;
-                          }
-                          navigate(`/chat?roomId=${post.chatRoomId}`);
-                        }}
-                        className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                      >
-                        채팅방 입장
-                      </button>
-                    )}
-                    <button
-                      onClick={handleToggleRecruitment}
-                      disabled={toggleRecruitmentMutation.isPending}
-                      className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold hover:bg-[color:var(--color-error)] hover:text-white hover:border-[color:var(--color-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여 취소"}
-                    </button>
-                  </>
+                {/* 마감 여부 확인 */}
+                {post.currentMemberCount !== undefined &&
+                 post.recruitmentLimit !== undefined &&
+                 post.currentMemberCount >= post.recruitmentLimit ? (
+                  /* 마감 후: 메시지만 표시 */
+                  <div className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold">
+                    모집 마감되었습니다
+                  </div>
+                ) : post.isApplied ? (
+                  /* 마감 전 + 참여 중: 참여 취소 버튼 */
+                  <button
+                    onClick={handleToggleRecruitment}
+                    disabled={toggleRecruitmentMutation.isPending}
+                    className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold hover:bg-[color:var(--color-error)] hover:text-white hover:border-[color:var(--color-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여 취소"}
+                  </button>
                 ) : (
-                  <>
-                    {/* 미참여일 때: 모집 마감 여부에 따라 버튼 또는 마감 메시지 표시 */}
-                    {post.currentMemberCount !== undefined &&
-                     post.recruitmentLimit !== undefined &&
-                     post.currentMemberCount >= post.recruitmentLimit ? (
-                      <div className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold">
-                        모집 마감되었습니다
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleToggleRecruitment}
-                        disabled={toggleRecruitmentMutation.isPending}
-                        className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여하기"}
-                      </button>
-                    )}
-                  </>
+                  /* 마감 전 + 미참여: 참여하기 버튼 */
+                  <button
+                    onClick={handleToggleRecruitment}
+                    disabled={toggleRecruitmentMutation.isPending}
+                    className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여하기"}
+                  </button>
                 )}
               </div>
             </div>
