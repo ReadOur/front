@@ -172,8 +172,15 @@ export function useLikePost(
       }
     },
     onSuccess: (data, variables, context) => {
-      // 서버 응답으로 최종 업데이트
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
+      // 서버 응답으로 좋아요 관련 필드만 업데이트 (isApplied 등 다른 필드 보존)
+      const currentPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId));
+      if (currentPost) {
+        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId), {
+          ...currentPost,
+          isLiked: data.isLiked,
+          likeCount: data.likeCount,
+        });
+      }
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
