@@ -756,26 +756,22 @@ export default function PostShow() {
         )}
 
         {/* ========== 모임 참여 섹션 (GROUP 카테고리인 경우) ========== */}
-        {post.category === "GROUP" && (
+        {post.category === "GROUP" && post.recruitmentDetails && (
           <div className="mt-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-[color:var(--color-bg-elev-2)] rounded-lg border border-[color:var(--color-border-subtle)]">
               <div className="flex-1">
                 <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-2">💬 모임 채팅방</h3>
                 <div className="flex items-center gap-4 text-sm text-[color:var(--color-fg-secondary)]">
-                  {post.currentMemberCount !== undefined && post.recruitmentLimit !== undefined && (
-                    <span>
-                      참여 인원: <strong className="text-[color:var(--color-fg-primary)]">{post.currentMemberCount}</strong> / {post.recruitmentLimit}
-                    </span>
-                  )}
-                  {post.isApplied && (
+                  <span>
+                    참여 인원: <strong className="text-[color:var(--color-fg-primary)]">{post.recruitmentDetails.currentMemberCount}</strong> / {post.recruitmentDetails.recruitmentLimit}
+                  </span>
+                  {post.recruitmentDetails.isApplied && (
                     <span className="px-2 py-1 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-full text-xs font-medium">
                       참여 중
                     </span>
                   )}
-                  {/* 모집 마감 상태 표시 (참여 중인 사용자도 볼 수 있음) */}
-                  {post.currentMemberCount !== undefined &&
-                   post.recruitmentLimit !== undefined &&
-                   post.currentMemberCount >= post.recruitmentLimit && (
+                  {/* 모집 마감 상태 표시 */}
+                  {post.recruitmentDetails.currentMemberCount >= post.recruitmentDetails.recruitmentLimit && (
                     <span className="px-2 py-1 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-full text-xs font-medium">
                       모집 마감
                     </span>
@@ -784,14 +780,12 @@ export default function PostShow() {
               </div>
               <div className="flex gap-2">
                 {/* 마감 여부 확인 */}
-                {post.currentMemberCount !== undefined &&
-                 post.recruitmentLimit !== undefined &&
-                 post.currentMemberCount >= post.recruitmentLimit ? (
+                {post.recruitmentDetails.currentMemberCount >= post.recruitmentDetails.recruitmentLimit ? (
                   /* 마감 후: 메시지만 표시 */
                   <div className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold">
                     모집 마감되었습니다
                   </div>
-                ) : post.isApplied ? (
+                ) : post.recruitmentDetails.isApplied ? (
                   /* 마감 전 + 참여 중: 참여 취소 버튼 */
                   <button
                     onClick={handleToggleRecruitment}

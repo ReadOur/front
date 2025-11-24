@@ -44,10 +44,24 @@ export interface Post {
   authorNickname: string;
   authorId: number;
   bookId?: number; // 책 ID (리뷰 게시글용)
-  chatRoomId?: number; // 채팅방 ID (모임 게시글용)
-  currentMemberCount?: number; // 현재 참여 인원 (모임 게시글용)
-  recruitmentLimit?: number; // 모집 인원 (모임 게시글용)
-  isApplied?: boolean; // 모임 참여 여부 (모임 게시글용)
+  chatRoomId?: number; // 채팅방 ID (모임 게시글용) - 하위 호환성
+  currentMemberCount?: number; // 현재 참여 인원 (모임 게시글용) - 하위 호환성
+  recruitmentLimit?: number; // 모집 인원 (모임 게시글용) - 하위 호환성
+  isApplied?: boolean; // 모임 참여 여부 (모임 게시글용) - 하위 호환성
+  recruitmentDetails?: { // GROUP 카테고리 전용 상세 정보
+    recruitmentId: number;
+    recruitmentLimit: number;
+    currentMemberCount: number;
+    status: string; // "RECRUITING" | "COMPLETED" 등
+    chatRoomName: string;
+    chatRoomDescription: string;
+    chatRoomId: number;
+    members: Array<{
+      userId: number;
+      nickname: string;
+    }>;
+    isApplied: boolean;
+  };
   hit: number;
   likeCount: number;
   commentCount: number;
