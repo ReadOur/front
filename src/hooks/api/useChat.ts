@@ -29,6 +29,21 @@ import {
   AnnouncementsResponse,
   GetAnnouncementsParams,
   AnnouncementDetailResponse,
+  CreateAnnouncementRequest,
+  UpdateAnnouncementRequest,
+  Announcement,
+  SchedulesResponse,
+  GetSchedulesParams,
+  Schedule,
+  CreateScheduleRequest,
+  UpdateScheduleRequest,
+  ScheduleParticipantsResponse,
+  PollsResponse,
+  GetPollsParams,
+  Poll,
+  CreatePollRequest,
+  VoteRequest,
+  PollResultsResponse,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -39,6 +54,12 @@ export const CHAT_QUERY_KEYS = {
   roomMessages: (roomId: number) => [...CHAT_QUERY_KEYS.all, "room-messages", roomId] as const,
   announcements: (roomId: number, page: number) => [...CHAT_QUERY_KEYS.all, "announcements", roomId, page] as const,
   announcementDetail: (roomId: number, announcementId: number) => [...CHAT_QUERY_KEYS.all, "announcement-detail", roomId, announcementId] as const,
+  schedules: (roomId: number, page: number) => [...CHAT_QUERY_KEYS.all, "schedules", roomId, page] as const,
+  scheduleDetail: (roomId: number, scheduleId: number) => [...CHAT_QUERY_KEYS.all, "schedule-detail", roomId, scheduleId] as const,
+  scheduleParticipants: (roomId: number, scheduleId: number) => [...CHAT_QUERY_KEYS.all, "schedule-participants", roomId, scheduleId] as const,
+  polls: (roomId: number, page: number) => [...CHAT_QUERY_KEYS.all, "polls", roomId, page] as const,
+  pollDetail: (roomId: number, pollId: number) => [...CHAT_QUERY_KEYS.all, "poll-detail", roomId, pollId] as const,
+  pollResults: (roomId: number, pollId: number) => [...CHAT_QUERY_KEYS.all, "poll-results", roomId, pollId] as const,
   threads: () => [...CHAT_QUERY_KEYS.all, "threads"] as const,
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,
@@ -630,6 +651,348 @@ export function useUnhideMessage(
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
 
       // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+// ===== 공지사항 관련 Mutations =====
+
+/**
+ * 공지사항 생성
+ */
+export function useCreateAnnouncement(
+  options?: UseMutationOptions<Announcement, Error, { roomId: number; data: CreateAnnouncementRequest }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<Announcement, Error, { roomId: number; data: CreateAnnouncementRequest }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, data }) => chatService.createAnnouncement(roomId, data),
+    onSuccess: (data, variables, context) => {
+      // 공지사항 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.announcements(variables.roomId, 0) });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 공지사항 수정
+ */
+export function useUpdateAnnouncement(
+  options?: UseMutationOptions<
+    Announcement,
+    Error,
+    { roomId: number; announcementId: number; data: UpdateAnnouncementRequest },
+    unknown
+  >
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    Announcement,
+    Error,
+    { roomId: number; announcementId: number; data: UpdateAnnouncementRequest },
+    unknown
+  >({
+    ...options,
+    mutationFn: ({ roomId, announcementId, data }) => chatService.updateAnnouncement(roomId, announcementId, data),
+    onSuccess: (data, variables, context) => {
+      // 공지사항 목록 및 상세 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.announcements(variables.roomId, 0) });
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.announcementDetail(variables.roomId, variables.announcementId),
+      });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 공지사항 삭제
+ */
+export function useDeleteAnnouncement(
+  options?: UseMutationOptions<void, Error, { roomId: number; announcementId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; announcementId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, announcementId }) => chatService.deleteAnnouncement(roomId, announcementId),
+    onSuccess: (data, variables, context) => {
+      // 공지사항 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.announcements(variables.roomId, 0) });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+// ===== 일정 관련 Queries =====
+
+/**
+ * 일정 목록 조회
+ */
+export function useSchedules(params: GetSchedulesParams, options?: { enabled?: boolean }) {
+  return useQuery<SchedulesResponse>({
+    queryKey: CHAT_QUERY_KEYS.schedules(params.roomId, params.page || 0),
+    queryFn: () => chatService.getSchedules(params),
+    enabled: options?.enabled !== false && !!params.roomId,
+  });
+}
+
+/**
+ * 일정 상세 조회
+ */
+export function useScheduleDetail(roomId: number, scheduleId: number, options?: { enabled?: boolean }) {
+  return useQuery<Schedule>({
+    queryKey: CHAT_QUERY_KEYS.scheduleDetail(roomId, scheduleId),
+    queryFn: () => chatService.getScheduleDetail(roomId, scheduleId),
+    enabled: options?.enabled !== false && !!roomId && !!scheduleId,
+  });
+}
+
+/**
+ * 일정 참여자 목록 조회
+ */
+export function useScheduleParticipants(roomId: number, scheduleId: number, options?: { enabled?: boolean }) {
+  return useQuery<ScheduleParticipantsResponse>({
+    queryKey: CHAT_QUERY_KEYS.scheduleParticipants(roomId, scheduleId),
+    queryFn: () => chatService.getScheduleParticipants(roomId, scheduleId),
+    enabled: options?.enabled !== false && !!roomId && !!scheduleId,
+  });
+}
+
+// ===== 일정 관련 Mutations =====
+
+/**
+ * 일정 생성
+ */
+export function useCreateSchedule(
+  options?: UseMutationOptions<Schedule, Error, { roomId: number; data: CreateScheduleRequest }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<Schedule, Error, { roomId: number; data: CreateScheduleRequest }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, data }) => chatService.createSchedule(roomId, data),
+    onSuccess: (data, variables, context) => {
+      // 일정 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.schedules(variables.roomId, 0) });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 일정 수정
+ */
+export function useUpdateSchedule(
+  options?: UseMutationOptions<
+    Schedule,
+    Error,
+    { roomId: number; scheduleId: number; data: UpdateScheduleRequest },
+    unknown
+  >
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<Schedule, Error, { roomId: number; scheduleId: number; data: UpdateScheduleRequest }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, scheduleId, data }) => chatService.updateSchedule(roomId, scheduleId, data),
+    onSuccess: (data, variables, context) => {
+      // 일정 목록 및 상세 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.schedules(variables.roomId, 0) });
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.scheduleDetail(variables.roomId, variables.scheduleId),
+      });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 일정 삭제
+ */
+export function useDeleteSchedule(
+  options?: UseMutationOptions<void, Error, { roomId: number; scheduleId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; scheduleId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, scheduleId }) => chatService.deleteSchedule(roomId, scheduleId),
+    onSuccess: (data, variables, context) => {
+      // 일정 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.schedules(variables.roomId, 0) });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 일정 참여 추가
+ */
+export function useAddScheduleParticipant(
+  options?: UseMutationOptions<void, Error, { roomId: number; scheduleId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; scheduleId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, scheduleId }) => chatService.addScheduleParticipant(roomId, scheduleId),
+    onSuccess: (data, variables, context) => {
+      // 일정 참여자 목록 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.scheduleParticipants(variables.roomId, variables.scheduleId),
+      });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 일정 참여 취소
+ */
+export function useRemoveScheduleParticipant(
+  options?: UseMutationOptions<void, Error, { roomId: number; scheduleId: number }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; scheduleId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, scheduleId }) => chatService.removeScheduleParticipant(roomId, scheduleId),
+    onSuccess: (data, variables, context) => {
+      // 일정 참여자 목록 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.scheduleParticipants(variables.roomId, variables.scheduleId),
+      });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+// ===== 투표 관련 Queries =====
+
+/**
+ * 투표 목록 조회
+ */
+export function usePolls(params: GetPollsParams, options?: { enabled?: boolean }) {
+  return useQuery<PollsResponse>({
+    queryKey: CHAT_QUERY_KEYS.polls(params.roomId, params.page || 0),
+    queryFn: () => chatService.getPolls(params),
+    enabled: options?.enabled !== false && !!params.roomId,
+  });
+}
+
+/**
+ * 투표 상세 조회
+ */
+export function usePollDetail(roomId: number, pollId: number, options?: { enabled?: boolean }) {
+  return useQuery<Poll>({
+    queryKey: CHAT_QUERY_KEYS.pollDetail(roomId, pollId),
+    queryFn: () => chatService.getPollDetail(roomId, pollId),
+    enabled: options?.enabled !== false && !!roomId && !!pollId,
+  });
+}
+
+/**
+ * 투표 결과 조회
+ */
+export function usePollResults(roomId: number, pollId: number, options?: { enabled?: boolean }) {
+  return useQuery<PollResultsResponse>({
+    queryKey: CHAT_QUERY_KEYS.pollResults(roomId, pollId),
+    queryFn: () => chatService.getPollResults(roomId, pollId),
+    enabled: options?.enabled !== false && !!roomId && !!pollId,
+  });
+}
+
+// ===== 투표 관련 Mutations =====
+
+/**
+ * 투표 생성
+ */
+export function useCreatePoll(
+  options?: UseMutationOptions<Poll, Error, { roomId: number; data: CreatePollRequest }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<Poll, Error, { roomId: number; data: CreatePollRequest }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, data }) => chatService.createPoll(roomId, data),
+    onSuccess: (data, variables, context) => {
+      // 투표 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.polls(variables.roomId, 0) });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 투표 삭제
+ */
+export function useDeletePoll(options?: UseMutationOptions<void, Error, { roomId: number; pollId: number }, unknown>) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; pollId: number }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, pollId }) => chatService.deletePoll(roomId, pollId),
+    onSuccess: (data, variables, context) => {
+      // 투표 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.polls(variables.roomId, 0) });
+
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 투표 참여/수정
+ */
+export function useVote(
+  options?: UseMutationOptions<void, Error, { roomId: number; pollId: number; data: VoteRequest }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; pollId: number; data: VoteRequest }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, pollId, data }) => chatService.vote(roomId, pollId, data),
+    onSuccess: (data, variables, context) => {
+      // 투표 결과 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.pollResults(variables.roomId, variables.pollId) });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.pollDetail(variables.roomId, variables.pollId) });
+
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, variables, context);
       }

@@ -380,3 +380,188 @@ export interface AnnouncementDetailResponse {
   author: AnnouncementAuthor;
 }
 
+/**
+ * 공지사항 생성 요청
+ */
+export interface CreateAnnouncementRequest {
+  title: string;
+  content: string;
+}
+
+/**
+ * 공지사항 수정 요청
+ */
+export interface UpdateAnnouncementRequest {
+  title?: string;
+  content?: string;
+}
+
+// ===== 채팅방 일정 API =====
+
+/**
+ * 일정 작성자 정보
+ */
+export interface ScheduleAuthor {
+  id: number;
+  username: string;
+  role: "OWNER" | "ADMIN" | "MEMBER" | "MANAGER";
+}
+
+/**
+ * 채팅방 일정 아이템
+ */
+export interface Schedule {
+  id: number;
+  roomId: number;
+  title: string;
+  description?: string;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: ScheduleAuthor;
+}
+
+/**
+ * 일정 목록 응답
+ */
+export interface SchedulesResponse {
+  items: Schedule[];
+  page: PageInfo;
+}
+
+/**
+ * 일정 목록 조회 파라미터
+ */
+export interface GetSchedulesParams {
+  roomId: number;
+  page?: number;
+  size?: number;
+}
+
+/**
+ * 일정 생성 요청
+ */
+export interface CreateScheduleRequest {
+  title: string;
+  description?: string;
+  startAt: string;
+  endAt: string;
+}
+
+/**
+ * 일정 수정 요청
+ */
+export interface UpdateScheduleRequest {
+  title?: string;
+  description?: string;
+  startAt?: string;
+  endAt?: string;
+}
+
+/**
+ * 일정 참여자 정보
+ */
+export interface ScheduleParticipant {
+  userId: number;
+  username: string;
+  joinedAt: string;
+}
+
+/**
+ * 일정 참여자 목록 응답
+ */
+export interface ScheduleParticipantsResponse {
+  participants: ScheduleParticipant[];
+}
+
+// ===== 채팅방 투표 API =====
+
+/**
+ * 투표 옵션
+ */
+export interface PollOption {
+  id: string;
+  text: string;
+}
+
+/**
+ * 투표 작성자 정보
+ */
+export interface PollAuthor {
+  id: number;
+  username: string;
+  role: "OWNER" | "ADMIN" | "MEMBER" | "MANAGER";
+}
+
+/**
+ * 투표 아이템
+ */
+export interface Poll {
+  id: number;
+  roomId: number;
+  question: string;
+  description?: string;
+  options: PollOption[];
+  multipleChoice: boolean;
+  closesAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: PollAuthor;
+  totalVotes?: number;
+}
+
+/**
+ * 투표 목록 응답
+ */
+export interface PollsResponse {
+  items: Poll[];
+  page: PageInfo;
+}
+
+/**
+ * 투표 목록 조회 파라미터
+ */
+export interface GetPollsParams {
+  roomId: number;
+  page?: number;
+  size?: number;
+}
+
+/**
+ * 투표 생성 요청
+ */
+export interface CreatePollRequest {
+  question: string;
+  description?: string;
+  options: string[];
+  multipleChoice: boolean;
+  closesAt?: string;
+}
+
+/**
+ * 투표 참여/수정 요청
+ */
+export interface VoteRequest {
+  selections: string[];
+}
+
+/**
+ * 투표 결과 옵션
+ */
+export interface PollResultOption {
+  id: string;
+  text: string;
+  voteCount: number;
+}
+
+/**
+ * 투표 결과 응답
+ */
+export interface PollResultsResponse {
+  pollId: number;
+  roomId: number;
+  totalVotes: number;
+  options: PollResultOption[];
+}
+

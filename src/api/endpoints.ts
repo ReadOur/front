@@ -104,6 +104,25 @@ export const CHAT_ENDPOINTS = {
   // 공지사항 (백엔드 API)
   ANNOUNCEMENTS: (roomId: number) => `/chat/rooms/${roomId}/announcements`, // 공지사항 목록 조회
   ANNOUNCEMENT_DETAIL: (roomId: number, announcementId: number) => `/chat/rooms/${roomId}/announcements/${announcementId}`, // 공지사항 상세 조회
+  CREATE_ANNOUNCEMENT: (roomId: number) => `/chat/rooms/${roomId}/announcements`, // 공지사항 생성
+  UPDATE_ANNOUNCEMENT: (roomId: number, announcementId: number) => `/chat/rooms/${roomId}/announcements/${announcementId}`, // 공지사항 수정
+  DELETE_ANNOUNCEMENT: (roomId: number, announcementId: number) => `/rooms/${roomId}/announcements/${announcementId}`, // 공지사항 삭제
+
+  // 일정 (백엔드 API)
+  SCHEDULES: (roomId: number) => `/chat/rooms/${roomId}/schedules`, // 일정 목록 조회
+  SCHEDULE_DETAIL: (roomId: number, scheduleId: number) => `/chat/rooms/${roomId}/schedules/${scheduleId}`, // 일정 상세 조회
+  CREATE_SCHEDULE: (roomId: number) => `/chat/rooms/${roomId}/schedules`, // 일정 생성
+  UPDATE_SCHEDULE: (roomId: number, scheduleId: number) => `/chat/rooms/${roomId}/schedules/${scheduleId}`, // 일정 수정
+  DELETE_SCHEDULE: (roomId: number, scheduleId: number) => `/chat/rooms/${roomId}/schedules/${scheduleId}`, // 일정 삭제
+  SCHEDULE_PARTICIPANTS: (roomId: number, scheduleId: number) => `/rooms/${roomId}/schedules/${scheduleId}/participants`, // 일정 참여자 관리
+
+  // 투표 (백엔드 API)
+  POLLS: (roomId: number) => `/chat/rooms/${roomId}/polls`, // 투표 목록 조회
+  POLL_DETAIL: (roomId: number, pollId: number) => `/chat/rooms/${roomId}/polls/${pollId}`, // 투표 상세 조회
+  CREATE_POLL: (roomId: number) => `/chat/rooms/${roomId}/polls`, // 투표 생성
+  DELETE_POLL: (roomId: number, pollId: number) => `/chat/rooms/${roomId}/polls/${pollId}`, // 투표 삭제
+  VOTE: (roomId: number, pollId: number) => `/chat/rooms/${roomId}/polls/${pollId}/votes`, // 투표 참여/수정
+  POLL_RESULTS: (roomId: number, pollId: number) => `/chat/rooms/${roomId}/polls/${pollId}/results`, // 투표 결과 조회
 
   // 채팅방 관리 (백엔드 API)
   JOIN_ROOM: (roomId: number) => `/chat/rooms/${roomId}/join`, // 채팅방 참여

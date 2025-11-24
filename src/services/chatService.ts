@@ -29,6 +29,21 @@ import {
   AnnouncementsResponse,
   GetAnnouncementsParams,
   AnnouncementDetailResponse,
+  CreateAnnouncementRequest,
+  UpdateAnnouncementRequest,
+  Announcement,
+  SchedulesResponse,
+  GetSchedulesParams,
+  Schedule,
+  CreateScheduleRequest,
+  UpdateScheduleRequest,
+  ScheduleParticipantsResponse,
+  PollsResponse,
+  GetPollsParams,
+  Poll,
+  CreatePollRequest,
+  VoteRequest,
+  PollResultsResponse,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -173,6 +188,188 @@ export async function getAnnouncements(params: GetAnnouncementsParams): Promise<
 export async function getAnnouncementDetail(roomId: number, announcementId: number): Promise<AnnouncementDetailResponse> {
   return apiClient.get<AnnouncementDetailResponse>(
     CHAT_ENDPOINTS.ANNOUNCEMENT_DETAIL(roomId, announcementId)
+  );
+}
+
+/**
+ * 공지사항 생성
+ */
+export async function createAnnouncement(roomId: number, data: CreateAnnouncementRequest): Promise<Announcement> {
+  return apiClient.post<Announcement>(
+    CHAT_ENDPOINTS.CREATE_ANNOUNCEMENT(roomId),
+    data
+  );
+}
+
+/**
+ * 공지사항 수정
+ */
+export async function updateAnnouncement(
+  roomId: number,
+  announcementId: number,
+  data: UpdateAnnouncementRequest
+): Promise<Announcement> {
+  return apiClient.put<Announcement>(
+    CHAT_ENDPOINTS.UPDATE_ANNOUNCEMENT(roomId, announcementId),
+    data
+  );
+}
+
+/**
+ * 공지사항 삭제
+ */
+export async function deleteAnnouncement(roomId: number, announcementId: number): Promise<void> {
+  return apiClient.delete<void>(
+    CHAT_ENDPOINTS.DELETE_ANNOUNCEMENT(roomId, announcementId)
+  );
+}
+
+// ===== 일정 관련 =====
+
+/**
+ * 일정 목록 조회
+ */
+export async function getSchedules(params: GetSchedulesParams): Promise<SchedulesResponse> {
+  const { roomId, page = 0, size = 10 } = params;
+  return apiClient.get<SchedulesResponse>(
+    CHAT_ENDPOINTS.SCHEDULES(roomId),
+    {
+      params: { page, size },
+    }
+  );
+}
+
+/**
+ * 일정 상세 조회
+ */
+export async function getScheduleDetail(roomId: number, scheduleId: number): Promise<Schedule> {
+  return apiClient.get<Schedule>(
+    CHAT_ENDPOINTS.SCHEDULE_DETAIL(roomId, scheduleId)
+  );
+}
+
+/**
+ * 일정 생성
+ */
+export async function createSchedule(roomId: number, data: CreateScheduleRequest): Promise<Schedule> {
+  return apiClient.post<Schedule>(
+    CHAT_ENDPOINTS.CREATE_SCHEDULE(roomId),
+    data
+  );
+}
+
+/**
+ * 일정 수정
+ */
+export async function updateSchedule(
+  roomId: number,
+  scheduleId: number,
+  data: UpdateScheduleRequest
+): Promise<Schedule> {
+  return apiClient.put<Schedule>(
+    CHAT_ENDPOINTS.UPDATE_SCHEDULE(roomId, scheduleId),
+    data
+  );
+}
+
+/**
+ * 일정 삭제
+ */
+export async function deleteSchedule(roomId: number, scheduleId: number): Promise<void> {
+  return apiClient.delete<void>(
+    CHAT_ENDPOINTS.DELETE_SCHEDULE(roomId, scheduleId)
+  );
+}
+
+/**
+ * 일정 참여자 목록 조회
+ */
+export async function getScheduleParticipants(
+  roomId: number,
+  scheduleId: number
+): Promise<ScheduleParticipantsResponse> {
+  return apiClient.get<ScheduleParticipantsResponse>(
+    CHAT_ENDPOINTS.SCHEDULE_PARTICIPANTS(roomId, scheduleId)
+  );
+}
+
+/**
+ * 일정 참여 추가
+ */
+export async function addScheduleParticipant(roomId: number, scheduleId: number): Promise<void> {
+  return apiClient.post<void>(
+    CHAT_ENDPOINTS.SCHEDULE_PARTICIPANTS(roomId, scheduleId)
+  );
+}
+
+/**
+ * 일정 참여 취소
+ */
+export async function removeScheduleParticipant(roomId: number, scheduleId: number): Promise<void> {
+  return apiClient.delete<void>(
+    CHAT_ENDPOINTS.SCHEDULE_PARTICIPANTS(roomId, scheduleId)
+  );
+}
+
+// ===== 투표 관련 =====
+
+/**
+ * 투표 목록 조회
+ */
+export async function getPolls(params: GetPollsParams): Promise<PollsResponse> {
+  const { roomId, page = 0, size = 10 } = params;
+  return apiClient.get<PollsResponse>(
+    CHAT_ENDPOINTS.POLLS(roomId),
+    {
+      params: { page, size },
+    }
+  );
+}
+
+/**
+ * 투표 상세 조회
+ */
+export async function getPollDetail(roomId: number, pollId: number): Promise<Poll> {
+  return apiClient.get<Poll>(
+    CHAT_ENDPOINTS.POLL_DETAIL(roomId, pollId)
+  );
+}
+
+/**
+ * 투표 생성
+ */
+export async function createPoll(roomId: number, data: CreatePollRequest): Promise<Poll> {
+  return apiClient.post<Poll>(
+    CHAT_ENDPOINTS.CREATE_POLL(roomId),
+    data
+  );
+}
+
+/**
+ * 투표 삭제
+ */
+export async function deletePoll(roomId: number, pollId: number): Promise<void> {
+  return apiClient.delete<void>(
+    CHAT_ENDPOINTS.DELETE_POLL(roomId, pollId)
+  );
+}
+
+/**
+ * 투표 참여/수정
+ */
+export async function vote(roomId: number, pollId: number, data: VoteRequest): Promise<void> {
+  return apiClient.post<void>(
+    CHAT_ENDPOINTS.VOTE(roomId, pollId),
+    data
+  );
+}
+
+/**
+ * 투표 결과 조회
+ */
+export async function getPollResults(roomId: number, pollId: number): Promise<PollResultsResponse> {
+  return apiClient.get<PollResultsResponse>(
+    CHAT_ENDPOINTS.POLL_RESULTS(roomId, pollId)
   );
 }
 
