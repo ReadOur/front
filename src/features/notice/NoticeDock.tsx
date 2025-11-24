@@ -1,7 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Minimize2, Bell, Plus, Edit2, Trash2 } from "lucide-react";
-import { useAnnouncements } from "@/hooks/api/useChat";
+import {
+  useAnnouncements,
+  useCreateAnnouncement,
+  useUpdateAnnouncement,
+  useDeleteAnnouncement,
+} from "@/hooks/api/useChat";
 import { Announcement } from "@/types";
+import { useToast } from "@/contexts/ToastProvider";
 
 /**
  * NoticeDock - 공지 목록 조회 및 작성창 (우측 도크)
@@ -37,12 +43,17 @@ export default function NoticeDock({
   const hasNextPage = data?.page?.hasNext || false;
 
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [newNotice, setNewNotice] = useState({
     title: "",
     content: "",
-    isPinned: false,
   });
   const [selectedNotice, setSelectedNotice] = useState<Announcement | null>(null);
+
+  const { showToast } = useToast();
+  const createMutation = useCreateAnnouncement();
+  const updateMutation = useUpdateAnnouncement();
+  const deleteMutation = useDeleteAnnouncement();
 
   // 드래그 기능을 위한 상태
   const [position, setPosition] = useState({ x: window.innerWidth - 416, y: 100 }); // 우측에서 시작
@@ -91,22 +102,108 @@ export default function NoticeDock({
 
   const handleCreateNotice = async () => {
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
-      alert("제목과 내용을 모두 입력해주세요.");
+      showToast({
+        message: "제목과 내용을 모두 입력해주세요.",
+        type: "error",
+      });
       return;
     }
 
-    // TODO: API 연동 - 공지 생성 API 구현 필요
-    alert("공지 생성 기능은 추후 구현 예정입니다.");
-    setNewNotice({ title: "", content: "", isPinned: false });
-    setIsCreating(false);
+    createMutation.mutate(
+      { roomId, data: { title: newNotice.title, content: newNotice.content } },
+      {
+        onSuccess: () => {
+          showToast({
+            message: "공지가 등록되었습니다.",
+            type: "success",
+          });
+          setNewNotice({ title: "", content: "" });
+          setIsCreating(false);
+        },
+        onError: (error) => {
+          showToast({
+            message: `공지 등록 실패: ${error.message}`,
+            type: "error",
+          });
+        },
+      }
+    );
+  };
+
+  const handleUpdateNotice = async () => {
+    if (!selectedNotice) return;
+
+    if (!newNotice.title.trim() || !newNotice.content.trim()) {
+      showToast({
+        message: "제목과 내용을 모두 입력해주세요.",
+        type: "error",
+      });
+      return;
+    }
+
+    updateMutation.mutate(
+      {
+        roomId,
+        announcementId: selectedNotice.id,
+        data: { title: newNotice.title, content: newNotice.content },
+      },
+      {
+        onSuccess: (updatedAnnouncement) => {
+          showToast({
+            message: "공지가 수정되었습니다.",
+            type: "success",
+          });
+          setSelectedNotice(updatedAnnouncement);
+          setNewNotice({ title: "", content: "" });
+          setIsEditing(false);
+        },
+        onError: (error) => {
+          showToast({
+            message: `공지 수정 실패: ${error.message}`,
+            type: "error",
+          });
+        },
+      }
+    );
   };
 
   const handleDeleteNotice = (noticeId: number) => {
-    if (confirm("이 공지를 삭제하시겠습니까?")) {
-      // TODO: API 연동 - 공지 삭제 API 구현 필요
-      alert("공지 삭제 기능은 추후 구현 예정입니다.");
-      setSelectedNotice(null);
+    if (!confirm("이 공지를 삭제하시겠습니까?")) {
+      return;
     }
+
+    deleteMutation.mutate(
+      { roomId, announcementId: noticeId },
+      {
+        onSuccess: () => {
+          showToast({
+            message: "공지가 삭제되었습니다.",
+            type: "success",
+          });
+          setSelectedNotice(null);
+        },
+        onError: (error) => {
+          showToast({
+            message: `공지 삭제 실패: ${error.message}`,
+            type: "error",
+          });
+        },
+      }
+    );
+  };
+
+  const handleEditStart = () => {
+    if (!selectedNotice) return;
+    setNewNotice({
+      title: selectedNotice.title,
+      content: selectedNotice.content,
+    });
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setNewNotice({ title: "", content: "" });
+    setIsEditing(false);
   };
 
   if (!isOpen) return null;
@@ -135,7 +232,7 @@ export default function NoticeDock({
             {isLoading ? "로딩 중..." : `${announcements.length}개의 공지`}
           </div>
         </div>
-        {hasPermission && !isCreating && !selectedNotice && (
+        {hasPermission && !isCreating && !selectedNotice && !isEditing && (
           <button
             onClick={() => setIsCreating(true)}
             className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white"
@@ -162,8 +259,8 @@ export default function NoticeDock({
         </button>
       </div>
 
-      {/* 공지 작성 폼 */}
-      {isCreating && (
+      {/* 공지 작성/수정 폼 */}
+      {(isCreating || isEditing) && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
             <div>
@@ -194,36 +291,29 @@ export default function NoticeDock({
                 className="w-full px-3 py-2 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)] focus:outline-none focus:ring-2 focus:ring-orange-500 text-[color:var(--chatdock-fg-primary)] resize-none"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isPinned"
-                checked={newNotice.isPinned}
-                onChange={(e) =>
-                  setNewNotice({ ...newNotice, isPinned: e.target.checked })
-                }
-                className="w-4 h-4 rounded border-[color:var(--chatdock-border-subtle)] text-orange-500 focus:ring-orange-500"
-              />
-              <label
-                htmlFor="isPinned"
-                className="text-sm text-[color:var(--chatdock-fg-primary)]"
-              >
-                상단 고정
-              </label>
-            </div>
             <div className="flex gap-2">
               <button
-                onClick={handleCreateNotice}
-                className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                onClick={isCreating ? handleCreateNotice : handleUpdateNotice}
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                등록
+                {createMutation.isPending || updateMutation.isPending
+                  ? "처리 중..."
+                  : isCreating
+                  ? "등록"
+                  : "수정"}
               </button>
               <button
                 onClick={() => {
-                  setIsCreating(false);
-                  setNewNotice({ title: "", content: "", isPinned: false });
+                  if (isCreating) {
+                    setIsCreating(false);
+                    setNewNotice({ title: "", content: "" });
+                  } else {
+                    handleEditCancel();
+                  }
                 }}
-                className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)] text-[color:var(--chatdock-fg-primary)] hover:bg-[color:var(--chatdock-bg-hover)] transition-colors"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)] text-[color:var(--chatdock-fg-primary)] hover:bg-[color:var(--chatdock-bg-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>
@@ -233,7 +323,7 @@ export default function NoticeDock({
       )}
 
       {/* 공지 상세 보기 */}
-      {selectedNotice && (
+      {selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-2">
@@ -263,21 +353,23 @@ export default function NoticeDock({
                 {selectedNotice.content}
               </p>
             </div>
-            {hasPermission && selectedNotice.author.role === "OWNER" && (
+            {hasPermission && (selectedNotice.author.role === "OWNER" || selectedNotice.author.role === "MANAGER") && (
               <div className="flex gap-2">
                 <button
-                  onClick={() => alert("수정 기능은 추후 구현 예정입니다.")}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)] text-[color:var(--chatdock-fg-primary)] hover:bg-[color:var(--chatdock-bg-hover)] transition-colors"
+                  onClick={handleEditStart}
+                  disabled={deleteMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)] text-[color:var(--chatdock-fg-primary)] hover:bg-[color:var(--chatdock-bg-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Edit2 className="w-4 h-4" />
                   수정
                 </button>
                 <button
                   onClick={() => handleDeleteNotice(selectedNotice.id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-[var(--radius-md)] bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  disabled={deleteMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-[var(--radius-md)] bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Trash2 className="w-4 h-4" />
-                  삭제
+                  {deleteMutation.isPending ? "삭제 중..." : "삭제"}
                 </button>
               </div>
             )}
@@ -286,7 +378,7 @@ export default function NoticeDock({
       )}
 
       {/* 공지 목록 */}
-      {!isCreating && !selectedNotice && (
+      {!isCreating && !selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="h-full flex items-center justify-center text-[color:var(--chatdock-fg-muted)]">
