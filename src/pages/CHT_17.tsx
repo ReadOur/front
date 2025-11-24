@@ -3,7 +3,7 @@ import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus, X, Pin, 
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useRoomsOverview, useCreateRoom, useLeaveRoom, usePinRoom, useUnpinRoom } from "@/hooks/api/useChat";
+import { useRoomsOverview, useCreateRoom, useJoinRoom, useLeaveRoom, usePinRoom, useUnpinRoom } from "@/hooks/api/useChat";
 import { MyRoomItem, PublicRoomItem } from "@/types/chat";
 import Modal from "@/components/Modal/Modal";
 import { useToast } from "@/components/Toast/ToastProvider";
@@ -14,6 +14,11 @@ import { useToast } from "@/components/Toast/ToastProvider";
  * - 검색 및 필터링
  * - 채팅방 클릭 시 Floating Dock에서 열기
  */
+
+// ChatThread 타입 확장 (isPublic 필드 추가)
+interface ExtendedChatThread extends ChatThread {
+  isPublic?: boolean;
+}
 
 // Mock 데이터 (실제로는 API에서 가져옴)
 const mockThreads: ChatThread[] = [
@@ -153,7 +158,7 @@ function formatRelativeTime(ms: number): string {
   return `${days}일 전`;
 }
 
-function ThreadListItem({ thread }: { thread: ChatThread }) {
+function ThreadListItem({ thread }: { thread: ExtendedChatThread }) {
   const { openThread } = useChatContext();
   const toast = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -164,6 +169,17 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
     : thread.users[0]?.name || "알 수 없음";
+
+  // 공개 채팅방 참여하기 mutation
+  const joinRoomMutation = useJoinRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방에 참여했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 참여에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
 
   // 채팅방 나가기 mutation
   const leaveRoomMutation = useLeaveRoom({
@@ -233,6 +249,12 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
     setIsMenuOpen(false);
   };
 
+  const handleJoinRoom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const roomId = Number(thread.id);
+    joinRoomMutation.mutate(roomId);
+  };
+
   return (
     <div
       className="flex items-start gap-3 p-4 hover:bg-[color:var(--color-bg-subtle)] cursor-pointer border-b border-[color:var(--color-border-subtle)] transition-colors relative"
@@ -283,38 +305,52 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
         </div>
       </div>
 
-      {/* Menu Button */}
-      <div className="relative flex-shrink-0" ref={menuRef}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsMenuOpen(!isMenuOpen);
-          }}
-          className="p-2 hover:bg-[color:var(--color-bg-hover)] rounded-full transition-colors"
-        >
-          <MoreVertical className="w-5 h-5 text-[color:var(--color-fg-muted)]" />
-        </button>
+      {/* Menu Button or Join Button */}
+      {thread.isPublic ? (
+        // 공개 채팅방: 참여하기 버튼
+        <div className="flex-shrink-0">
+          <button
+            onClick={handleJoinRoom}
+            disabled={joinRoomMutation.isPending}
+            className="px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+          >
+            {joinRoomMutation.isPending ? "참여 중..." : "참여하기"}
+          </button>
+        </div>
+      ) : (
+        // 내 채팅방: 메뉴 버튼
+        <div className="relative flex-shrink-0" ref={menuRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMenuOpen(!isMenuOpen);
+            }}
+            className="p-2 hover:bg-[color:var(--color-bg-hover)] rounded-full transition-colors"
+          >
+            <MoreVertical className="w-5 h-5 text-[color:var(--color-fg-muted)]" />
+          </button>
 
-        {/* Dropdown Menu */}
-        {isMenuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-40 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg shadow-lg z-10 overflow-hidden">
-            <button
-              onClick={handleTogglePin}
-              className="w-full flex items-center gap-2 px-4 py-2 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors text-sm"
-            >
-              <Pin className="w-4 h-4" />
-              <span>{isPinned ? '핀 해제' : '핀 고정'}</span>
-            </button>
-            <button
-              onClick={handleLeaveRoom}
-              className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-500 hover:bg-[color:var(--color-bg-hover)] transition-colors text-sm"
-            >
-              <X className="w-4 h-4" />
-              <span>나가기</span>
-            </button>
-          </div>
-        )}
-      </div>
+          {/* Dropdown Menu */}
+          {isMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-40 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg shadow-lg z-10 overflow-hidden">
+              <button
+                onClick={handleTogglePin}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors text-sm"
+              >
+                <Pin className="w-4 h-4" />
+                <span>{isPinned ? '핀 해제' : '핀 고정'}</span>
+              </button>
+              <button
+                onClick={handleLeaveRoom}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-red-500 hover:bg-[color:var(--color-bg-hover)] transition-colors text-sm"
+              >
+                <X className="w-4 h-4" />
+                <span>나가기</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -378,11 +414,14 @@ export default function CHT_17() {
   const threads = useMemo(() => {
     if (!data) return [];
 
+    const myRoomIds = new Set(data.myRooms.items.map(room => room.roomId));
+
     const myRooms: ChatThread[] = data.myRooms.items.map((room) => ({
       id: room.roomId.toString(),
       users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
       category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
       unreadCount: room.unreadCount,
+      isPublic: false, // 내 채팅방
       lastMessage: room.lastMsg
         ? {
             id: room.lastMsg.id.toString(),
@@ -399,6 +438,7 @@ export default function CHT_17() {
       users: [{ id: "unknown", name: room.name }],
       category: "MEETING" as ChatCategory, // 공개방은 MEETING으로 표시
       unreadCount: 0,
+      isPublic: true, // 공개 채팅방 (참여 전)
       lastMessage: undefined,
     }));
 

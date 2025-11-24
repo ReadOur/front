@@ -103,6 +103,7 @@ export const CHAT_ENDPOINTS = {
   ANNOUNCEMENT_DETAIL: (roomId: number, announcementId: number) => `/chat/rooms/${roomId}/announcements/${announcementId}`, // 공지사항 상세 조회
 
   // 채팅방 관리 (백엔드 API)
+  JOIN_ROOM: (roomId: number) => `/chat/rooms/${roomId}/join`, // 채팅방 참여하기
   LEAVE_ROOM: (roomId: number) => `/chat/rooms/${roomId}/leave`, // 채팅방 나가기
   DELETE_ROOM: (roomId: number) => `/chat/rooms/${roomId}`, // 채팅방 삭제(폭파) - 방장 전용
   PIN_ROOM: (roomId: number) => `/chat/rooms/${roomId}/pin`, // 채팅방 핀 고정/해제

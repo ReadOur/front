@@ -401,6 +401,30 @@ export function useCreateRoom(
 }
 
 /**
+ * 채팅방 참여하기
+ */
+export function useJoinRoom(
+  options?: UseMutationOptions<void, Error, number, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, number, unknown>({
+    ...options,
+    mutationFn: chatService.joinRoom,
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
  * 채팅방 나가기
  */
 export function useLeaveRoom(
