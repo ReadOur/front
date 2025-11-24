@@ -155,10 +155,13 @@ export default function PostShow() {
 
   // 8. 모임 참여 토글 mutation
   const toggleRecruitmentMutation = useToggleRecruitmentApply({
-    onSuccess: async () => {
-      // 먼저 데이터 다시 불러오기
-      await refetch();
-      // refetch 후 업데이트된 상태는 자동으로 post에 반영됨
+    onSuccess: () => {
+      // useToggleRecruitmentApply hook에서 캐시 업데이트를 처리하므로
+      // 별도의 refetch는 불필요 (race condition 방지)
+      toast.show({
+        title: "처리되었습니다.",
+        variant: "success"
+      });
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출
