@@ -213,9 +213,30 @@ export function useToggleRecruitmentApply(
     ...options,
     mutationFn: postService.toggleRecruitmentApply,
     onSuccess: (data, postId, context) => {
-      // 게시글 상세 무효화 (자동 refetch로 최신 데이터 가져오기)
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
-      // 게시글 목록도 업데이트
+      // 서버 응답으로 recruitmentDetails.isApplied 업데이트 (다른 필드 보존)
+      const currentPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(postId));
+      if (currentPost && data && currentPost.recruitmentDetails) {
+        const wasApplied = currentPost.recruitmentDetails.isApplied || false;
+        const isNowApplied = data.isApplied;
+
+        // currentMemberCount 계산: 상태가 변경되었을 때만 조정
+        const newCount = !wasApplied && isNowApplied
+          ? (currentPost.recruitmentDetails.currentMemberCount || 0) + 1
+          : wasApplied && !isNowApplied
+          ? Math.max(0, (currentPost.recruitmentDetails.currentMemberCount || 1) - 1)
+          : currentPost.recruitmentDetails.currentMemberCount || 0;
+
+        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
+          ...currentPost,
+          recruitmentDetails: {
+            ...currentPost.recruitmentDetails,
+            isApplied: data.isApplied,
+            currentMemberCount: newCount,
+          },
+        });
+      }
+
+      // 게시글 목록만 무효화 (상세는 setQueryData로 이미 업데이트)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
