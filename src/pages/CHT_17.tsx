@@ -166,19 +166,6 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
   const [isPinned, setIsPinned] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 채팅방 참여 mutation
-  const joinRoomMutation = useJoinRoom({
-    onSuccess: () => {
-      toast.show({ title: "채팅방에 참여했습니다.", variant: "success" });
-      // 참여 후 채팅방 열기
-      openThread(thread.id);
-    },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || error.message || "채팅방 참여에 실패했습니다.";
-      toast.show({ title: errorMessage, variant: "error" });
-    },
-  });
-
   const isGroup = thread.users.length > 1;
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
@@ -273,19 +260,14 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
 
   const handleThreadClick = () => {
     // 공개 채팅방이고 참여하지 않은 경우 먼저 참여
-    if (thread.joined === false) {
-      const roomId = Number(thread.id);
-      joinRoomMutation.mutate(roomId);
-    } else {
-      // 이미 참여했거나 내 채팅방인 경우 바로 열기
-  const handleClick = () => {
-    // 공개방이면서 참여하지 않은 경우 참여 먼저 하기
     if (isPublic && !joined) {
       const roomId = Number(thread.id);
       joinRoomMutation.mutate(roomId);
-    } else {
-      openThread(thread.id);
+      return;
     }
+
+    // 이미 참여했거나 내 채팅방인 경우 바로 열기
+    openThread(thread.id);
   };
 
   return (
