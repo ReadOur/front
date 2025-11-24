@@ -663,7 +663,7 @@ export default function PostShow() {
               <div className="flex gap-2">
                 {post.isApplied ? (
                   <>
-                    {/* 참여 중일 때: 채팅방이 생성되었으면 입장 버튼도 표시 */}
+                    {/* 참여 중일 때 */}
                     {post.chatRoomId && (
                       <button
                         onClick={(e) => {
@@ -680,13 +680,22 @@ export default function PostShow() {
                         채팅방 입장
                       </button>
                     )}
-                    <button
-                      onClick={handleToggleRecruitment}
-                      disabled={toggleRecruitmentMutation.isPending}
-                      className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold hover:bg-[color:var(--color-error)] hover:text-white hover:border-[color:var(--color-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여 취소"}
-                    </button>
+                    {/* 마감 후에는 참여 취소 버튼 대신 메시지 표시 */}
+                    {post.currentMemberCount !== undefined &&
+                     post.recruitmentLimit !== undefined &&
+                     post.currentMemberCount >= post.recruitmentLimit ? (
+                      <div className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold">
+                        모집 마감되었습니다
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleToggleRecruitment}
+                        disabled={toggleRecruitmentMutation.isPending}
+                        className="flex-shrink-0 px-6 py-3 bg-[color:var(--color-bg-elev-1)] text-[color:var(--color-fg-primary)] border border-[color:var(--color-border-subtle)] rounded-lg font-semibold hover:bg-[color:var(--color-error)] hover:text-white hover:border-[color:var(--color-error)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {toggleRecruitmentMutation.isPending ? "처리 중..." : "참여 취소"}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
