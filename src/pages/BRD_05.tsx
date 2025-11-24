@@ -10,6 +10,7 @@ import {
   useDeleteComment,
   useToggleRecruitmentApply,
 } from "@/hooks/api";
+import { useCreateRoom } from "@/hooks/api/useChat";
 import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
@@ -19,6 +20,7 @@ import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
 import { isLoggedIn } from "@/utils/auth";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { getBookDetail } from "@/services/bookService";
+import { Avatar } from "@/components/Avatar/Avatar";
 /**
  * 게시글 상세 페이지 (BRD_05)
  *
@@ -70,6 +72,13 @@ export default function PostShow() {
   const [deletePostModalOpen, setDeletePostModalOpen] = useState(false);
   const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  // 작성자 메뉴 상태
+  const [isAuthorMenuOpen, setIsAuthorMenuOpen] = useState(false);
+  const authorMenuRef = useRef<HTMLDivElement>(null);
+
+  // 댓글 작성자 메뉴 상태 (commentId를 키로 사용)
+  const [openCommentMenuId, setOpenCommentMenuId] = useState<number | null>(null);
 
   // ===== API 데이터 페칭 =====
 
@@ -169,6 +178,19 @@ export default function PostShow() {
     },
   });
 
+  // 9. 1:1 채팅방 생성 mutation
+  const createRoomMutation = useCreateRoom({
+    onSuccess: (data) => {
+      toast.show({ title: "채팅방이 생성되었습니다.", variant: "success" });
+      // 채팅방 페이지로 이동
+      navigate(`/chat?roomId=${data.roomId}`);
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 생성에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
   // 스포일러 게시글이 로드될 때마다 가림막 초기화
   useEffect(() => {
     setIsSpoilerRevealed(false);
@@ -182,6 +204,19 @@ export default function PostShow() {
       hasCalledViewApi.current = postId; // 호출 완료 표시
     }
   }, [postId, post?.postId]); // post?.postId가 변경될 때만 실행 (게시글이 로드된 직후)
+
+  // 작성자 메뉴 외부 클릭 감지
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (authorMenuRef.current && !authorMenuRef.current.contains(event.target as Node)) {
+        setIsAuthorMenuOpen(false);
+      }
+    }
+    if (isAuthorMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isAuthorMenuOpen]);
 
   // ===== 이벤트 핸들러 =====
 
@@ -369,6 +404,55 @@ export default function PostShow() {
     toggleRecruitmentMutation.mutate(postId);
   }
 
+  /**
+   * 1:1 채팅방 생성 핸들러
+   */
+  function handleCreateDirectChat(targetUserId: number, targetUsername: string) {
+    // 로그인 확인
+    if (!isLoggedIn()) {
+      alert("권한이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
+    // TODO: 현재 사용자 ID 가져오기 (AuthContext 또는 JWT에서)
+    // 임시로 1을 사용 (실제로는 로그인한 사용자 ID를 사용해야 함)
+    const currentUserId = 1;
+
+    createRoomMutation.mutate({
+      scope: "PRIVATE",
+      name: `${targetUsername}님과의 채팅`,
+      description: "1:1 채팅방",
+      memberIds: [currentUserId, targetUserId],
+    });
+
+    setIsAuthorMenuOpen(false);
+  }
+
+  /**
+   * 댓글 작성자와 1:1 채팅방 생성 핸들러
+   */
+  function handleCreateCommentDirectChat(targetUserId: number, targetUsername: string) {
+    // 로그인 확인
+    if (!isLoggedIn()) {
+      alert("권한이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
+    // TODO: 현재 사용자 ID 가져오기 (AuthContext 또는 JWT에서)
+    const currentUserId = 1;
+
+    createRoomMutation.mutate({
+      scope: "PRIVATE",
+      name: `${targetUsername}님과의 채팅`,
+      description: "1:1 채팅방",
+      memberIds: [currentUserId, targetUserId],
+    });
+
+    setOpenCommentMenuId(null);
+  }
+
   // ===== 로딩 및 에러 처리 =====
 
   // 1. postId가 없는 경우 (잘못된 URL 접근)
@@ -504,10 +588,45 @@ export default function PostShow() {
           )}
 
           <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          {/* 게시글 제목 (API의 title 필드) */}
-          <h1 id="title" className="flex-1 text-lg sm:text-xl md:text-2xl font-extrabold text-[color:var(--color-fg-primary)] break-words">
-            {post.title}
-          </h1>
+          {/* 게시글 제목 및 작성자 */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <h1 id="title" className="flex-1 text-lg sm:text-xl md:text-2xl font-extrabold text-[color:var(--color-fg-primary)] break-words">
+              {post.title}
+            </h1>
+
+            {/* 작성자 아바타 및 메뉴 */}
+            <div className="relative flex-shrink-0" ref={authorMenuRef}>
+              <button
+                onClick={() => setIsAuthorMenuOpen(!isAuthorMenuOpen)}
+                className="focus:outline-none hover:opacity-80 transition-opacity"
+                aria-label={`${post.authorNickname} 메뉴`}
+              >
+                <Avatar
+                  name={post.authorNickname}
+                  size="md"
+                  className="cursor-pointer border-2 border-[color:var(--color-border-subtle)] hover:border-[color:var(--color-accent)]"
+                />
+              </button>
+
+              {/* 작성자 메뉴 드롭다운 */}
+              {isAuthorMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg shadow-lg z-20 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[color:var(--color-border-subtle)]">
+                    <p className="font-semibold text-[color:var(--color-fg-primary)]">{post.authorNickname}</p>
+                    <p className="text-xs text-[color:var(--color-fg-muted)]">작성자</p>
+                  </div>
+                  <button
+                    onClick={() => handleCreateDirectChat(post.authorId, post.authorNickname)}
+                    disabled={createRoomMutation.isPending}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors disabled:opacity-50"
+                  >
+                    <span>💬</span>
+                    <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* 버튼 그룹 */}
           <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
@@ -785,16 +904,42 @@ export default function PostShow() {
             // API 응답의 comments 배열을 순회하며 각 댓글 렌더링
             comments.map((comment) => {
               const isEditing = editingCommentId === comment.commentId;
+              const isCommentMenuOpen = openCommentMenuId === comment.commentId;
 
               return (
                 <React.Fragment key={comment.commentId}>
                   <div className="grid grid-cols-[40px_1fr_auto] gap-3 py-3 border-t first:border-t-0 border-[color:var(--color-border-subtle)]">
-                    {/* 작성자 아바타 (닉네임의 첫 글자로 표시) */}
-                    <div className="w-10 h-10 rounded-full bg-[color:var(--color-bg-elev-1)]
-                      border border-[color:var(--color-border-subtle)] flex
-                      items-center justify-center text-[color:var(--color-fg-muted)]
-                      text-sm font-semibold">
-                      {comment.authorNickname[0]?.toUpperCase() || "?"}
+                    {/* 작성자 아바타 (클릭 가능) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenCommentMenuId(isCommentMenuOpen ? null : comment.commentId)}
+                        className="focus:outline-none hover:opacity-80 transition-opacity"
+                        aria-label={`${comment.authorNickname} 메뉴`}
+                      >
+                        <Avatar
+                          name={comment.authorNickname}
+                          size="sm"
+                          className="cursor-pointer border border-[color:var(--color-border-subtle)] hover:border-[color:var(--color-accent)]"
+                        />
+                      </button>
+
+                      {/* 댓글 작성자 메뉴 드롭다운 */}
+                      {isCommentMenuOpen && (
+                        <div className="absolute left-0 top-full mt-2 w-48 bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg shadow-lg z-20 overflow-hidden">
+                          <div className="px-4 py-3 border-b border-[color:var(--color-border-subtle)]">
+                            <p className="font-semibold text-[color:var(--color-fg-primary)]">{comment.authorNickname}</p>
+                            <p className="text-xs text-[color:var(--color-fg-muted)]">댓글 작성자</p>
+                          </div>
+                          <button
+                            onClick={() => handleCreateCommentDirectChat(comment.authorId, comment.authorNickname)}
+                            disabled={createRoomMutation.isPending}
+                            className="w-full flex items-center gap-2 px-4 py-3 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors disabled:opacity-50"
+                          >
+                            <span>💬</span>
+                            <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* 댓글 내용 및 메타 정보 */}

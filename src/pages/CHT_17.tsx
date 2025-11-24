@@ -3,7 +3,7 @@ import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus, X, Pin, 
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
 import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
-import { useRoomsOverview, useCreateRoom, useLeaveRoom, usePinRoom, useUnpinRoom, useJoinRoom } from "@/hooks/api/useChat";
+import { useRoomsOverview, useCreateRoom, useJoinRoom, useLeaveRoom, usePinRoom, useUnpinRoom } from "@/hooks/api/useChat";
 import { MyRoomItem, PublicRoomItem } from "@/types/chat";
 import Modal from "@/components/Modal/Modal";
 import { useToast } from "@/components/Toast/ToastProvider";
@@ -166,6 +166,19 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
   const [isPinned, setIsPinned] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // 채팅방 참여 mutation
+  const joinRoomMutation = useJoinRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방에 참여했습니다.", variant: "success" });
+      // 참여 후 채팅방 열기
+      openThread(thread.id);
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 참여에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
   const isGroup = thread.users.length > 1;
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
@@ -258,6 +271,13 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
     setIsMenuOpen(false);
   };
 
+  const handleThreadClick = () => {
+    // 공개 채팅방이고 참여하지 않은 경우 먼저 참여
+    if (thread.joined === false) {
+      const roomId = Number(thread.id);
+      joinRoomMutation.mutate(roomId);
+    } else {
+      // 이미 참여했거나 내 채팅방인 경우 바로 열기
   const handleClick = () => {
     // 공개방이면서 참여하지 않은 경우 참여 먼저 하기
     if (isPublic && !joined) {
@@ -271,7 +291,7 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
   return (
     <div
       className="flex items-start gap-3 p-4 hover:bg-[color:var(--color-bg-subtle)] cursor-pointer border-b border-[color:var(--color-border-subtle)] transition-colors relative"
-      onClick={handleClick}
+      onClick={handleThreadClick}
     >
       {/* Avatar */}
       <div className="relative flex-shrink-0">
@@ -402,10 +422,14 @@ export default function CHT_17() {
       return;
     }
 
+    // TODO: 실제 로그인 구현 후 userId를 동적으로 가져오기
+    const currentUserId = parseInt(userId);
+
     createRoomMutation.mutate({
+      scope: "PUBLIC",
       name: roomName.trim(),
       description: roomDescription.trim() || undefined,
-      category: "GROUP",
+      memberIds: [currentUserId], // 그룹 채팅방은 현재 사용자만 포함
     });
   };
 
@@ -435,7 +459,7 @@ export default function CHT_17() {
       category: "MEETING" as ChatCategory, // 공개방은 MEETING으로 표시
       unreadCount: 0,
       lastMessage: undefined,
-      joined: room.joined,
+      joined: room.joined, // 참여 여부 유지
     }));
 
     return { myRoomsData: myRooms, publicRoomsData: publicRooms };

@@ -299,12 +299,19 @@ export interface GetRoomMessagesParams {
 export type RoomCategory = "DIRECT" | "GROUP" | "MEETING";
 
 /**
+ * 채팅방 Scope 타입 (1:1 vs 그룹)
+ */
+export type RoomScope = "PRIVATE" | "PUBLIC";
+
+/**
  * 채팅방 생성 요청
  */
 export interface CreateRoomRequest {
   name: string;
   description?: string;
-  category: RoomCategory;
+  category?: RoomCategory; // 기존 방식 (선택적)
+  scope?: RoomScope; // 새로운 방식 (선택적)
+  memberIds?: number[]; // 참여자 ID 목록 (1:1 채팅방 생성 시 사용)
 }
 
 /**
@@ -314,7 +321,8 @@ export interface CreateRoomResponse {
   roomId: number;
   name: string;
   description: string;
-  category: RoomCategory;
+  category?: RoomCategory;
+  scope?: RoomScope;
   createdAt: string;
 }
 
