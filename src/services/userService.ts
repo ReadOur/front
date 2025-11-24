@@ -167,6 +167,22 @@ export async function getMyComments(params?: {
   });
 }
 
+/**
+ * 닉네임 수정
+ * PATCH /users/me/nickname
+ */
+export async function updateNickname(nickname: string): Promise<void> {
+  return apiClient.patch<void>(USER_ENDPOINTS.UPDATE_NICKNAME, { nickname });
+}
+
+/**
+ * 이메일 수정
+ * PATCH /users/me/email
+ */
+export async function updateEmail(email: string): Promise<void> {
+  return apiClient.patch<void>(USER_ENDPOINTS.UPDATE_EMAIL, { email });
+}
+
 export const userService = {
   getMyPage,
   getUserMyPage,
@@ -177,6 +193,8 @@ export const userService = {
   getMyPosts,
   getMyLikedPosts,
   getMyComments,
+  updateNickname,
+  updateEmail,
 };
 
 export default userService;
