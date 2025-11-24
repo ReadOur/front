@@ -259,6 +259,9 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
   };
 
   const handleThreadClick = () => {
+    // 참여 중이거나 로딩 중이면 무시
+    if (joinRoomMutation.isPending) return;
+
     // 공개 채팅방이고 참여하지 않은 경우 먼저 참여
     if (isPublic && !joined) {
       const roomId = Number(thread.id);
@@ -317,6 +320,22 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
               {thread.unreadCount}
             </span>
           ) : null}
+          {/* 참여하지 않은 공개 채팅방 표시 */}
+          {thread.joined === false && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-600 dark:text-green-400 rounded-full border border-green-500/30">
+              {joinRoomMutation.isPending ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  참여 중...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3 h-3" />
+                  참여하기
+                </>
+              )}
+            </span>
+          )}
         </div>
       </div>
 
