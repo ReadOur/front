@@ -147,9 +147,10 @@ export default function PostShow() {
   // 8. 모임 참여 토글 mutation
   const toggleRecruitmentMutation = useToggleRecruitmentApply({
     onSuccess: async () => {
-      // 먼저 데이터 다시 불러오기
+      // 게시글 쿼리 무효화 및 재요청
+      await queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      // 추가로 refetch 호출하여 확실하게 최신 데이터 가져오기
       await refetch();
-      // refetch 후 업데이트된 상태는 자동으로 post에 반영됨
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출
