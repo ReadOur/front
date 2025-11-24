@@ -155,11 +155,13 @@ export default function PostShow() {
 
   // 8. 모임 참여 토글 mutation
   const toggleRecruitmentMutation = useToggleRecruitmentApply({
-    onSuccess: async () => {
-      // 게시글 쿼리 무효화 및 재요청
-      await queryClient.invalidateQueries({ queryKey: ["post", postId] });
-      // 추가로 refetch 호출하여 확실하게 최신 데이터 가져오기
-      await refetch();
+    onSuccess: () => {
+      // useToggleRecruitmentApply hook에서 캐시 업데이트를 처리하므로
+      // 별도의 refetch는 불필요 (race condition 방지)
+      toast.show({
+        title: "처리되었습니다.",
+        variant: "success"
+      });
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출

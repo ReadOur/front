@@ -244,8 +244,25 @@ export function useToggleRecruitmentApply(
       }
     },
     onSuccess: (data, postId, context) => {
-      // 서버 응답으로 최종 업데이트
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
+      // 서버 응답으로 캐시 직접 업데이트 (refetch 대신)
+      if (context?.previousPost && data) {
+        const wasApplied = context.previousPost.isApplied || false;
+        const isNowApplied = data.isApplied;
+        const baseCount = context.previousPost.currentMemberCount || 0;
+
+        // 원본 상태와 최종 상태를 비교하여 currentMemberCount 계산
+        const newCount = !wasApplied && isNowApplied
+          ? baseCount + 1  // 참여하지 않았는데 참여함 → +1
+          : wasApplied && !isNowApplied
+          ? Math.max(0, baseCount - 1)  // 참여했었는데 취소함 → -1
+          : baseCount;  // 상태 변화 없음 (에러 등)
+
+        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
+          ...context.previousPost,
+          isApplied: data.isApplied,
+          currentMemberCount: newCount,
+        });
+      }
 
       // 게시글 목록도 업데이트 (참여 인원 변경)
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
