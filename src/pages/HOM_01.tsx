@@ -161,20 +161,20 @@ const RecruitmentPostCard: React.FC<RecruitmentPostCardProps> = ({ post, onClick
           {/* 모집 상태 배지 */}
           <div className="flex items-center gap-2 mb-2">
             <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-pink-500/10 text-pink-600">
-              모임
+              [모임]
             </span>
             {isFull ? (
               <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-red-500/10 text-red-600">
-                모집마감
+                [모집마감]
               </span>
             ) : (
               <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-500/10 text-green-600">
-                모집중
+                [모집중]
               </span>
             )}
             {post.isApplied && (
               <span className="inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-500/10 text-blue-600">
-                참여중
+                [참여중]
               </span>
             )}
           </div>
