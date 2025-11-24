@@ -52,6 +52,7 @@ export interface ChatThread {
   unreadCount?: number;
   category: ChatCategory; // 1:1, 단체, 모임
   isPinned?: boolean; // 상단 고정 여부
+  joined?: boolean; // 참여 여부 (공개 채팅방용)
 }
 
 // ===== Chat window =====
