@@ -172,8 +172,15 @@ export function useLikePost(
       }
     },
     onSuccess: (data, variables, context) => {
-      // 서버 응답으로 최종 업데이트
-      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(variables.postId) });
+      // 서버 응답으로 좋아요 관련 필드만 업데이트 (isApplied 등 다른 필드 보존)
+      const currentPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId));
+      if (currentPost) {
+        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId), {
+          ...currentPost,
+          isLiked: data.isLiked,
+          likeCount: data.likeCount,
+        });
+      }
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
@@ -196,80 +203,29 @@ export function useViewPost() {
 /**
  * 모임 참여 토글
  * - 참여 중이면 참여 취소, 미참여면 참여
- * - 낙관적 업데이트로 즉시 UI 반영
  */
 export function useToggleRecruitmentApply(
-  options?: UseMutationOptions<
-    { isApplied: boolean },
-    Error,
-    string,
-    { previousPost?: Post }
-  >
+  options?: UseMutationOptions<{ isApplied: boolean }, Error, string, unknown>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    { isApplied: boolean },
-    Error,
-    string,
-    { previousPost?: Post }
-  >({
+  return useMutation<{ isApplied: boolean }, Error, string, unknown>({
     ...options,
     mutationFn: postService.toggleRecruitmentApply,
-    onMutate: async (postId) => {
-      // 낙관적 업데이트: 즉시 UI 반영
-      await queryClient.cancelQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
-
-      const previousPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(postId));
-
-      if (previousPost) {
-        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
-          ...previousPost,
-          isApplied: !previousPost.isApplied,
-          currentMemberCount: previousPost.isApplied
-            ? (previousPost.currentMemberCount || 1) - 1
-            : (previousPost.currentMemberCount || 0) + 1,
-        });
-      }
-
-      return { previousPost };
-    },
-    onError: (err, postId, context) => {
-      // 에러 시 롤백
-      if (context?.previousPost) {
-        queryClient.setQueryData(POST_QUERY_KEYS.detail(postId), context.previousPost);
-      }
-      if (options?.onError) {
-        (options.onError as any)(err, postId, context);
-      }
-    },
     onSuccess: (data, postId, context) => {
-      // 서버 응답으로 캐시 직접 업데이트 (refetch 대신)
-      if (context?.previousPost && data) {
-        const wasApplied = context.previousPost.isApplied || false;
-        const isNowApplied = data.isApplied;
-        const baseCount = context.previousPost.currentMemberCount || 0;
-
-        // 원본 상태와 최종 상태를 비교하여 currentMemberCount 계산
-        const newCount = !wasApplied && isNowApplied
-          ? baseCount + 1  // 참여하지 않았는데 참여함 → +1
-          : wasApplied && !isNowApplied
-          ? Math.max(0, baseCount - 1)  // 참여했었는데 취소함 → -1
-          : baseCount;  // 상태 변화 없음 (에러 등)
-
-        queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
-          ...context.previousPost,
-          isApplied: data.isApplied,
-          currentMemberCount: newCount,
-        });
-      }
-
-      // 게시글 목록도 업데이트 (참여 인원 변경)
+      // 게시글 상세 무효화 (자동 refetch로 최신 데이터 가져오기)
+      queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
+      // 게시글 목록도 업데이트
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.all });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
         (options.onSuccess as any)(data, postId, context);
+      }
+    },
+    onError: (err, postId, context) => {
+      if (options?.onError) {
+        (options.onError as any)(err, postId, context);
       }
     },
   });

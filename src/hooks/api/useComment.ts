@@ -109,17 +109,14 @@ export function useCreateComment(
         queryKey: COMMENT_QUERY_KEYS.lists(),
       });
 
-      // 게시글 상세도 무효화 (댓글 수 업데이트)
-      queryClient.invalidateQueries({
-        queryKey: POST_QUERY_KEYS.detail(String(variables.postId)),
-      });
-
       // 대댓글인 경우 부모 댓글의 replies도 무효화
       if (variables.parentId) {
         queryClient.invalidateQueries({
           queryKey: COMMENT_QUERY_KEYS.replies(String(variables.parentId)),
         });
       }
+
+      // 게시글 상세는 이미 setQueryData로 업데이트했으므로 invalidate 불필요 (isApplied 등 다른 필드 보존)
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
@@ -178,10 +175,7 @@ export function useUpdateComment(
         queryKey: COMMENT_QUERY_KEYS.lists(),
       });
 
-      // 게시글 상세도 무효화 (댓글 내용 업데이트)
-      queryClient.invalidateQueries({
-        queryKey: detailKey,
-      });
+      // 게시글 상세는 이미 setQueryData로 업데이트했으므로 invalidate 불필요 (isApplied 등 다른 필드 보존)
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
@@ -232,10 +226,7 @@ export function useDeleteComment(
         queryKey: COMMENT_QUERY_KEYS.lists(),
       });
 
-      // 게시글 상세도 무효화 (댓글 수 업데이트)
-      queryClient.invalidateQueries({
-        queryKey: detailKey,
-      });
+      // 게시글 상세는 이미 setQueryData로 업데이트했으므로 invalidate 불필요 (isApplied 등 다른 필드 보존)
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {

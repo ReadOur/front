@@ -97,27 +97,27 @@ export default function PostShow() {
 
   // 3. 댓글 작성 mutation (POST /community/posts/{postId}/comments)
   const createCommentMutation = useCreateComment({
-    onSuccess: async () => {
-      setCommentText("");   // 기존 동작 유지
-      await refetch();      // ✅ 등록 직후 게시글(댓글 포함) 다시 GET
+    onSuccess: () => {
+      setCommentText("");   // 입력 필드 초기화
+      // useCreateComment 훅에서 setQueryData로 캐시 업데이트하므로 refetch 불필요
     },
   });
 
 
   // 4. 댓글 수정 mutation (PUT /community/comments/{commentId})
   const updateCommentMutation = useUpdateComment({
-    onSuccess: async () => {
+    onSuccess: () => {
       setEditingCommentId(null);
       setEditingCommentText("");
-      await refetch();      // ✅ 수정 직후 다시 GET
+      // useUpdateComment 훅에서 setQueryData로 캐시 업데이트하므로 refetch 불필요
     },
   });
 
 
   // 5. 댓글 삭제 mutation (DELETE /community/posts/{postId}/comments/{commentId})
   const deleteCommentMutation = useDeleteComment({
-    onSuccess: async () => {
-      await refetch();      // ✅ 삭제 직후 다시 GET
+    onSuccess: () => {
+      // useDeleteComment 훅에서 setQueryData로 캐시 업데이트하므로 refetch 불필요
     },
   });
 
