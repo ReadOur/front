@@ -194,6 +194,13 @@ function ChatWindow({
   const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // 메시지별 메뉴 관련 상태
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
+  const [messageMenuOpen, setMessageMenuOpen] = useState<string | null>(null);
+  const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
+  const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
+  const messageMenuRef = useRef<HTMLDivElement>(null);
+
   const [newEvent, setNewEvent] = useState<CreateEventData>({
     title: "",
     description: "",
@@ -214,16 +221,19 @@ function ChatWindow({
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
       }
+      if (messageMenuRef.current && !messageMenuRef.current.contains(event.target as Node)) {
+        setMessageMenuOpen(null);
+      }
     };
 
-    if (isMenuOpen) {
+    if (isMenuOpen || messageMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isMenuOpen]);
+  }, [isMenuOpen, messageMenuOpen]);
 
   const handleOpenEventModal = () => {
     const today = new Date();
@@ -303,7 +313,7 @@ function ChatWindow({
           </button>
           {/* 메뉴 드롭다운 */}
           {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+            <div className="absolute right-0 top-full mt-1 w-[576px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
               {/* AI 명령어 섹션 */}
               <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
                 <div className="px-3 py-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
@@ -411,13 +421,117 @@ function ChatWindow({
       <div ref={boxRef} className="flex-1 overflow-auto p-3 space-y-2">
         {messages.map((m) => {
           const mine = m.fromId === me.id;
+          const isHidden = hiddenMessageIds.has(m.id);
+          const isAISessionStart = aiSessionStart === m.id;
+          const isAISessionEnd = aiSessionEnd === m.id;
+
           return (
-            <div key={m.id} className={cls("max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)]", mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]") }>
-              {!mine && m.senderNickname && (
-                <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
+            <div key={m.id} className="relative group">
+              {/* AI 세션 시작 마커 */}
+              {isAISessionStart && (
+                <div className="flex items-center gap-2 mb-1 text-xs text-[color:var(--color-primary)]">
+                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
+                  <span className="font-semibold">AI 세션 시작</span>
+                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
+                </div>
               )}
-              <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>
-              <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>{new Date(m.createdAt).toLocaleTimeString()}</div>
+
+              <div className="flex items-start gap-1">
+                <div className={cls(
+                  "max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)] transition-opacity",
+                  mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]",
+                  isHidden && "opacity-30 blur-sm"
+                )}>
+                  {!mine && m.senderNickname && (
+                    <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
+                  )}
+                  <div className="text-sm leading-snug whitespace-pre-wrap break-words">
+                    {isHidden ? "가려진 메시지" : m.text}
+                  </div>
+                  <div className={cls("mt-1 text-[10px]", mine ? "opacity-80" : "text-[color:var(--chatdock-fg-muted)]")}>
+                    {new Date(m.createdAt).toLocaleTimeString()}
+                  </div>
+                </div>
+
+                {/* 메시지 메뉴 버튼 */}
+                <div className="relative" ref={messageMenuOpen === m.id ? messageMenuRef : null}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMessageMenuOpen(messageMenuOpen === m.id ? null : m.id);
+                    }}
+                    className={cls(
+                      "w-6 h-6 grid place-items-center rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] transition-opacity",
+                      messageMenuOpen === m.id ? "opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100"
+                    )}
+                    title="메시지 메뉴"
+                  >
+                    <MoreVertical className="w-3.5 h-3.5 text-[color:var(--chatdock-fg-muted)]" />
+                  </button>
+
+                  {/* 메시지 메뉴 드롭다운 */}
+                  {messageMenuOpen === m.id && (
+                    <div className="absolute right-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+                      <button
+                        onClick={() => {
+                          setHiddenMessageIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(m.id)) {
+                              next.delete(m.id);
+                            } else {
+                              next.add(m.id);
+                            }
+                            return next;
+                          });
+                          setMessageMenuOpen(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        {isHidden ? "메시지 보이기" : "메시지 가리기"}
+                      </button>
+
+                      {/* 방장/관리자 전용 메뉴 */}
+                      {isOwner && (
+                        <>
+                          <div className="h-px bg-[color:var(--chatdock-border-subtle)] my-1" />
+                          <button
+                            onClick={() => {
+                              setAiSessionStart(aiSessionStart === m.id ? null : m.id);
+                              if (aiSessionStart === m.id) {
+                                // 시작점 해제 시 끝점도 해제
+                                setAiSessionEnd(null);
+                              }
+                              setMessageMenuOpen(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm text-[color:var(--color-primary)]"
+                          >
+                            {aiSessionStart === m.id ? "✓ AI 세션 시작" : "AI 세션 시작 설정"}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setAiSessionEnd(aiSessionEnd === m.id ? null : m.id);
+                              setMessageMenuOpen(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm text-[color:var(--color-primary)]"
+                            disabled={!aiSessionStart}
+                          >
+                            {aiSessionEnd === m.id ? "✓ AI 세션 끝" : "AI 세션 끝 설정"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* AI 세션 끝 마커 */}
+              {isAISessionEnd && (
+                <div className="flex items-center gap-2 mt-1 text-xs text-[color:var(--color-primary)]">
+                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
+                  <span className="font-semibold">AI 세션 끝</span>
+                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
+                </div>
+              )}
             </div>
           );
         })}

@@ -153,7 +153,13 @@ function formatRelativeTime(ms: number): string {
   return `${days}일 전`;
 }
 
-function ThreadListItem({ thread }: { thread: ChatThread }) {
+interface ThreadListItemProps {
+  thread: ChatThread;
+  isPublic?: boolean;
+  joined?: boolean;
+}
+
+function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListItemProps) {
   const { openThread } = useChatContext();
   const toast = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -177,6 +183,25 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
   const displayName = isGroup
     ? `${thread.users.map((u) => u.name).join(", ")}`
     : thread.users[0]?.name || "알 수 없음";
+
+  // 채팅방 참여 mutation
+  const joinRoomMutation = useJoinRoom({
+    onSuccess: () => {
+      toast.show({ title: "채팅방에 참여했습니다.", variant: "success" });
+      openThread(thread.id);
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "채팅방 참여에 실패했습니다.";
+      const statusCode = error.response?.status;
+
+      // 400번대, 500번대 에러는 alert로 표시
+      if (statusCode && (statusCode >= 400 && statusCode < 600)) {
+        alert(errorMessage);
+      } else {
+        toast.show({ title: errorMessage, variant: "error" });
+      }
+    },
+  });
 
   // 채팅방 나가기 mutation
   const leaveRoomMutation = useLeaveRoom({
@@ -253,6 +278,12 @@ function ThreadListItem({ thread }: { thread: ChatThread }) {
       joinRoomMutation.mutate(roomId);
     } else {
       // 이미 참여했거나 내 채팅방인 경우 바로 열기
+  const handleClick = () => {
+    // 공개방이면서 참여하지 않은 경우 참여 먼저 하기
+    if (isPublic && !joined) {
+      const roomId = Number(thread.id);
+      joinRoomMutation.mutate(roomId);
+    } else {
       openThread(thread.id);
     }
   };
@@ -403,8 +434,8 @@ export default function CHT_17() {
   };
 
   // 백엔드 응답을 UI 형식으로 변환
-  const threads = useMemo(() => {
-    if (!data) return [];
+  const { myRoomsData, publicRoomsData } = useMemo(() => {
+    if (!data) return { myRoomsData: [], publicRoomsData: [] };
 
     const myRooms: ChatThread[] = data.myRooms.items.map((room) => ({
       id: room.roomId.toString(),
@@ -422,7 +453,7 @@ export default function CHT_17() {
         : undefined,
     }));
 
-    const publicRooms: ChatThread[] = data.publicRooms.items.map((room) => ({
+    const publicRooms: (ChatThread & { joined: boolean })[] = data.publicRooms.items.map((room) => ({
       id: room.roomId.toString(),
       users: [{ id: "unknown", name: room.name }],
       category: "MEETING" as ChatCategory, // 공개방은 MEETING으로 표시
@@ -431,8 +462,12 @@ export default function CHT_17() {
       joined: room.joined, // 참여 여부 유지
     }));
 
-    return [...myRooms, ...publicRooms];
+    return { myRoomsData: myRooms, publicRoomsData: publicRooms };
   }, [data]);
+
+  const threads = useMemo(() => {
+    return [...myRoomsData, ...publicRoomsData];
+  }, [myRoomsData, publicRoomsData]);
 
   // URL에서 roomId 쿼리 파라미터를 읽어서 자동으로 채팅방 열기
   useEffect(() => {
@@ -456,7 +491,8 @@ export default function CHT_17() {
     MEETING: threads.filter(t => t.category === "MEETING").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
   };
 
-  const filteredThreads = threads.filter((thread) => {
+  // 필터링 함수
+  const filterThread = (thread: ChatThread) => {
     // 카테고리 필터
     if (selectedCategory !== "ALL" && thread.category !== selectedCategory) {
       return false;
@@ -465,7 +501,11 @@ export default function CHT_17() {
     // 검색 필터
     const displayName = thread.users.map((u) => u.name).join(", ");
     return displayName.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  };
+
+  const filteredMyRooms = myRoomsData.filter(filterThread);
+  const filteredPublicRooms = publicRoomsData.filter(filterThread);
+  const filteredThreads = threads.filter(filterThread);
 
   return (
     <div className="flex h-[calc(100vh-200px)] bg-[color:var(--color-bg)] rounded-[var(--radius-xl)] overflow-hidden border border-[color:var(--color-border-subtle)]">
@@ -548,9 +588,31 @@ export default function CHT_17() {
               {searchQuery ? "검색 결과가 없습니다" : "채팅방이 없습니다"}
             </div>
           ) : (
-            filteredThreads.map((thread) => (
-              <ThreadListItem key={thread.id} thread={thread} />
-            ))
+            <>
+              {/* 내 채팅방 섹션 */}
+              {filteredMyRooms.length > 0 && (
+                <div>
+                  <div className="sticky top-0 bg-[color:var(--color-bg-subtle)] px-4 py-2 text-xs font-semibold text-[color:var(--color-fg-muted)] uppercase tracking-wider z-10">
+                    내 채팅방
+                  </div>
+                  {filteredMyRooms.map((thread) => (
+                    <ThreadListItem key={thread.id} thread={thread} isPublic={false} joined={true} />
+                  ))}
+                </div>
+              )}
+
+              {/* 공개 채팅방 섹션 */}
+              {filteredPublicRooms.length > 0 && (
+                <div>
+                  <div className="sticky top-0 bg-[color:var(--color-bg-subtle)] px-4 py-2 text-xs font-semibold text-[color:var(--color-fg-muted)] uppercase tracking-wider z-10">
+                    공개 채팅방
+                  </div>
+                  {filteredPublicRooms.map((room) => (
+                    <ThreadListItem key={room.id} thread={room} isPublic={true} joined={room.joined} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

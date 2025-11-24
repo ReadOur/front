@@ -218,6 +218,7 @@ interface BookCardProps {
     bookname: string;
     authors: string;
     bookImageUrl: string;
+    description: string;
     averageRating: number | null;
     reviewCount: number;
   };
@@ -253,6 +254,13 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
           </h3>
           <p className="text-sm text-[color:var(--color-fg-muted)] mb-2">{book.authors}</p>
 
+          {/* 책 설명 */}
+          {book.description && (
+            <p className="text-sm text-[color:var(--color-fg-muted)] line-clamp-2 mb-2">
+              {book.description}
+            </p>
+          )}
+
           {/* 평점 및 리뷰 수 */}
           <div className="flex items-center gap-2 text-sm">
             {book.averageRating != null && (
@@ -261,7 +269,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
               </span>
             )}
             <span className="text-[color:var(--color-fg-muted)]">
-              리뷰 {book.reviewCount}개
+              리뷰 {book.reviewCount ?? 0}개
             </span>
           </div>
         </div>
@@ -359,91 +367,6 @@ export default function HOM_01() {
       </section>
 
       {/* ============================================================
-          인기 게시글 (popularPosts)
-
-          데이터 소스: mainPageData.popularPosts
-          타입: Post[]
-          설명: 좋아요가 많은 게시글 목록
-          ============================================================ */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-6 h-6 text-red-500" />
-            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">인기 게시글</h2>
-          </div>
-          <button
-            onClick={() => navigate("/boards?sort=likeCount,desc")}
-            className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
-          >
-            더보기
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {isLoading ? (
-          <PostListSkeleton count={5} />
-        ) : popularPosts && popularPosts.length > 0 ? (
-          <div className="space-y-3">
-            {popularPosts.map((post) => (
-              <PostCard
-                key={post.postId}
-                post={post}
-                onClick={() => navigate(`/boards/${post.postId}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
-            아직 인기 게시글이 없습니다.
-          </div>
-        )}
-      </section>
-
-      {/* ============================================================
-          모집 게시글 (recruitmentPosts)
-
-          데이터 소스: mainPageData.recruitmentPosts
-          타입: RecruitmentPost[]
-          추가 필드:
-          - currentMemberCount: 현재 참여 인원
-          - recruitmentLimit: 모집 정원
-          - isApplied: 참여 신청 여부
-          ============================================================ */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Users className="w-6 h-6 text-pink-500" />
-            <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">모집 중인 모임</h2>
-          </div>
-          <button
-            onClick={() => navigate("/boards?category=GROUP")}
-            className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
-          >
-            더보기
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {isLoading ? (
-          <PostListSkeleton count={4} />
-        ) : recruitmentPosts && recruitmentPosts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recruitmentPosts.map((post) => (
-              <RecruitmentPostCard
-                key={post.postId}
-                post={post}
-                onClick={() => navigate(`/boards/${post.postId}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
-            현재 모집 중인 모임이 없습니다.
-          </div>
-        )}
-      </section>
-
-      {/* ============================================================
           추천도서 (popularBooks)
 
           데이터 소스: mainPageData.popularBooks
@@ -459,12 +382,7 @@ export default function HOM_01() {
           <div className="flex items-center gap-3">
             <BookMarked className="w-6 h-6 text-blue-500" />
             <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">
-              추천도서
-              {popularBooksData?.criteria && (
-                <span className="ml-2 text-base font-normal text-[color:var(--color-fg-muted)]">
-                  ({popularBooksData.criteria})
-                </span>
-              )}
+              {popularBooksData?.criteria ? `${popularBooksData.criteria}를 위한 추천 도서` : "추천도서"}
             </h2>
           </div>
           <button
@@ -497,6 +415,81 @@ export default function HOM_01() {
             추천할 도서가 없습니다.
           </div>
         )}
+      </section>
+
+      {/* ============================================================
+          인기 게시글 & 모임 게시글 (반반 나눠서 표시)
+          ============================================================ */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* 인기 게시글 (popularPosts) */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-6 h-6 text-red-500" />
+              <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">인기 게시글</h2>
+            </div>
+            <button
+              onClick={() => navigate("/boards?sort=likeCount,desc")}
+              className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
+            >
+              더보기
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {isLoading ? (
+            <PostListSkeleton count={5} />
+          ) : popularPosts && popularPosts.length > 0 ? (
+            <div className="space-y-3">
+              {popularPosts.map((post) => (
+                <PostCard
+                  key={post.postId}
+                  post={post}
+                  onClick={() => navigate(`/boards/${post.postId}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
+              아직 인기 게시글이 없습니다.
+            </div>
+          )}
+        </div>
+
+        {/* 모집 게시글 (recruitmentPosts) */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-pink-500" />
+              <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">모집 중인 모임</h2>
+            </div>
+            <button
+              onClick={() => navigate("/boards?category=GROUP")}
+              className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
+            >
+              더보기
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {isLoading ? (
+            <PostListSkeleton count={5} />
+          ) : recruitmentPosts && recruitmentPosts.length > 0 ? (
+            <div className="space-y-3">
+              {recruitmentPosts.map((post) => (
+                <RecruitmentPostCard
+                  key={post.postId}
+                  post={post}
+                  onClick={() => navigate(`/boards/${post.postId}`)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-[color:var(--color-fg-muted)]">
+              현재 모집 중인 모임이 없습니다.
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ============================================================

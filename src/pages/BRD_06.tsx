@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
 import { TagInput } from "@/components/TagInput/TagInput";
@@ -14,16 +14,22 @@ import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 경로는 프로젝트
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
   const { postId } = useParams<{ postId: string }>();
+  const [searchParams] = useSearchParams();
   const isEditMode = !!postId;
   const toast = useToast();
+
+  // URL 쿼리 파라미터에서 카테고리 읽기
+  const initialCategory = searchParams.get("category") || "FREE";
 
   const [title, setTitle] = useState<string>("");
   const [contentHtml, setContentHtml] = useState<string>("");
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [category, setCategory] = useState<string>("FREE");
+  const [category, setCategory] = useState<string>(initialCategory);
   const [bookId, setBookId] = useState<number | undefined>(undefined);
   const [chatRoomId, setChatRoomId] = useState<number | undefined>(undefined);
-  const [recruitmentLimit, setRecruitmentLimit] = useState<number | undefined>(undefined);
+  const [recruitmentLimit, setRecruitmentLimit] = useState<number | undefined>(10);
+  const [chatRoomName, setChatRoomName] = useState<string>("");
+  const [chatRoomDescription, setChatRoomDescription] = useState<string>("");
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
@@ -62,6 +68,8 @@ export const BRD_06 = (): React.JSX.Element => {
       setBookId(existingPost.bookId);
       setChatRoomId(existingPost.chatRoomId);
       setRecruitmentLimit(existingPost.recruitmentLimit);
+      setChatRoomName(existingPost.chatRoomName || "");
+      setChatRoomDescription(existingPost.chatRoomDescription || "");
       setIsSpoiler(existingPost.isSpoiler || false);
       setAttachments(existingPost.attachments || []);
     }
@@ -141,6 +149,12 @@ export const BRD_06 = (): React.JSX.Element => {
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
+        // GROUP 카테고리일 때 모임 관련 필드 추가
+        ...(category === "GROUP" && {
+          recruitmentLimit: recruitmentLimit,
+          chatRoomName: chatRoomName.trim() || title.trim(),
+          chatRoomDescription: chatRoomDescription.trim() || safeHtml,
+        }),
       };
       createPostMutation.mutate(createData);
     }
@@ -225,6 +239,34 @@ export const BRD_06 = (): React.JSX.Element => {
                   value={bookId || ""}
                   onChange={(e) => setBookId(e.target.value ? Number(e.target.value) : undefined)}
                   placeholder="책 ID를 입력하세요"
+                  disabled={isEditMode}
+                  className="
+                    w-full h-10 rounded-[var(--radius-md)]
+                    bg-[color:var(--color-bg-elev-1)]
+                    text-[color:var(--color-fg-primary)]
+                    border border-[color:var(--color-border-subtle)]
+                    focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
+                    px-3
+                    disabled:opacity-60 disabled:cursor-not-allowed
+                  "
+                />
+              </div>
+            )}
+
+            {/* 모집 인원 입력 (GROUP 카테고리인 경우) */}
+            {category === "GROUP" && (
+              <div className="min-w-[200px]">
+                <label htmlFor="recruitmentLimit" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                  모집 인원 {isEditMode && <span className="text-xs">(변경 불가)</span>}
+                </label>
+                <input
+                  id="recruitmentLimit"
+                  type="number"
+                  value={recruitmentLimit || ""}
+                  onChange={(e) => setRecruitmentLimit(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="예: 10"
+                  min={2}
+                  max={100}
                   disabled={isEditMode}
                   className="
                     w-full h-10 rounded-[var(--radius-md)]
@@ -330,6 +372,63 @@ export const BRD_06 = (): React.JSX.Element => {
               />
             </div>
           </div>
+
+          {/* 모임 채팅방 정보 (GROUP 카테고리인 경우) */}
+          {category === "GROUP" && !isEditMode && (
+            <div className="rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] p-6 border border-[color:var(--color-border-subtle)]">
+              <h3 className="text-lg font-semibold text-[color:var(--color-fg-primary)] mb-4">모임 채팅방 설정</h3>
+
+              {/* 채팅방 이름 */}
+              <div className="mb-4">
+                <label htmlFor="chatRoomName" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                  채팅방 이름 (선택)
+                </label>
+                <input
+                  id="chatRoomName"
+                  type="text"
+                  value={chatRoomName}
+                  onChange={(e) => setChatRoomName(e.target.value)}
+                  placeholder="비워두면 모임 제목과 동일하게 설정됩니다"
+                  maxLength={100}
+                  className="
+                    w-full h-10 rounded-[var(--radius-md)]
+                    bg-[color:var(--color-bg-elev-2)]
+                    text-[color:var(--color-fg-primary)]
+                    border border-[color:var(--color-border-subtle)]
+                    focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
+                    px-3
+                  "
+                />
+              </div>
+
+              {/* 채팅방 설명 */}
+              <div>
+                <label htmlFor="chatRoomDescription" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                  채팅방 설명 (선택)
+                </label>
+                <textarea
+                  id="chatRoomDescription"
+                  value={chatRoomDescription}
+                  onChange={(e) => setChatRoomDescription(e.target.value)}
+                  placeholder="비워두면 게시글 내용과 동일하게 설정됩니다"
+                  maxLength={500}
+                  rows={3}
+                  className="
+                    w-full rounded-[var(--radius-md)]
+                    bg-[color:var(--color-bg-elev-2)]
+                    text-[color:var(--color-fg-primary)]
+                    border border-[color:var(--color-border-subtle)]
+                    focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]
+                    px-3 py-2
+                    resize-none
+                  "
+                />
+                <p className="text-xs text-[color:var(--color-fg-muted)] mt-1">
+                  {chatRoomDescription.length} / 500자
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* 파일 첨부 */}
           <div>
