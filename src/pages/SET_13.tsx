@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "@/api/client";
 import { LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import { changePassword } from "@/services/authService";
-import { updateNickname, updateEmail } from "@/services/userService";
+import { updateNickname } from "@/services/userService";
 import { isAxiosError } from "axios";
 import { LibrarySearchModal } from "@/components/LibrarySearchModal/LibrarySearchModal";
 import type { Library } from "@/types/library";
@@ -17,11 +17,6 @@ import { useQueryClient } from "@tanstack/react-query";
  *    - Endpoint: PATCH /api/users/me/nickname
  *    - Request Body: { nickname: string }
  *    - Response: { success: boolean, data: { nickname: string } }
- *
- * 2. 이메일 수정 API
- *    - Endpoint: PATCH /api/users/me/email
- *    - Request Body: { email: string }
- *    - Response: { success: boolean, data: { email: string } }
  */
 
 export default function SET_13() {
@@ -34,13 +29,11 @@ export default function SET_13() {
 
   // 편집 모드 상태 관리
   const [isEditingNickname, setIsEditingNickname] = useState(false);
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [isLibrarySearchModalOpen, setIsLibrarySearchModalOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // 임시 값 상태
   const [tempNickname, setTempNickname] = useState("");
-  const [tempEmail, setTempEmail] = useState("");
 
   // 비밀번호 변경 상태
   const [currentPassword, setCurrentPassword] = useState("");
@@ -103,42 +96,6 @@ export default function SET_13() {
   const handleCancelNickname = () => {
     setTempNickname(myPageData?.nickname || "");
     setIsEditingNickname(false);
-  };
-
-  // 이메일 수정 핸들러
-  const handleEditEmail = () => {
-    // TODO: 백엔드에서 이메일 정보 제공 필요 (현재 MyPagePreview에 이메일 없음)
-    setTempEmail("");
-    setIsEditingEmail(true);
-  };
-
-  const handleSaveEmail = async () => {
-    try {
-      await updateEmail(tempEmail);
-
-      // 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ['myPage'] });
-
-      setIsEditingEmail(false);
-      alert('이메일이 성공적으로 변경되었습니다.');
-    } catch (error) {
-      console.error('이메일 수정 실패:', error);
-      if (isAxiosError(error)) {
-        if (error.code === 'ERR_NETWORK') {
-          alert('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
-        } else {
-          const message = error.response?.data?.message || '이메일 수정에 실패했습니다.';
-          alert(message);
-        }
-      } else {
-        alert('이메일 수정에 실패했습니다. 다시 시도해주세요.');
-      }
-    }
-  };
-
-  const handleCancelEmail = () => {
-    setTempEmail("");
-    setIsEditingEmail(false);
   };
 
   // 비밀번호 변경 핸들러
@@ -353,106 +310,6 @@ export default function SET_13() {
                       </button>
                       <button
                         onClick={handleCancelNickname}
-                        className="px-6 py-3 rounded hover:opacity-90 transition"
-                        style={{
-                          background: "#D9D9D9",
-                          color: "black",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          취소
-                        </span>
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* 이메일 */}
-                <div
-                  className="flex items-center gap-4 px-6 py-6 rounded"
-                  style={{ background: "#E9E5DC" }}
-                >
-                  <span
-                    style={{
-                      color: "black",
-                      fontSize: "36px",
-                      opacity: 0.6,
-                      lineHeight: "36px",
-                      minWidth: "120px",
-                    }}
-                  >
-                    이메일
-                  </span>
-                  {!isEditingEmail ? (
-                    <>
-                      <span
-                        className="flex-1"
-                        style={{
-                          color: "black",
-                          fontSize: "28px",
-                          lineHeight: "36px",
-                        }}
-                      >
-                        {/* TODO: 백엔드에서 이메일 정보 제공 필요 */}
-                        이메일 정보를 불러올 수 없습니다
-                      </span>
-                      <button
-                        onClick={handleEditEmail}
-                        className="px-6 py-3 rounded hover:opacity-90 transition"
-                        style={{
-                          background: "#6B4F3F",
-                          color: "white",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          수정
-                        </span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <input
-                        type="email"
-                        value={tempEmail}
-                        onChange={(e) => setTempEmail(e.target.value)}
-                        className="flex-1 px-4 py-2 rounded"
-                        style={{
-                          background: "#FFF9F2",
-                          color: "black",
-                          fontSize: "28px",
-                          lineHeight: "36px",
-                          border: "2px solid #6B4F3F",
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveEmail}
-                        className="px-6 py-3 rounded hover:opacity-90 transition"
-                        style={{
-                          background: "#6B4F3F",
-                          color: "white",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          저장
-                        </span>
-                      </button>
-                      <button
-                        onClick={handleCancelEmail}
                         className="px-6 py-3 rounded hover:opacity-90 transition"
                         style={{
                           background: "#D9D9D9",
