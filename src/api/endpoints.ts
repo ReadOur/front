@@ -26,6 +26,9 @@ export const USER_ENDPOINTS = {
   FIND_ID: "/users/find-id",
   RESET_PASSWORD: "/users/reset-password",
   CHANGE_PASSWORD: "/users/change-password",
+  // 사용자 정보 수정
+  UPDATE_NICKNAME: "/users/me/nickname",
+  UPDATE_EMAIL: "/users/me/email",
   // 마이페이지 - 내 프로필
   MY_PAGE: "/my-page", // 내 프로필 + 최근 글/댓글/좋아요 5개씩
   MY_POSTS: "/my-page/posts", // 내가 작성한 게시글 전체 (페이징)

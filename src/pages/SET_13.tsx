@@ -3,21 +3,12 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "@/api/client";
 import { LIBRARY_ENDPOINTS } from "@/api/endpoints";
 import { changePassword } from "@/services/authService";
+import { updateNickname, updateEmail } from "@/services/userService";
 import { isAxiosError } from "axios";
 import { LibrarySearchModal } from "@/components/LibrarySearchModal/LibrarySearchModal";
 import type { Library } from "@/types/library";
-
-// TODO: API 연동 시 아래 서비스를 import 하세요
-// import { updateUserNickname, updateUserEmail, updateUserPersonalInfo } from "@/services/userService";
-
-// 목업 데이터 (나중에 API로 교체)
-const mockUserData = {
-  name: "홍길동",
-  nickname: "독서왕",
-  email: "hong@example.com",
-  personalInfo: "개인정보",
-  favoriteLibraries: [] as Library[],
-};
+import { useMyPage } from "@/hooks/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * API 연동 가이드:
@@ -31,27 +22,25 @@ const mockUserData = {
  *    - Endpoint: PATCH /api/users/me/email
  *    - Request Body: { email: string }
  *    - Response: { success: boolean, data: { email: string } }
- *
- * 3. 개인정보 수정 API
- *    - Endpoint: PATCH /api/users/me/personal-info
- *    - Request Body: { personalInfo: string }
- *    - Response: { success: boolean, data: { personalInfo: string } }
  */
 
 export default function SET_13() {
-  const [userData, setUserData] = useState(mockUserData);
+  // 실제 사용자 정보 가져오기
+  const { data: myPageData, isLoading: isLoadingUserData } = useMyPage();
+  const queryClient = useQueryClient();
+
+  // 사용자 데이터 상태 (선호 도서관 포함)
+  const [favoriteLibraries, setFavoriteLibraries] = useState<Library[]>([]);
 
   // 편집 모드 상태 관리
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
   const [isLibrarySearchModalOpen, setIsLibrarySearchModalOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // 임시 값 상태
-  const [tempNickname, setTempNickname] = useState(userData.nickname);
-  const [tempEmail, setTempEmail] = useState(userData.email);
-  const [tempPersonalInfo, setTempPersonalInfo] = useState(userData.personalInfo);
+  const [tempNickname, setTempNickname] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
 
   // 비밀번호 변경 상태
   const [currentPassword, setCurrentPassword] = useState("");
@@ -69,10 +58,7 @@ export default function SET_13() {
       setIsLoadingLibraries(true);
       try {
         const response = await apiClient.get<Library[]>(LIBRARY_ENDPOINTS.FAVORITE_LIBRARIES);
-        setUserData(prevData => ({
-          ...prevData,
-          favoriteLibraries: response || [],
-        }));
+        setFavoriteLibraries(response || []);
       } catch (error) {
         console.error("선호 도서관 목록 조회 실패:", error);
         // 에러 발생 시 빈 배열 유지
@@ -86,92 +72,73 @@ export default function SET_13() {
 
   // 닉네임 수정 핸들러
   const handleEditNickname = () => {
-    setTempNickname(userData.nickname);
+    setTempNickname(myPageData?.nickname || "");
     setIsEditingNickname(true);
   };
 
   const handleSaveNickname = async () => {
     try {
-      // TODO: API 호출 시 아래 주석을 해제하고 사용하세요
-      // const response = await updateUserNickname(tempNickname);
-      // if (response.success) {
-      //   setUserData({ ...userData, nickname: response.data.nickname });
-      //   alert('닉네임이 성공적으로 변경되었습니다.');
-      // }
+      await updateNickname(tempNickname);
 
-      // 임시: 로컬 상태만 업데이트
-      setUserData({ ...userData, nickname: tempNickname });
+      // 캐시 무효화 (마이페이지 데이터 다시 로드)
+      queryClient.invalidateQueries({ queryKey: ['myPage'] });
+
       setIsEditingNickname(false);
-      console.log('닉네임 수정:', tempNickname);
+      alert('닉네임이 성공적으로 변경되었습니다.');
     } catch (error) {
       console.error('닉네임 수정 실패:', error);
-      // alert('닉네임 수정에 실패했습니다. 다시 시도해주세요.');
+      if (isAxiosError(error)) {
+        if (error.code === 'ERR_NETWORK') {
+          alert('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          const message = error.response?.data?.message || '닉네임 수정에 실패했습니다.';
+          alert(message);
+        }
+      } else {
+        alert('닉네임 수정에 실패했습니다. 다시 시도해주세요.');
+      }
     }
   };
 
   const handleCancelNickname = () => {
-    setTempNickname(userData.nickname);
+    setTempNickname(myPageData?.nickname || "");
     setIsEditingNickname(false);
   };
 
   // 이메일 수정 핸들러
   const handleEditEmail = () => {
-    setTempEmail(userData.email);
+    // TODO: 백엔드에서 이메일 정보 제공 필요 (현재 MyPagePreview에 이메일 없음)
+    setTempEmail("");
     setIsEditingEmail(true);
   };
 
   const handleSaveEmail = async () => {
     try {
-      // TODO: API 호출 시 아래 주석을 해제하고 사용하세요
-      // const response = await updateUserEmail(tempEmail);
-      // if (response.success) {
-      //   setUserData({ ...userData, email: response.data.email });
-      //   alert('이메일이 성공적으로 변경되었습니다.');
-      // }
+      await updateEmail(tempEmail);
 
-      // 임시: 로컬 상태만 업데이트
-      setUserData({ ...userData, email: tempEmail });
+      // 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['myPage'] });
+
       setIsEditingEmail(false);
-      console.log('이메일 수정:', tempEmail);
+      alert('이메일이 성공적으로 변경되었습니다.');
     } catch (error) {
       console.error('이메일 수정 실패:', error);
-      // alert('이메일 수정에 실패했습니다. 다시 시도해주세요.');
+      if (isAxiosError(error)) {
+        if (error.code === 'ERR_NETWORK') {
+          alert('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          const message = error.response?.data?.message || '이메일 수정에 실패했습니다.';
+          alert(message);
+        }
+      } else {
+        alert('이메일 수정에 실패했습니다. 다시 시도해주세요.');
+      }
     }
   };
 
   const handleCancelEmail = () => {
-    setTempEmail(userData.email);
+    setTempEmail("");
     setIsEditingEmail(false);
-  };
-
-  // 개인정보 수정 핸들러
-  const handleEditPersonalInfo = () => {
-    setTempPersonalInfo(userData.personalInfo);
-    setIsEditingPersonalInfo(true);
-  };
-
-  const handleSavePersonalInfo = async () => {
-    try {
-      // TODO: API 호출 시 아래 주석을 해제하고 사용하세요
-      // const response = await updateUserPersonalInfo(tempPersonalInfo);
-      // if (response.success) {
-      //   setUserData({ ...userData, personalInfo: response.data.personalInfo });
-      //   alert('개인정보가 성공적으로 변경되었습니다.');
-      // }
-
-      // 임시: 로컬 상태만 업데이트
-      setUserData({ ...userData, personalInfo: tempPersonalInfo });
-      setIsEditingPersonalInfo(false);
-      console.log('개인정보 수정:', tempPersonalInfo);
-    } catch (error) {
-      console.error('개인정보 수정 실패:', error);
-      // alert('개인정보 수정에 실패했습니다. 다시 시도해주세요.');
-    }
-  };
-
-  const handleCancelPersonalInfo = () => {
-    setTempPersonalInfo(userData.personalInfo);
-    setIsEditingPersonalInfo(false);
   };
 
   // 비밀번호 변경 핸들러
@@ -243,12 +210,6 @@ export default function SET_13() {
     setIsChangingPassword(false);
   };
 
-  // 수정 핸들러 (나중에 모달/폼으로 구현)
-  const handleEdit = (field: string) => {
-    console.log(`수정: ${field}`);
-    // TODO: 모달 열기 또는 인라인 편집
-  };
-
   // 도서관 검색 모달 열기
   const handleAddLibrary = () => {
     setIsLibrarySearchModalOpen(true);
@@ -264,10 +225,7 @@ export default function SET_13() {
       });
 
       // 로컬 상태 업데이트
-      setUserData({
-        ...userData,
-        favoriteLibraries: [...userData.favoriteLibraries, library],
-      });
+      setFavoriteLibraries([...favoriteLibraries, library]);
       console.log("관심 도서관 추가:", library.libraryName);
       setIsLibrarySearchModalOpen(false);
     } catch (error) {
@@ -283,10 +241,7 @@ export default function SET_13() {
       await apiClient.delete(LIBRARY_ENDPOINTS.REMOVE_FAVORITE_LIBRARY(libraryCode));
 
       // 로컬 상태 업데이트
-      setUserData({
-        ...userData,
-        favoriteLibraries: userData.favoriteLibraries.filter((lib) => lib.libraryCode !== libraryCode),
-      });
+      setFavoriteLibraries(favoriteLibraries.filter((lib) => lib.libraryCode !== libraryCode));
       console.log("관심 도서관 삭제:", libraryCode);
     } catch (error) {
       console.error("관심 도서관 삭제 실패:", error);
@@ -312,7 +267,12 @@ export default function SET_13() {
 
         {/* 메인 설정 영역 */}
         <div className="max-w-[900px] mx-auto">
-          <div className="space-y-6">
+          {isLoadingUserData ? (
+            <div className="text-center py-8 text-xl" style={{ color: "#999" }}>
+              로딩 중...
+            </div>
+          ) : (
+            <div className="space-y-6">
                 {/* 닉네임 */}
                 <div
                   className="flex items-center gap-4 px-6 py-6 rounded"
@@ -339,7 +299,7 @@ export default function SET_13() {
                           lineHeight: "36px",
                         }}
                       >
-                        {userData.nickname}
+                        {myPageData?.nickname || "닉네임 없음"}
                       </span>
                       <button
                         onClick={handleEditNickname}
@@ -438,7 +398,8 @@ export default function SET_13() {
                           lineHeight: "36px",
                         }}
                       >
-                        {userData.email}
+                        {/* TODO: 백엔드에서 이메일 정보 제공 필요 */}
+                        이메일 정보를 불러올 수 없습니다
                       </span>
                       <button
                         onClick={handleEditEmail}
@@ -511,105 +472,6 @@ export default function SET_13() {
                   )}
                 </div>
 
-                {/* 개인정보 수정 */}
-                <div
-                  className="flex items-center gap-4 px-6 py-6 rounded"
-                  style={{ background: "#E9E5DC" }}
-                >
-                  <span
-                    style={{
-                      color: "black",
-                      fontSize: "36px",
-                      opacity: 0.6,
-                      lineHeight: "36px",
-                      minWidth: "240px",
-                    }}
-                  >
-                    개인정보
-                  </span>
-                  {!isEditingPersonalInfo ? (
-                    <>
-                      <span
-                        className="flex-1"
-                        style={{
-                          color: "black",
-                          fontSize: "28px",
-                          lineHeight: "36px",
-                        }}
-                      >
-                        {userData.personalInfo}
-                      </span>
-                      <button
-                        onClick={handleEditPersonalInfo}
-                        className="px-6 py-3 rounded hover:opacity-90 transition"
-                        style={{
-                          background: "#6B4F3F",
-                          color: "white",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          수정
-                        </span>
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <input
-                        type="text"
-                        value={tempPersonalInfo}
-                        onChange={(e) => setTempPersonalInfo(e.target.value)}
-                        className="flex-1 px-4 py-2 rounded"
-                        style={{
-                          background: "#FFF9F2",
-                          color: "black",
-                          fontSize: "28px",
-                          lineHeight: "36px",
-                          border: "2px solid #6B4F3F",
-                        }}
-                      />
-                      <button
-                        onClick={handleSavePersonalInfo}
-                        className="px-6 py-3 rounded hover:opacity-90 transition"
-                        style={{
-                          background: "#6B4F3F",
-                          color: "white",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          저장
-                        </span>
-                      </button>
-                      <button
-                        onClick={handleCancelPersonalInfo}
-                        className="px-6 py-3 rounded hover:opacity-90 transition"
-                        style={{
-                          background: "#D9D9D9",
-                          color: "black",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "28px",
-                            lineHeight: "36px",
-                          }}
-                        >
-                          취소
-                        </span>
-                      </button>
-                    </>
-                  )}
-                </div>
-
                 {/* 관심 도서관 */}
                 <div
                   className="px-6 py-6 rounded"
@@ -652,8 +514,8 @@ export default function SET_13() {
                       <div className="text-sm" style={{ color: "#6B4F3F" }}>
                         로딩 중...
                       </div>
-                    ) : userData.favoriteLibraries.length > 0 ? (
-                      userData.favoriteLibraries.map((library) => (
+                    ) : favoriteLibraries.length > 0 ? (
+                      favoriteLibraries.map((library) => (
                         <div
                           key={library.libraryCode}
                           className="px-6 py-2 rounded-[30px] flex items-center gap-2 group cursor-pointer hover:opacity-80 transition"
@@ -858,6 +720,7 @@ export default function SET_13() {
                   )}
                 </div>
           </div>
+          )}
         </div>
       </div>
 
