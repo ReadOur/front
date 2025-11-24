@@ -11,8 +11,9 @@ import {
   UserProfileLikedPostsResponse,
   UserProfileCommentsResponse,
   UpdateProfileRequest,
-  SpringPage,
-  PostListItem,
+  MyPagePostsResponse,
+  MyPageLikedPostsResponse,
+  MyPageCommentsResponse,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -56,7 +57,7 @@ export function useMyPage() {
  * 내가 작성한 게시글 전체 조회 (페이징)
  */
 export function useMyPosts(params?: { page?: number; size?: number; sort?: string }) {
-  return useQuery<SpringPage<PostListItem>>({
+  return useQuery<MyPagePostsResponse>({
     queryKey: USER_QUERY_KEYS.myPosts(params),
     queryFn: () => userService.getMyPosts(params),
   });
@@ -66,7 +67,7 @@ export function useMyPosts(params?: { page?: number; size?: number; sort?: strin
  * 좋아요 누른 글 전체 조회 (페이징)
  */
 export function useMyLikedPosts(params?: { page?: number; size?: number; sort?: string }) {
-  return useQuery<SpringPage<PostListItem>>({
+  return useQuery<MyPageLikedPostsResponse>({
     queryKey: USER_QUERY_KEYS.myLikedPosts(params),
     queryFn: () => userService.getMyLikedPosts(params),
   });
@@ -76,7 +77,7 @@ export function useMyLikedPosts(params?: { page?: number; size?: number; sort?: 
  * 내가 작성한 댓글 전체 조회 (페이징)
  */
 export function useMyComments(params?: { page?: number; size?: number; sort?: string }) {
-  return useQuery<SpringPage<PostListItem>>({
+  return useQuery<MyPageCommentsResponse>({
     queryKey: USER_QUERY_KEYS.myComments(params),
     queryFn: () => userService.getMyComments(params),
   });
