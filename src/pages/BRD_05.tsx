@@ -650,6 +650,14 @@ export default function PostShow() {
                       참여 중
                     </span>
                   )}
+                  {/* 모집 마감 상태 표시 (참여 중인 사용자도 볼 수 있음) */}
+                  {post.currentMemberCount !== undefined &&
+                   post.recruitmentLimit !== undefined &&
+                   post.currentMemberCount >= post.recruitmentLimit && (
+                    <span className="px-2 py-1 bg-[color:var(--color-bg-elev-2)] text-[color:var(--color-fg-muted)] border border-[color:var(--color-border-subtle)] rounded-full text-xs font-medium">
+                      모집 마감
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
