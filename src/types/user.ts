@@ -3,6 +3,9 @@
  */
 
 import { BaseEntity } from "./api";
+import { MyPageCommentItem } from "./comment";
+import { PostListItem } from "./post";
+import { SpringPage } from "./spring";
 
 // ===== 사용자 엔티티 =====
 
@@ -141,9 +144,9 @@ export interface ChangePasswordRequest {
 export interface MyPagePreview {
   userId: number;
   nickname: string;
-  myPosts: import("./post").PostListItem[];
-  myComments: import("./post").PostListItem[];
-  likedPosts: import("./post").PostListItem[];
+  myPosts: PostListItem[];
+  myComments: MyPageCommentItem[];
+  likedPosts: PostListItem[];
 }
 
 /**
@@ -154,9 +157,27 @@ export interface MyPagePreview {
 export interface UserProfilePreview {
   userId: number;
   nickname: string;
-  myPosts: import("./post").PostListItem[];
-  myComments: import("./post").PostListItem[];
-  likedPosts: import("./post").PostListItem[];
+  myPosts: PostListItem[];
+  myComments: MyPageCommentItem[];
+  likedPosts: PostListItem[];
+}
+
+export interface MyPagePostsResponse {
+  userId: number;
+  nickname: string;
+  postPage: SpringPage<PostListItem>;
+}
+
+export interface MyPageLikedPostsResponse {
+  userId: number;
+  nickname: string;
+  likedPostsPage: SpringPage<PostListItem>;
+}
+
+export interface MyPageCommentsResponse {
+  userId: number;
+  nickname: string;
+  commentPage: SpringPage<MyPageCommentItem>;
 }
 
 /**
@@ -166,7 +187,7 @@ export interface UserProfilePreview {
 export interface UserProfilePostsResponse {
   userId: number;
   nickname: string;
-  postPage: import("./api").SpringPage<import("./post").PostListItem>;
+  postPage: SpringPage<PostListItem>;
 }
 
 /**
@@ -176,7 +197,7 @@ export interface UserProfilePostsResponse {
 export interface UserProfileLikedPostsResponse {
   userId: number;
   nickname: string;
-  likedPostsPage: import("./api").SpringPage<import("./post").PostListItem>;
+  likedPostsPage: SpringPage<PostListItem>;
 }
 
 /**
@@ -186,5 +207,5 @@ export interface UserProfileLikedPostsResponse {
 export interface UserProfileCommentsResponse {
   userId: number;
   nickname: string;
-  commentPage: import("./api").SpringPage<import("./post").PostListItem>;
+  commentPage: SpringPage<MyPageCommentItem>;
 }
