@@ -313,7 +313,7 @@ function ChatWindow({
           </button>
           {/* 메뉴 드롭다운 */}
           {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-[576px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+            <div className="absolute right-full top-0 mr-2 w-[576px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
               {/* AI 명령어 섹션 */}
               <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
                 <div className="px-3 py-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
@@ -436,10 +436,10 @@ function ChatWindow({
                 </div>
               )}
 
-              <div className="flex items-start gap-1">
+              <div className={cls("flex items-start gap-1", mine && "flex-row-reverse justify-end")}>
                 <div className={cls(
                   "max-w-[75%] px-3 py-2 rounded-[var(--radius-lg)] transition-opacity",
-                  mine ? "ml-auto bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]",
+                  mine ? "bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]" : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]",
                   isHidden && "opacity-30 blur-sm"
                 )}>
                   {!mine && m.senderNickname && (
@@ -471,7 +471,10 @@ function ChatWindow({
 
                   {/* 메시지 메뉴 드롭다운 */}
                   {messageMenuOpen === m.id && (
-                    <div className="absolute right-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+                    <div className={cls(
+                      "absolute top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50",
+                      mine ? "right-0" : "left-0"
+                    )}>
                       <button
                         onClick={() => {
                           setHiddenMessageIds(prev => {
