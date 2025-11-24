@@ -420,7 +420,7 @@ export default function HOM_01() {
       {/* ============================================================
           인기 게시글 & 모임 게시글 (반반 나눠서 표시)
           ============================================================ */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* 인기 게시글 (popularPosts) */}
         <div>
           <div className="flex items-center justify-between mb-6">
