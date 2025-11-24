@@ -370,6 +370,12 @@ export const BRD_List: React.FC = () => {
                       {badges.find((b) => b.type === "new") && (
                         <span className="text-[color:var(--color-accent)] text-sm shrink-0">[NEW]</span>
                       )}
+                      {/* GROUP 카테고리일 때 참여 인원수 표시 */}
+                      {post.category === "GROUP" && post.currentMemberCount !== undefined && post.recruitmentLimit !== undefined && (
+                        <span className="text-[color:var(--color-accent)] text-sm shrink-0">
+                          [👥 {post.currentMemberCount}/{post.recruitmentLimit}]
+                        </span>
+                      )}
                     </div>
 
                     {/* 좋아요 */}
