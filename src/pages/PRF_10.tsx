@@ -55,20 +55,36 @@ export default function PRF_10() {
   const profileData = isViewingOtherUser ? userPageData : myPageData;
   const isLoading = isViewingOtherUser ? isLoadingUserPage : isLoadingMyPage;
 
-  // 전체 목록 데이터
-  const likedPostsData = isViewingOtherUser
-    ? userLikedPostsData?.likedPostsPage
-    : myLikedPostsData;
-  const myPostsData = isViewingOtherUser
-    ? userPostsData?.postPage
-    : myPostsDataFull;
-  const myCommentsData = isViewingOtherUser
-    ? userCommentsData?.commentPage
-    : myCommentsDataFull;
+  // 전체 목록 데이터 (페이지네이션 응답이 없을 때 마이페이지 미리보기 데이터로 대체)
+  const likedPosts = isViewingOtherUser
+    ? userLikedPostsData?.likedPostsPage?.content || userPageData?.likedPosts
+    : myLikedPostsData?.likedPostsPage?.content || myPageData?.likedPosts;
+  const myPosts = isViewingOtherUser
+    ? userPostsData?.postPage?.content || userPageData?.myPosts
+    : myPostsDataFull?.postPage?.content || myPageData?.myPosts;
+  const myComments = isViewingOtherUser
+    ? userCommentsData?.commentPage?.content || userPageData?.myComments
+    : myCommentsDataFull?.commentPage?.content || myPageData?.myComments;
 
-  const isLoadingLikedPosts = isViewingOtherUser ? isLoadingUserLikedPosts : isLoadingMyLikedPosts;
-  const isLoadingMyPosts = isViewingOtherUser ? isLoadingUserPosts : isLoadingMyPostsFull;
-  const isLoadingMyComments = isViewingOtherUser ? isLoadingUserComments : isLoadingMyCommentsFull;
+  const likedPostsCount = isViewingOtherUser
+    ? userLikedPostsData?.likedPostsPage?.totalElements ?? userPageData?.likedPosts?.length
+    : myLikedPostsData?.likedPostsPage?.totalElements ?? myPageData?.likedPosts?.length;
+  const myPostsCount = isViewingOtherUser
+    ? userPostsData?.postPage?.totalElements ?? userPageData?.myPosts?.length
+    : myPostsDataFull?.postPage?.totalElements ?? myPageData?.myPosts?.length;
+  const myCommentsCount = isViewingOtherUser
+    ? userCommentsData?.commentPage?.totalElements ?? userPageData?.myComments?.length
+    : myCommentsDataFull?.commentPage?.totalElements ?? myPageData?.myComments?.length;
+
+  const isLoadingLikedPosts = isViewingOtherUser
+    ? isLoadingUserLikedPosts && !userPageData?.likedPosts
+    : isLoadingMyLikedPosts && !myPageData?.likedPosts;
+  const isLoadingMyPosts = isViewingOtherUser
+    ? isLoadingUserPosts && !userPageData?.myPosts
+    : isLoadingMyPostsFull && !myPageData?.myPosts;
+  const isLoadingMyComments = isViewingOtherUser
+    ? isLoadingUserComments && !userPageData?.myComments
+    : isLoadingMyCommentsFull && !myPageData?.myComments;
 
   // 날짜 포맷 함수
   const formatDate = (dateString: string) => {
@@ -128,9 +144,9 @@ export default function PRF_10() {
                 사용자 ID: {profileData.userId}
               </p>
               <div className="flex gap-6 mt-3 text-base" style={{ color: "#6B4F3F" }}>
-                <span>내 글 {profileData.myPosts.length}</span>
-                <span>댓글 단 글 {profileData.myComments.length}</span>
-                <span>좋아요 {profileData.likedPosts.length}</span>
+                <span>내 글 {myPostsCount ?? 0}</span>
+                <span>댓글 단 글 {myCommentsCount ?? 0}</span>
+                <span>좋아요 {likedPostsCount ?? 0}</span>
               </div>
             </div>
           </div>
@@ -140,7 +156,7 @@ export default function PRF_10() {
           </div>
         )}
 
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* 3개 섹션: 좋아요 누른 글, 내가 작성한 글, 댓글 단 글 */}
           <div className="grid grid-cols-2 gap-6">
             {/* 좋아요 누른 글 */}
@@ -185,7 +201,7 @@ export default function PRF_10() {
                       로딩 중...
                     </div>
                   ) : (() => {
-                    const posts = likedPostsData?.content?.slice(0, 5) || [];
+                    const posts = likedPosts?.slice(0, 5) || [];
 
                     return posts.length > 0 ? (
                       posts.map((post) => (
@@ -248,7 +264,7 @@ export default function PRF_10() {
                       로딩 중...
                     </div>
                   ) : (() => {
-                    const posts = myPostsData?.content?.slice(0, 5) || [];
+                    const posts = myPosts?.slice(0, 5) || [];
 
                     return posts.length > 0 ? (
                       posts.map((post) => (
@@ -311,12 +327,12 @@ export default function PRF_10() {
                       로딩 중...
                     </div>
                   ) : (() => {
-                    const posts = myCommentsData?.content?.slice(0, 5) || [];
+                    const posts = myComments?.slice(0, 5) || [];
 
                     return posts.length > 0 ? (
                       posts.map((post) => (
                         <div
-                          key={post.postId}
+                          key={post.commentId}
                           onClick={() => handlePostClick(post.postId)}
                           className="p-4 rounded cursor-pointer hover:opacity-80 transition"
                           style={{ background: "#E9E5DC" }}
@@ -325,7 +341,7 @@ export default function PRF_10() {
                             className="font-normal line-clamp-1"
                             style={{ color: "#6B4F3F", fontSize: "18px" }}
                           >
-                            {post.title}
+                            {post.postTitle}
                           </p>
                           <p
                             className="text-sm mt-1"

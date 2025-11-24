@@ -11,8 +11,9 @@ import {
   UserProfileLikedPostsResponse,
   UserProfileCommentsResponse,
   UpdateProfileRequest,
-  SpringPage,
-  PostListItem,
+  MyPagePostsResponse,
+  MyPageLikedPostsResponse,
+  MyPageCommentsResponse,
 } from "@/types";
 
 /**
@@ -121,8 +122,8 @@ export async function getMyPosts(params?: {
   page?: number;
   size?: number;
   sort?: string;
-}): Promise<SpringPage<PostListItem>> {
-  return apiClient.get<SpringPage<PostListItem>>(USER_ENDPOINTS.MY_POSTS, {
+}): Promise<MyPagePostsResponse> {
+  return apiClient.get<MyPagePostsResponse>(USER_ENDPOINTS.MY_POSTS, {
     params: {
       page: params?.page || 0,
       size: params?.size || 20,
@@ -139,8 +140,8 @@ export async function getMyLikedPosts(params?: {
   page?: number;
   size?: number;
   sort?: string;
-}): Promise<SpringPage<PostListItem>> {
-  return apiClient.get<SpringPage<PostListItem>>(USER_ENDPOINTS.MY_LIKED_POSTS, {
+}): Promise<MyPageLikedPostsResponse> {
+  return apiClient.get<MyPageLikedPostsResponse>(USER_ENDPOINTS.MY_LIKED_POSTS, {
     params: {
       page: params?.page || 0,
       size: params?.size || 20,
@@ -157,8 +158,8 @@ export async function getMyComments(params?: {
   page?: number;
   size?: number;
   sort?: string;
-}): Promise<SpringPage<PostListItem>> {
-  return apiClient.get<SpringPage<PostListItem>>(USER_ENDPOINTS.MY_COMMENTS, {
+}): Promise<MyPageCommentsResponse> {
+  return apiClient.get<MyPageCommentsResponse>(USER_ENDPOINTS.MY_COMMENTS, {
     params: {
       page: params?.page || 0,
       size: params?.size || 20,

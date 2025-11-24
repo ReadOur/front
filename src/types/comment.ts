@@ -56,3 +56,17 @@ export interface CommentLikeResponse {
   isLiked: boolean;
   likeCount: number;
 }
+
+// ===== 마이페이지 댓글 목록 =====
+
+/**
+ * 마이페이지 댓글 목록 아이템
+ * - 내가 단 댓글 목록, 특정 사용자가 단 댓글 목록 응답 공용
+ */
+export interface MyPageCommentItem {
+  commentId: number;
+  content: string;
+  createdAt: string;
+  postId: number;
+  postTitle: string;
+}
