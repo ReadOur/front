@@ -9,8 +9,6 @@ export default function CAL_11() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
-  // 조회 설정 (월별 고정)
-  const [scope, setScope] = useState<Scope>('USER');
 
   // 날짜 클릭 시 일정 목록 표시
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -70,7 +68,7 @@ export default function CAL_11() {
         const data = await getEvents({
           viewDate,
           viewType: 'MONTH',
-          scope,
+          scope: 'ALL',
         });
         setEvents(data);
       } catch (error: any) {
@@ -88,7 +86,7 @@ export default function CAL_11() {
     };
 
     fetchEvents();
-  }, [year, month, scope, user, isAuthenticated]);
+  }, [year, month, user, isAuthenticated]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -408,7 +406,7 @@ export default function CAL_11() {
       const data = await getEvents({
         viewDate,
         viewType: 'MONTH',
-        scope,
+        scope: 'ALL',
       });
       setEvents(data);
     } catch (error: any) {
@@ -489,58 +487,6 @@ export default function CAL_11() {
 
           {/* 빈 공간 (레이아웃 균형) */}
           <div style={{ width: "120px" }} />
-        </div>
-
-        {/* 조회 설정: Scope (월별 고정) */}
-        <div className="flex items-center justify-center gap-4 mb-6">
-          {/* Scope 선택 */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>
-              조회:
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setScope('USER')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: scope === 'USER' ? "#90BE6D" : "#E9E5DC",
-                  color: scope === 'USER' ? "white" : "#6B4F3F",
-                }}
-              >
-                개인
-              </button>
-              <button
-                onClick={() => setScope('ROOM')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: scope === 'ROOM' ? "#90BE6D" : "#E9E5DC",
-                  color: scope === 'ROOM' ? "white" : "#6B4F3F",
-                }}
-              >
-                방
-              </button>
-              <button
-                onClick={() => setScope('GLOBAL')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: scope === 'GLOBAL' ? "#90BE6D" : "#E9E5DC",
-                  color: scope === 'GLOBAL' ? "white" : "#6B4F3F",
-                }}
-              >
-                모임
-              </button>
-              <button
-                onClick={() => setScope('ALL')}
-                className="px-4 py-2 rounded hover:opacity-80 transition text-sm font-semibold"
-                style={{
-                  background: scope === 'ALL' ? "#90BE6D" : "#E9E5DC",
-                  color: scope === 'ALL' ? "white" : "#6B4F3F",
-                }}
-              >
-                전체
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* 캘린더 */}
