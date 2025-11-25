@@ -105,7 +105,7 @@ export function useRoomMessages(params: GetRoomMessagesParams, options?: { enabl
 }
 
 /**
- * 채팅 스레드 목록 조회
+ * 채팅방 멤버 프로필 조회
  */
 export function useThreads(params?: GetThreadsParams) {
   return useQuery<PaginatedResponse<ChatThread>>({
