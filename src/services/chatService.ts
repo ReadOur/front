@@ -377,7 +377,7 @@ export async function getPollResults(roomId: number, pollId: number): Promise<Po
  * 채팅방 참여
  */
 export async function joinRoom(roomId: number): Promise<void> {
-  return apiClient.post<void>(CHAT_ENDPOINTS.JOIN_ROOM(roomId));
+  return apiClient.post<void>(CHAT_ENDPOINTS.JOIN_ROOM(roomId), {});
 }
 
 /**
