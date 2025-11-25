@@ -15,6 +15,7 @@ import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
+import { extractUserIdFromToken } from "@/utils/auth";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -863,17 +864,7 @@ export default function ChatDock() {
   };
 
   // User data
-  const tokenUserId = useMemo(() => {
-    if (!accessToken) return undefined;
-    try {
-      const payload = JSON.parse(atob(accessToken.split(".")[1] || ""));
-      const rawId = payload.userId ?? payload.sub ?? payload.id ?? payload.uid;
-      return rawId ? rawId.toString() : undefined;
-    } catch (error) {
-      console.warn("토큰에서 userId를 파싱하지 못했습니다:", error);
-      return undefined;
-    }
-  }, [accessToken]);
+  const tokenUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
 
   const myUserId = myPage?.userId ? myPage.userId.toString() : tokenUserId;
   const me: ChatUser = {

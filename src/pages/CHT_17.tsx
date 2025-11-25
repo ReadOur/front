@@ -10,6 +10,7 @@ import { useToast } from "@/components/Toast/ToastProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
+import { extractUserIdFromToken } from "@/utils/auth";
 
 /**
  * CHT_17 - 채팅방 목록 페이지
@@ -280,17 +281,7 @@ export default function CHT_17() {
   const [roomName, setRoomName] = useState("");
   const [roomDescription, setRoomDescription] = useState("");
 
-  const tokenUserId = useMemo(() => {
-    if (!accessToken) return undefined;
-    try {
-      const payload = JSON.parse(atob(accessToken.split(".")[1] || ""));
-      const rawId = payload.userId ?? payload.sub ?? payload.id ?? payload.uid;
-      return rawId ? rawId.toString() : undefined;
-    } catch (error) {
-      console.warn("토큰에서 userId를 파싱하지 못했습니다:", error);
-      return undefined;
-    }
-  }, [accessToken]);
+  const tokenUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
 
   const currentUserId = myPage?.userId ? myPage.userId.toString() : tokenUserId;
 
