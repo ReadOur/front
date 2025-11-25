@@ -3,7 +3,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom, useRoomMemberProfile } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -251,8 +251,10 @@ function ChatWindow({
                       __onResizeStart,
                       width = 320,
                       height = 420,
+                      roomId,
                       isOwner = false,
                       isMuted = false,
+                      currentUserIdNumber,
                     }: {
   me: ChatUser;
   thread: ChatThread;
@@ -269,8 +271,10 @@ function ChatWindow({
   __onResizeStart?: (direction: string, e: React.PointerEvent) => void;
   width?: number;
   height?: number;
+  roomId?: number;
   isOwner?: boolean;
   isMuted?: boolean;
+  currentUserIdNumber?: number | null;
 }) {
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -285,6 +289,34 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
+  const [profileTarget, setProfileTarget] = useState<{
+    roomId: number;
+    userId: number;
+    messageId: string;
+    nickname?: string;
+  } | null>(null);
+
+  const {
+    data: selectedMemberProfile,
+    isFetching: isProfileFetching,
+    error: profileError,
+  } = useRoomMemberProfile(profileTarget?.roomId, profileTarget?.userId, { enabled: !!profileTarget });
+
+  const toast = useToast();
+
+  const createRoomMutation = useCreateRoom({
+    onSuccess: (data) => {
+      toast.show({
+        title: "1:1 채팅방을 생성했습니다.",
+        description: data.name,
+        variant: "success",
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error.message || "채팅방 생성에 실패했습니다.";
+      toast.show({ title: message, variant: "error" });
+    },
+  });
 
   const [newEvent, setNewEvent] = useState<CreateEventData>({
     title: "",
@@ -319,6 +351,50 @@ function ChatWindow({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isMenuOpen, messageMenuOpen]);
+
+  useEffect(() => {
+    if (profileError && profileTarget) {
+      const message = (profileError as any)?.response?.data?.message || profileError.message || "사용자 정보를 불러오지 못했습니다.";
+      toast.show({ title: message, variant: "error" });
+    }
+  }, [profileError, profileTarget, toast]);
+
+  const handleSenderProfileClick = (message: ChatMessage) => {
+    const senderIdValue = (message.senderId ?? message.fromId)?.toString();
+    const resolvedRoomId = Number(roomId ?? thread.id);
+    const senderIdNumber = senderIdValue ? Number(senderIdValue) : NaN;
+
+    if (!senderIdValue || Number.isNaN(senderIdNumber) || Number.isNaN(resolvedRoomId)) {
+      toast.show({ title: "프로필을 확인할 수 없는 발신자입니다.", variant: "warning" });
+      return;
+    }
+
+    if (profileTarget?.messageId === message.id) {
+      setProfileTarget(null);
+      return;
+    }
+
+    setProfileTarget({
+      roomId: resolvedRoomId,
+      userId: senderIdNumber,
+      messageId: message.id,
+      nickname: message.senderNickname,
+    });
+  };
+
+  const handleCreateDirectRoom = (targetUserId: number, nickname?: string) => {
+    if (!currentUserIdNumber) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      return;
+    }
+
+    createRoomMutation.mutate({
+      scope: "PRIVATE",
+      name: `${nickname ?? "사용자"}님과의 채팅`,
+      description: "1:1 채팅방",
+      memberIds: [currentUserIdNumber, targetUserId],
+    });
+  };
 
   const handleOpenEventModal = () => {
     const today = new Date();
@@ -555,6 +631,8 @@ function ChatWindow({
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
+          const isProfileOpen = profileTarget?.messageId === m.id;
+          const profile = isProfileOpen ? selectedMemberProfile : undefined;
 
           return (
             <div key={m.id} className="relative group">
@@ -566,6 +644,16 @@ function ChatWindow({
                   <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
                 </div>
               )}
+
+              <div className={cls("mb-1 flex", mine ? "justify-end" : "justify-start")}>
+                <button
+                  type="button"
+                  onClick={() => handleSenderProfileClick(m)}
+                  className="text-[10px] px-2 py-1 rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-muted)] hover:text-[color:var(--color-primary)] hover:border-[color:var(--color-primary)]"
+                >
+                  보낸 사람 ID: {senderId ?? "알 수 없음"}
+                </button>
+              </div>
 
               <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}>
                 {mine ? (
@@ -739,6 +827,59 @@ function ChatWindow({
                   </>
                 )}
               </div>
+
+              {isProfileOpen && (
+                <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">{profile?.nickname ?? profileTarget?.nickname ?? "사용자 정보"}</div>
+                      <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
+                        ID {profileTarget?.userId}
+                        {profile?.role ? ` · 역할 ${profile.role}` : ""}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProfileTarget(null)}
+                      className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+                      aria-label="프로필 카드 닫기"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {isProfileFetching ? (
+                    <div className="flex items-center gap-2 text-[color:var(--chatdock-fg-muted)] text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin" /> 프로필을 불러오는 중...
+                    </div>
+                  ) : profile ? (
+                    <div className="text-sm space-y-1 text-[color:var(--chatdock-fg-primary)]">
+                      <div>닉네임: {profile.nickname}</div>
+                      <div>역할: {profile.role}</div>
+                      <div>사용자 ID: {profile.userId}</div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-[color:var(--chatdock-fg-muted)]">
+                      프로필 정보를 불러올 수 없습니다.
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => profileTarget?.userId && handleCreateDirectRoom(profileTarget.userId, profile?.nickname ?? profileTarget?.nickname)}
+                      disabled={!profileTarget?.userId || createRoomMutation.isPending || !currentUserIdNumber}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                    >
+                      <span>💬</span>
+                      <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+                    </button>
+                    {!currentUserIdNumber && (
+                      <span className="text-xs text-[color:var(--chatdock-fg-muted)]">로그인 후 생성할 수 있습니다.</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* AI 세션 끝 마커 */}
               {isAISessionEnd && (
@@ -995,6 +1136,7 @@ export default function ChatDock() {
   const tokenUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
 
   const myUserId = myPage?.userId ? myPage.userId.toString() : tokenUserId;
+  const myUserIdNumber = useMemo(() => (myUserId ? Number(myUserId) : null), [myUserId]);
   const me: ChatUser = {
     id: myUserId || "me",
     name: myPage?.nickname || user?.name || user?.email || "나",
@@ -1668,6 +1810,7 @@ export default function ChatDock() {
                 roomId={parseInt(id, 10)}
                 isOwner={false} // TODO: 백엔드에서 방장 정보 받아오기
                 isMuted={false} // TODO: 백엔드에서 뮤트 상태 받아오기
+                currentUserIdNumber={myUserIdNumber}
               />
             </div>
           );

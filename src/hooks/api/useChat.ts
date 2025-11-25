@@ -46,6 +46,7 @@ import {
   PollResultsResponse,
   AiJobRequest,
   AiJobResponse,
+  RoomMemberProfile,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -62,6 +63,7 @@ export const CHAT_QUERY_KEYS = {
   polls: (roomId: number, page: number) => [...CHAT_QUERY_KEYS.all, "polls", roomId, page] as const,
   pollDetail: (roomId: number, pollId: number) => [...CHAT_QUERY_KEYS.all, "poll-detail", roomId, pollId] as const,
   pollResults: (roomId: number, pollId: number) => [...CHAT_QUERY_KEYS.all, "poll-results", roomId, pollId] as const,
+  roomMemberProfile: (roomId: number, userId: number) => [...CHAT_QUERY_KEYS.all, "room-member-profile", roomId, userId] as const,
   threads: () => [...CHAT_QUERY_KEYS.all, "threads"] as const,
   threadList: (params?: GetThreadsParams) => [...CHAT_QUERY_KEYS.threads(), params] as const,
   threadDetail: (id: string) => [...CHAT_QUERY_KEYS.threads(), id] as const,
@@ -101,6 +103,17 @@ export function useRoomMessages(params: GetRoomMessagesParams, options?: { enabl
     queryKey: CHAT_QUERY_KEYS.roomMessages(params.roomId),
     queryFn: () => chatService.getRoomMessages(params),
     enabled: options?.enabled !== false && !!params.roomId,
+  });
+}
+
+/**
+ * 채팅방 멤버 프로필 조회
+ */
+export function useRoomMemberProfile(roomId?: number, userId?: number, options?: { enabled?: boolean }) {
+  return useQuery<RoomMemberProfile>({
+    queryKey: CHAT_QUERY_KEYS.roomMemberProfile(roomId ?? 0, userId ?? 0),
+    queryFn: () => chatService.getRoomMemberProfile(roomId as number, userId as number),
+    enabled: options?.enabled !== false && !!roomId && !!userId,
   });
 }
 
