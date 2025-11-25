@@ -38,6 +38,7 @@ export interface ChatMessage {
   id: string;
   threadId: string;
   fromId: string;
+  senderId?: string;
   text: string;
   createdAt: number; // epoch ms
   senderNickname?: string; // 발신자 닉네임
@@ -420,7 +421,8 @@ function ChatWindow({
       {/* body */}
       <div ref={boxRef} className="flex-1 overflow-auto p-3 space-y-2">
         {messages.map((m) => {
-          const mine = m.fromId?.toString() === me.id?.toString();
+          const senderId = (m.fromId ?? m.senderId)?.toString();
+          const mine = senderId === me.id?.toString();
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
@@ -880,6 +882,7 @@ export default function ChatDock() {
         id: `ai-${Date.now()}`,
         threadId: variables.roomId.toString(),
         fromId: "ai",
+        senderId: "ai",
         text: data.result || "AI 응답을 받았습니다.",
         createdAt: Date.now(),
       };
@@ -952,6 +955,7 @@ export default function ChatDock() {
               id: room.lastMsg.id.toString(),
               threadId: room.roomId.toString(),
               fromId: "unknown",
+              senderId: "unknown",
               text: room.lastMsg.preview,
               createdAt: new Date(room.lastMsg.createdAt).getTime(),
             }
@@ -1168,6 +1172,7 @@ export default function ChatDock() {
           id: msg.id.toString(),
           threadId: msg.roomId.toString(),
           fromId: msg.senderId.toString(),
+          senderId: msg.senderId.toString(),
           text: msg.body.text,
           createdAt: new Date(msg.createdAt).getTime(),
           senderNickname: msg.senderNickname,
@@ -1206,6 +1211,7 @@ export default function ChatDock() {
       id: message.id.toString(),
       threadId: threadId,
       fromId: message.senderId.toString(),
+      senderId: message.senderId.toString(),
       text: message.body.text || "",
       createdAt: new Date(message.createdAt).getTime(),
       senderNickname: message.senderNickname,
@@ -1312,6 +1318,7 @@ export default function ChatDock() {
         id: `user-ai-${Date.now()}`,
         threadId: threadId,
         fromId: me.id,
+        senderId: me.id,
         text: text,
         createdAt: Date.now(),
       };
