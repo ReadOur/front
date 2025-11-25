@@ -187,14 +187,14 @@ export async function joinRoom(roomId: number): Promise<void> {
  * 채팅방 나가기
  */
 export async function leaveRoom(roomId: number): Promise<void> {
-  return apiClient.post<void>(CHAT_ENDPOINTS.LEAVE_ROOM(roomId));
+  return apiClient.post<void>(CHAT_ENDPOINTS.LEAVE_ROOM(roomId), {});
 }
 
 /**
  * 채팅방 핀 고정
  */
 export async function pinRoom(roomId: number): Promise<void> {
-  return apiClient.post<void>(CHAT_ENDPOINTS.PIN_ROOM(roomId));
+  return apiClient.post<void>(CHAT_ENDPOINTS.PIN_ROOM(roomId), {});
 }
 
 /**
@@ -215,7 +215,7 @@ export async function deleteRoom(roomId: number): Promise<void> {
  * 채팅방 알림 끄기/메시지 가리기
  */
 export async function muteRoom(roomId: number): Promise<void> {
-  return apiClient.post<void>(CHAT_ENDPOINTS.MUTE_ROOM(roomId));
+  return apiClient.post<void>(CHAT_ENDPOINTS.MUTE_ROOM(roomId), {});
 }
 
 /**
@@ -242,7 +242,7 @@ export async function requestAI(roomId: number, data: {
  * 메시지 숨기기
  */
 export async function hideMessage(roomId: number, messageId: number): Promise<void> {
-  return apiClient.post<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(roomId, messageId));
+  return apiClient.post<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(roomId, messageId), {});
 }
 
 /**
