@@ -1019,12 +1019,7 @@ function ChatWindow({
             </button>
           </div>
 
-          <div className="px-3 py-3 space-y-3 text-[color:var(--chatdock-fg-primary)]">
-            <div className="space-y-1 text-sm">
-              <div>닉네임: {profileTarget.nickname ?? "알 수 없음"}</div>
-              <div>권한: {profileTarget.role ?? "정보 없음"}</div>
-            </div>
-
+          <div className="px-3 py-3 text-[color:var(--chatdock-fg-primary)]">
             <div className="flex items-center gap-2">
               <button
                 type="button"
