@@ -3,7 +3,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom, useRoomMemberProfile } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -371,15 +371,30 @@ function ChatWindow({
   }, [isMenuOpen, messageMenuOpen]);
 
   const handleSenderProfileClick = (message: ChatMessage) => {
-    if (selectedProfileMessageId === message.id) {
-      setSelectedProfileMessageId(null);
+    const senderIdValue = (message.senderId ?? message.fromId)?.toString();
+    const resolvedRoomId = Number(roomId ?? thread.id);
+    const senderIdNumber = senderIdValue ? Number(senderIdValue) : NaN;
+
+    if (!senderIdValue || Number.isNaN(senderIdNumber) || Number.isNaN(resolvedRoomId)) {
+      toast.show({ title: "프로필을 확인할 수 없는 발신자입니다.", variant: "warning" });
       return;
     }
 
-    setSelectedProfileMessageId(message.id);
+    if (profileTarget?.messageId === message.id) {
+      setProfileTarget(null);
+      return;
+    }
+
+    setProfileTarget({
+      roomId: resolvedRoomId,
+      userId: senderIdNumber,
+      messageId: message.id,
+      nickname: message.senderNickname,
+      role: message.senderRole,
+    });
   };
 
-  const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
+  const handleCreateDirectRoom = (targetUserId: number, nickname?: string) => {
     if (!currentUserIdNumber) {
       toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
       return;
@@ -830,9 +845,10 @@ function ChatWindow({
                 <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-semibold">{profile?.nickname ?? "사용자 정보"}</div>
+                      <div className="font-semibold">{profile?.nickname ?? profileTarget?.nickname ?? "사용자 정보"}</div>
                       <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                        {profile?.role ? `권한: ${profile.role}` : "권한 정보 없음"}
+                        ID {profileTarget?.userId}
+                        {profile?.role ? ` · 역할 ${profile.role}` : ""}
                       </div>
                     </div>
                     <button

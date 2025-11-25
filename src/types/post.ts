@@ -153,8 +153,11 @@ export interface GetPostsParams extends PaginationParams {
 
 /**
  * 좋아요 응답
+ * - 일부 백엔드 구현은 { liked: boolean } 형식으로 반환할 수 있으므로 필드를 옵션으로 정의
+ * - likeCount를 내려주지 않는 경우가 있어 캐시된 값을 기반으로 계산할 수 있게 선택 속성으로 둠
  */
 export interface LikeResponse {
-  isLiked: boolean;
-  likeCount: number;
+  isLiked?: boolean;
+  liked?: boolean;
+  likeCount?: number;
 }
