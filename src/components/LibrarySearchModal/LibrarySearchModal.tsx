@@ -40,7 +40,7 @@ export function LibrarySearchModal({ isOpen, onClose, onSelectLibrary }: Library
     if (selectedProvince && selectedCity) {
       searchLibraries(selectedProvince, selectedCity, 0);
     }
-  }, [selectedCity]);
+  }, [selectedCity, selectedProvince]);
 
   const loadProvinces = async () => {
     try {

@@ -1,6 +1,6 @@
 // CAL_11.tsx - 캘린더 페이지
 import React, { useState, useMemo, useEffect } from "react";
-import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, ViewType, Scope } from "@/api/calendar";
+import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, Scope } from "@/api/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function CAL_11() {
@@ -9,8 +9,6 @@ export default function CAL_11() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
   // 조회 설정 (월별 고정)
   const [scope, setScope] = useState<Scope>('USER');
 
@@ -65,7 +63,6 @@ export default function CAL_11() {
   // 일정 데이터 가져오기
   useEffect(() => {
     const fetchEvents = async () => {
-      setIsLoading(true);
       try {
         // viewDate 형식: YYYY-MM-DD (해당 월의 1일)
         const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -87,13 +84,11 @@ export default function CAL_11() {
           }
         }
         setEvents([]);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchEvents();
-  }, [year, month, scope, user]);
+  }, [year, month, scope, user, isAuthenticated]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -248,13 +243,6 @@ export default function CAL_11() {
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, dragOffset]);
-
-  // 일정 클릭 핸들러 (상세 모달 열기)
-  const handleEventClick = (event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setIsEventDetailModalOpen(true);
-    setIsDateEventsModalOpen(false); // 목록 모달 닫기
-  };
 
   // datetime-local 형식 변환 헬퍼
   const formatDateTimeLocal = (dateStr: string) => {

@@ -10,7 +10,6 @@ import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 경로는 프로젝트 구조에 맞게 조정
 
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -177,6 +176,7 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         bookId: category === "REVIEW" ? bookId : undefined,
+        chatRoomId: category === "GROUP" ? chatRoomId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,

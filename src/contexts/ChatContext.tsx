@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { ChatThread } from "@/features/message/ChatDock";
 import { useToast } from "@/components/Toast/ToastProvider";
 
 /**

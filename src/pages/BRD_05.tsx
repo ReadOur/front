@@ -88,7 +88,7 @@ export default function PostShow() {
     data: post,
     isLoading: isPostLoading,
     error: postError,
-    refetch, // ✅ 추가: 저장/등록/삭제 후 강제 재요청에 사용
+    refetch: _refetch, // ✅ 추가: 저장/등록/삭제 후 강제 재요청에 사용
   } = usePost(postId || "");
 
 
@@ -124,9 +124,11 @@ export default function PostShow() {
   const queryClient = useQueryClient();
 
   // 6. 책 정보 조회 (REVIEW 카테고리인 경우)
-  const { data: bookDetail, isLoading: isBookLoading } = useBookDetail(
-    post?.bookId ? String(post.bookId) : ""
-  );
+  const { data: bookDetail, isLoading: _isBookLoading } = useQuery({
+    queryKey: ["book", post?.bookId],
+    queryFn: () => getBookDetail(String(post?.bookId)),
+    enabled: post?.category === "REVIEW" && !!post?.bookId,
+  });
 
   // 7. 게시글 삭제 mutation (DELETE /community/posts/{postId})
   const deletePostMutation = useDeletePost({
@@ -204,7 +206,7 @@ export default function PostShow() {
       viewPostMutation.mutate(postId);
       hasCalledViewApi.current = postId; // 호출 완료 표시
     }
-  }, [postId, post?.postId]); // post?.postId가 변경될 때만 실행 (게시글이 로드된 직후)
+  }, [postId, post, isPostLoading, viewPostMutation]); // post가 로드된 직후에만 실행
 
   // 작성자 메뉴 외부 클릭 감지
   useEffect(() => {
