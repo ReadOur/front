@@ -3,7 +3,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom, useRoomMemberProfile } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -296,37 +296,44 @@ function ChatWindow({
     role?: string;
   } | null>(null);
 
-  // 현재 사용자의 role 조회 (상태 선언 이후)
-  const { data: memberProfile, isLoading: isLoadingMemberProfile } = useRoomMemberProfile(roomId, currentUserIdNumber || undefined, {
-    enabled: !!roomId && !!currentUserIdNumber,
-  });
+  // 현재 사용자의 role 상태
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [targetUserRole, setTargetUserRole] = useState<string | null>(null);
+
+  // 현재 사용자의 role 조회
+  useEffect(() => {
+    if (!roomId || !currentUserIdNumber) return;
+
+    chatService.getRoomMemberProfile(roomId, currentUserIdNumber)
+      .then((profile) => {
+        console.log('🔍 Current user role loaded:', profile);
+        setCurrentUserRole(profile.role);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load current user role:', error);
+      });
+  }, [roomId, currentUserIdNumber]);
 
   // 프로필 대상 사용자의 role 조회
-  const { data: targetMemberProfile } = useRoomMemberProfile(
-    roomId,
-    profileTarget?.userId,
-    {
-      enabled: !!roomId && !!profileTarget?.userId,
+  useEffect(() => {
+    if (!roomId || !profileTarget?.userId) {
+      setTargetUserRole(null);
+      return;
     }
-  );
+
+    chatService.getRoomMemberProfile(roomId, profileTarget.userId)
+      .then((profile) => {
+        console.log('🔍 Target user role loaded:', profile);
+        setTargetUserRole(profile.role);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to load target user role:', error);
+      });
+  }, [roomId, profileTarget?.userId]);
 
   // role에 따른 권한 확인
-  const userRole = memberProfile?.role;
-  const isAdmin = userRole === "ADMIN" || userRole === "OWNER" || userRole === "MANAGER";
-  const isOwner = userRole === "OWNER";
-
-  // 디버깅: role 정보 확인
-  useEffect(() => {
-    console.log('🔍 ChatDock Role Debug:', {
-      roomId,
-      currentUserIdNumber,
-      memberProfile,
-      isLoadingMemberProfile,
-      userRole,
-      isAdmin,
-      isOwner,
-    });
-  }, [roomId, currentUserIdNumber, memberProfile, isLoadingMemberProfile, userRole, isAdmin, isOwner]);
+  const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
+  const isOwner = currentUserRole === "OWNER";
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
@@ -993,7 +1000,7 @@ function ChatWindow({
             <div>
               <div className="font-semibold text-[color:var(--chatdock-fg-primary)]">{profileTarget.nickname ?? "사용자 정보"}</div>
               <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                {targetMemberProfile?.role ? `권한: ${targetMemberProfile.role}` : "권한 정보 없음"}
+                {targetUserRole ? `권한: ${targetUserRole}` : "권한 정보 없음"}
               </div>
             </div>
             <button
