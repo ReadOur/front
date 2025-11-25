@@ -91,9 +91,12 @@ export async function getRoomMessages(params: GetRoomMessagesParams): Promise<Ro
  * 채팅방 멤버 프로필 조회
  */
 export async function getRoomMemberProfile(roomId: number, userId: number) {
-  return apiClient.get<RoomMemberProfile>(
+  console.log('🔍 getRoomMemberProfile called:', { roomId, userId });
+  const result = await apiClient.get<RoomMemberProfile>(
     CHAT_ENDPOINTS.ROOM_MEMBER_PROFILE(roomId, userId)
   );
+  console.log('🔍 getRoomMemberProfile result:', result);
+  return result;
 }
 
 /**
