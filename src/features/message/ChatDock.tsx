@@ -276,14 +276,36 @@ function ChatWindow({
   currentUserIdNumber?: number | null;
 }) {
   // 현재 사용자의 role 조회
-  const { data: memberProfile } = useRoomMemberProfile(roomId, currentUserIdNumber || undefined, {
+  const { data: memberProfile, isLoading: isLoadingMemberProfile } = useRoomMemberProfile(roomId, currentUserIdNumber || undefined, {
     enabled: !!roomId && !!currentUserIdNumber,
   });
+
+  // 프로필 대상 사용자의 role 조회
+  const { data: targetMemberProfile } = useRoomMemberProfile(
+    roomId,
+    profileTarget?.userId,
+    {
+      enabled: !!roomId && !!profileTarget?.userId,
+    }
+  );
 
   // role에 따른 권한 확인
   const userRole = memberProfile?.role;
   const isAdmin = userRole === "ADMIN" || userRole === "OWNER" || userRole === "MANAGER";
   const isOwner = userRole === "OWNER";
+
+  // 디버깅: role 정보 확인
+  useEffect(() => {
+    console.log('🔍 ChatDock Role Debug:', {
+      roomId,
+      currentUserIdNumber,
+      memberProfile,
+      isLoadingMemberProfile,
+      userRole,
+      isAdmin,
+      isOwner,
+    });
+  }, [roomId, currentUserIdNumber, memberProfile, isLoadingMemberProfile, userRole, isAdmin, isOwner]);
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -969,7 +991,7 @@ function ChatWindow({
             <div>
               <div className="font-semibold text-[color:var(--chatdock-fg-primary)]">{profileTarget.nickname ?? "사용자 정보"}</div>
               <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                {profileTarget.role ? `권한: ${profileTarget.role}` : "권한 정보 없음"}
+                {targetMemberProfile?.role ? `권한: ${targetMemberProfile.role}` : "권한 정보 없음"}
               </div>
             </div>
             <button
