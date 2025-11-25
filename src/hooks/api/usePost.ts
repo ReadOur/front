@@ -156,7 +156,7 @@ export function useLikePost(
 
       if (previousPost) {
         const newIsLiked = !isLiked;
-        const newLikeCount = isLiked ? previousPost.likeCount - 1 : previousPost.likeCount + 1;
+        const newLikeCount = Math.max(0, isLiked ? previousPost.likeCount - 1 : previousPost.likeCount + 1);
 
         queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
           ...previousPost,
@@ -187,12 +187,30 @@ export function useLikePost(
       // 서버 응답으로 좋아요 관련 필드만 업데이트 (isApplied 등 다른 필드 보존)
       const currentPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId));
       if (currentPost && data) {
+        const serverIsLiked = data.isLiked ?? data.liked;
+        const resolvedIsLiked = serverIsLiked ?? !currentPost.isLiked;
+        const likeCountFromServer = data.likeCount;
+        const derivedLikeCount = (() => {
+          if (likeCountFromServer !== undefined) return likeCountFromServer;
+
+          const wasLiked = currentPost.isLiked ?? false;
+          if (resolvedIsLiked === wasLiked) return currentPost.likeCount;
+
+          // 서버에서 수치를 내려주지 않은 경우, 현재 캐시 값을 기준으로 증감
+          const delta = resolvedIsLiked ? 1 : -1;
+          return Math.max(0, (currentPost.likeCount ?? 0) + delta);
+        })();
+
         queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId), {
           ...currentPost,
-          isLiked: data.isLiked,
-          likeCount: data.likeCount,
+          isLiked: resolvedIsLiked,
+          likeCount: derivedLikeCount,
         });
-        console.log('✅ 캐시 업데이트 완료:', { isLiked: data.isLiked, likeCount: data.likeCount });
+        console.log('✅ 캐시 업데이트 완료:', {
+          isLiked: resolvedIsLiked,
+          likeCount: derivedLikeCount,
+          rawResponse: data,
+        });
       } else {
         console.warn('⚠️ 캐시 업데이트 실패:', { currentPost, data });
       }

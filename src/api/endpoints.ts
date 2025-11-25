@@ -52,7 +52,8 @@ export const POST_ENDPOINTS = {
   UPDATE: (postId: string) => `/community/posts/${postId}`,
   DELETE: (postId: string) => `/community/posts/${postId}`,
   LIKE: (postId: string) => `/community/posts/${postId}/like`,
-  UNLIKE: (postId: string) => `/community/posts/${postId}/unlike`,
+  // 백엔드에서 같은 엔드포인트로 토글 처리하므로 취소도 LIKE로 요청
+  UNLIKE: (postId: string) => `/community/posts/${postId}/like`,
   VIEW: (postId: string) => `/community/posts/${postId}/view`, // 조회수 증가 API
   TOGGLE_RECRUITMENT_APPLY: (postId: string) => `/community/recruitments/${postId}/apply-toggle`, // 모임 참여 토글
 } as const;
