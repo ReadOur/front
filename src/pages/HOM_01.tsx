@@ -219,6 +219,7 @@ interface BookCardProps {
     authors: string;
     bookImageUrl: string;
     description: string;
+    isbn13: string;
     averageRating: number | null;
     reviewCount: number;
   };
@@ -406,7 +407,7 @@ export default function HOM_01() {
               <BookCard
                 key={book.bookId}
                 book={book}
-                onClick={() => navigate(`/books/${book.bookId}`)}
+                onClick={() => navigate(`/books/isbn/${book.isbn13}`)}
               />
             ))}
           </div>
