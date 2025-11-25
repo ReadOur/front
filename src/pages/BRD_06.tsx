@@ -28,6 +28,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [category, setCategory] = useState<string>(initialCategory);
   const [bookId, setBookId] = useState<number | undefined>(undefined);
   const [bookSearchQuery, setBookSearchQuery] = useState<string>("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
   const [selectedBookInfo, setSelectedBookInfo] = useState<{ title: string; author: string } | null>(null);
   const [showBookDropdown, setShowBookDropdown] = useState<boolean>(false);
   const [chatRoomId, setChatRoomId] = useState<number | undefined>(undefined);
@@ -56,10 +57,19 @@ export const BRD_06 = (): React.JSX.Element => {
     "미스터리",
   ];
 
-  // 책 검색 (REVIEW 카테고리용)
+  // 책 검색어 debounce (300ms 후 실행)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(bookSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [bookSearchQuery]);
+
+  // 책 검색 (REVIEW 카테고리용) - debounced 검색어 사용
   const { data: bookSearchResults, isLoading: isSearchingBooks } = useBookSearch({
     type: "TITLE",
-    keyword: bookSearchQuery,
+    keyword: debouncedSearchQuery,
     page: 0,
     size: 3,
   });
@@ -69,10 +79,10 @@ export const BRD_06 = (): React.JSX.Element => {
     enabled: isEditMode,
   });
 
-  // 편집 모드에서 책 정보 로드 (REVIEW 카테고리인 경우)
-  const { data: existingBookDetail } = useBookDetail(
-    existingPost?.bookId ? String(existingPost.bookId) : ""
-  );
+  // 편집 모드에서 책 정보 로드 (REVIEW 카테고리이고 bookId가 있는 경우만)
+  // 빈 문자열은 useBookDetail의 enabled: !!bookId로 인해 API 호출되지 않음
+  const existingBookId = existingPost?.bookId ? String(existingPost.bookId) : "";
+  const { data: existingBookDetail } = useBookDetail(existingBookId);
 
   // 수정 모드: 기존 데이터를 폼에 채우기
   useEffect(() => {
