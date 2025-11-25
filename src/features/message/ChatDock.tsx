@@ -296,6 +296,13 @@ function ChatWindow({
     nickname?: string;
     role?: string;
   } | null>(null);
+  const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
+  const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
+    active: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
+  const dockContainerRef = useRef<HTMLDivElement>(null);
 
   const resolveProfileFromMessage = useCallback((messageId: string | null) => {
     if (!messageId) return null;
@@ -316,11 +323,40 @@ function ChatWindow({
 
   useEffect(() => {
     setProfileTarget((prev) => resolveProfileFromMessage(prev?.messageId));
-  }, [messages, resolveProfileFromMessage]);
+    setProfileCardPosition((prev) => {
+      if (!prev || !profileTarget) return prev;
+
+      const cardWidth = 288;
+      const cardHeight = 180;
+      const margin = 12;
+
+      return {
+        left: Math.min(Math.max(margin, prev.left), window.innerWidth - cardWidth - margin),
+        top: Math.min(Math.max(margin, prev.top), window.innerHeight - cardHeight - margin),
+      };
+    });
+  }, [messages, resolveProfileFromMessage, profileTarget]);
 
   useEffect(() => {
     setProfileTarget(null);
+    setProfileCardPosition(null);
   }, [roomId, thread.id]);
+
+  useEffect(() => {
+    if (!profileTarget || profileCardPosition) return;
+
+    const cardWidth = 288;
+    const cardHeight = 180;
+    const margin = 12;
+    const dockRect = dockContainerRef.current?.getBoundingClientRect();
+    const preferredLeft = dockRect ? dockRect.right + 12 : window.innerWidth - cardWidth - margin;
+    const preferredTop = dockRect ? dockRect.top + 48 : margin;
+
+    setProfileCardPosition({
+      left: Math.min(Math.max(margin, preferredLeft), window.innerWidth - cardWidth - margin),
+      top: Math.min(Math.max(margin, preferredTop), window.innerHeight - cardHeight - margin),
+    });
+  }, [profileTarget, profileCardPosition]);
 
   const toast = useToast();
 
@@ -400,6 +436,45 @@ function ChatWindow({
     });
   };
 
+  const handleProfileCardDragStart = (e: React.PointerEvent) => {
+    if (!profileCardPosition) return;
+
+    profileCardDrag.current = {
+      active: true,
+      offsetX: e.clientX - profileCardPosition.left,
+      offsetY: e.clientY - profileCardPosition.top,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleProfileCardDragMove = (e: React.PointerEvent) => {
+    if (!profileCardDrag.current.active) return;
+
+    const cardWidth = 288;
+    const cardHeight = 180;
+    const margin = 12;
+
+    const left = Math.min(
+      Math.max(margin, e.clientX - profileCardDrag.current.offsetX),
+      window.innerWidth - cardWidth - margin
+    );
+    const top = Math.min(
+      Math.max(margin, e.clientY - profileCardDrag.current.offsetY),
+      window.innerHeight - cardHeight - margin
+    );
+
+    setProfileCardPosition({ left, top });
+  };
+
+  const handleProfileCardDragEnd = (e: React.PointerEvent) => {
+    profileCardDrag.current.active = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // already released
+    }
+  };
+
   const handleOpenEventModal = () => {
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}T09:00`;
@@ -446,6 +521,7 @@ function ChatWindow({
 
   return (
     <div
+      ref={dockContainerRef}
       className="flex flex-col overflow-hidden relative
              rounded-[var(--radius-lg)]
              bg-[color:var(--chatdock-bg-elev-2)]
@@ -912,6 +988,61 @@ function ChatWindow({
         </div>
       </form>
 
+      {profileTarget && profileCardPosition && (
+        <div
+          className="fixed z-[120] w-72 rounded-[var(--radius-lg)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-2)] shadow-2xl"
+          style={{ top: profileCardPosition.top, left: profileCardPosition.left }}
+          onPointerMove={handleProfileCardDragMove}
+          onPointerUp={handleProfileCardDragEnd}
+          onPointerCancel={handleProfileCardDragEnd}
+        >
+          <div
+            className="flex items-start justify-between gap-2 px-3 py-2 border-b border-[color:var(--chatdock-border-subtle)] cursor-move"
+            onPointerDown={handleProfileCardDragStart}
+          >
+            <div>
+              <div className="font-semibold text-[color:var(--chatdock-fg-primary)]">{profileTarget.nickname ?? "사용자 정보"}</div>
+              <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
+                {profileTarget.role ? `권한: ${profileTarget.role}` : "권한 정보 없음"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setProfileTarget(null);
+                setProfileCardPosition(null);
+              }}
+              className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+              aria-label="프로필 카드 닫기"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="px-3 py-3 space-y-3 text-[color:var(--chatdock-fg-primary)]">
+            <div className="space-y-1 text-sm">
+              <div>닉네임: {profileTarget.nickname ?? "알 수 없음"}</div>
+              <div>권한: {profileTarget.role ?? "정보 없음"}</div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => profileTarget.userId && handleCreateDirectRoom(profileTarget.userId, profileTarget.nickname)}
+                disabled={!profileTarget.userId || createRoomMutation.isPending || !currentUserIdNumber}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+              >
+                <span>💬</span>
+                <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+              </button>
+              {!currentUserIdNumber && (
+                <span className="text-xs text-[color:var(--chatdock-fg-muted)]">로그인 후 생성할 수 있습니다.</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 리사이즈 핸들 - 8방향 */}
       {__onResizeStart && (
         <>
@@ -1082,6 +1213,7 @@ function ChatWindow({
       {/* AI Dock */}
       <AIDock
         isOpen={isAIDockOpen}
+        anchorRef={dockContainerRef}
         onClose={() => setIsAIDockOpen(false)}
         onMinimize={() => setIsAIDockOpen(false)}
       />

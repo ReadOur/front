@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { X, Minimize2, Send, Sparkles } from "lucide-react";
 
 /**
@@ -19,9 +19,28 @@ interface AIDockProps {
   isOpen: boolean;
   onClose: () => void;
   onMinimize?: () => void;
+  anchorRef?: React.RefObject<HTMLElement>;
 }
 
-export default function AIDock({ isOpen, onClose, onMinimize }: AIDockProps) {
+export default function AIDock({ isOpen, onClose, onMinimize, anchorRef }: AIDockProps) {
+  const getInitialPosition = useCallback(() => {
+    const width = 384; // w-96
+    const height = 600;
+    const margin = 16;
+    const anchorRect = anchorRef?.current?.getBoundingClientRect();
+
+    if (anchorRect) {
+      const left = Math.min(Math.max(margin, anchorRect.right + 12), window.innerWidth - width - margin);
+      const top = Math.min(Math.max(margin, anchorRect.top), window.innerHeight - height - margin);
+      return { x: left, y: top };
+    }
+
+    return {
+      x: Math.max(margin, window.innerWidth - width - margin),
+      y: Math.max(margin, margin),
+    };
+  }, [anchorRef]);
+
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: "welcome",
@@ -33,20 +52,13 @@ export default function AIDock({ isOpen, onClose, onMinimize }: AIDockProps) {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState(() => {
-    const width = 384; // w-96
-    const height = 600;
-    const margin = 16;
-    return {
-      x: Math.max(margin, window.innerWidth - width - margin),
-      y: Math.max(margin, window.innerHeight - height - margin),
-    };
-  });
+  const [position, setPosition] = useState(() => getInitialPosition());
   const dragInfo = useRef<{ isDragging: boolean; offsetX: number; offsetY: number }>({
     isDragging: false,
     offsetX: 0,
     offsetY: 0,
   });
+  const wasOpen = useRef(isOpen);
 
   // 자동 스크롤
   useEffect(() => {
@@ -116,6 +128,13 @@ export default function AIDock({ isOpen, onClose, onMinimize }: AIDockProps) {
       setIsLoading(false);
     }, 2000);
   };
+
+  useEffect(() => {
+    if (isOpen && !wasOpen.current) {
+      setPosition(getInitialPosition());
+    }
+    wasOpen.current = isOpen;
+  }, [getInitialPosition, isOpen]);
 
   if (!isOpen) return null;
 
