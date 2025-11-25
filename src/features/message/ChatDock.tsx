@@ -40,6 +40,10 @@ export interface ChatUser {
 export interface ChatMessage {
   id: string;
   threadId: string;
+  /**
+   * fromId: ChatDock 내부에서 예전부터 사용하던 발신자 식별자. 정렬/메뉴 노출 등 UI 판단이 이 값을 기준으로 이루어진다.
+   * senderId: 백엔드가 내려주는 원본 키. 호환성 유지를 위해 둘 다 보유하며, 실제 렌더링에서는 fromId → senderId 순으로 확인한다.
+   */
   fromId: string;
   senderId?: string;
   text: string;
