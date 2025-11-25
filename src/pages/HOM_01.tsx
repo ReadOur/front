@@ -470,8 +470,8 @@ export default function HOM_01() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="flex flex-col items-center">
                 <div className="w-32 h-44 bg-[color:var(--color-bg-subtle)] rounded-lg animate-pulse mb-3" />
                 <div className="w-full h-4 bg-[color:var(--color-bg-subtle)] rounded animate-pulse mb-2" />
@@ -480,8 +480,8 @@ export default function HOM_01() {
             ))}
           </div>
         ) : books && books.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {books.slice(0, 5).map((book) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {books.slice(0, 4).map((book) => (
               <BookCard
                 key={book.bookId}
                 book={book}
