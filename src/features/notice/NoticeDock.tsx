@@ -220,6 +220,26 @@ export default function NoticeDock({
       onPointerUp={handleDragEnd}
       onPointerCancel={handleDragEnd}
     >
+      <button
+        className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
+      <button
+        className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
+      <button
+        className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
+      <button
+        className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
       {/* 헤더 (드래그 가능) */}
       <div
         className="h-14 flex items-center gap-2 px-4 border-b border-[color:var(--chatdock-border-subtle)] bg-gradient-to-r from-orange-500 to-red-500 cursor-move"
