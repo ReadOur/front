@@ -124,11 +124,9 @@ export default function PostShow() {
   const queryClient = useQueryClient();
 
   // 6. 책 정보 조회 (REVIEW 카테고리인 경우)
-  const { data: bookDetail, isLoading: _isBookLoading } = useQuery({
-    queryKey: ["book", post?.bookId],
-    queryFn: () => getBookDetail(String(post?.bookId)),
-    enabled: post?.category === "REVIEW" && !!post?.bookId,
-  });
+  const { data: bookDetail, isLoading: _isBookLoading } = useBookDetail(
+    post?.category === "REVIEW" && post?.bookId ? String(post.bookId) : ""
+  );
 
   // 7. 게시글 삭제 mutation (DELETE /community/posts/{postId})
   const deletePostMutation = useDeletePost({
