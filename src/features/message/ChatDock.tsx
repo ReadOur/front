@@ -290,7 +290,7 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
-  const [profileTarget, setProfileTarget] = useState<{
+  const [profileCardTarget, setProfileCardTarget] = useState<{
     messageId: string | null;
     userId?: number;
     nickname?: string;
@@ -315,11 +315,11 @@ function ChatWindow({
   }, [messages]);
 
   useEffect(() => {
-    setProfileTarget((prev) => resolveProfileFromMessage(prev?.messageId));
+    setProfileCardTarget((prev) => resolveProfileFromMessage(prev?.messageId));
   }, [messages, resolveProfileFromMessage]);
 
   useEffect(() => {
-    setProfileTarget(null);
+    setProfileCardTarget(null);
   }, [roomId, thread.id]);
 
   const toast = useToast();
@@ -373,12 +373,12 @@ function ChatWindow({
   }, [isMenuOpen, messageMenuOpen]);
 
   const handleSenderProfileClick = (message: ChatMessage) => {
-    if (profileTarget?.messageId === message.id) {
-      setProfileTarget(null);
+    if (profileCardTarget?.messageId === message.id) {
+      setProfileCardTarget(null);
       return;
     }
 
-    setProfileTarget(resolveProfileFromMessage(message.id));
+    setProfileCardTarget(resolveProfileFromMessage(message.id));
   };
 
   const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
@@ -635,8 +635,8 @@ function ChatWindow({
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
-          const isProfileOpen = profileTarget?.messageId === m.id;
-          const profile = isProfileOpen ? profileTarget : null;
+          const isProfileOpen = profileCardTarget?.messageId === m.id;
+          const profile = isProfileOpen ? profileCardTarget : null;
 
           return (
             <div key={m.id} className="relative group">
@@ -839,7 +839,7 @@ function ChatWindow({
                     </div>
                     <button
                       type="button"
-                      onClick={() => setProfileTarget(null)}
+                      onClick={() => setProfileCardTarget(null)}
                       className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
                       aria-label="프로필 카드 닫기"
                     >
