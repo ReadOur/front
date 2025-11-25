@@ -275,7 +275,28 @@ function ChatWindow({
   isMuted?: boolean;
   currentUserIdNumber?: number | null;
 }) {
-  // 현재 사용자의 role 조회
+  // 상태 선언 (먼저)
+  const [text, setText] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isAIDockOpen, setIsAIDockOpen] = useState(false);
+  const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 메시지별 메뉴 관련 상태
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
+  const [messageMenuOpen, setMessageMenuOpen] = useState<string | null>(null);
+  const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
+  const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
+  const messageMenuRef = useRef<HTMLDivElement>(null);
+  const [profileTarget, setProfileTarget] = useState<{
+    messageId: string | null;
+    userId?: number;
+    nickname?: string;
+    role?: string;
+  } | null>(null);
+
+  // 현재 사용자의 role 조회 (상태 선언 이후)
   const { data: memberProfile, isLoading: isLoadingMemberProfile } = useRoomMemberProfile(roomId, currentUserIdNumber || undefined, {
     enabled: !!roomId && !!currentUserIdNumber,
   });
@@ -306,25 +327,6 @@ function ChatWindow({
       isOwner,
     });
   }, [roomId, currentUserIdNumber, memberProfile, isLoadingMemberProfile, userRole, isAdmin, isOwner]);
-  const [text, setText] = useState("");
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [isAIDockOpen, setIsAIDockOpen] = useState(false);
-  const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // 메시지별 메뉴 관련 상태
-  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
-  const [messageMenuOpen, setMessageMenuOpen] = useState<string | null>(null);
-  const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
-  const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
-  const messageMenuRef = useRef<HTMLDivElement>(null);
-  const [profileTarget, setProfileTarget] = useState<{
-    messageId: string | null;
-    userId?: number;
-    nickname?: string;
-    role?: string;
-  } | null>(null);
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
