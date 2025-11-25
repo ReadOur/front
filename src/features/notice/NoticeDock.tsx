@@ -7,7 +7,7 @@ import {
   useDeleteAnnouncement,
 } from "@/hooks/api/useChat";
 import { Announcement } from "@/types";
-import { useToast } from "@/contexts/ToastProvider";
+import { useToast } from "@/components/Toast/ToastProvider";
 
 /**
  * NoticeDock - 공지 목록 조회 및 작성창 (우측 도크)
