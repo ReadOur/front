@@ -289,6 +289,12 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
+  const [messageMenuPositions, setMessageMenuPositions] = useState<Record<string, { left: number; top: number }>>({});
+  const messageMenuDrag = useRef<{ messageId: string | null; offsetX: number; offsetY: number }>({
+    messageId: null,
+    offsetX: 0,
+    offsetY: 0,
+  });
   const [profileTarget, setProfileTarget] = useState<{
     messageId: string | null;
     userId?: number;
@@ -299,6 +305,14 @@ function ChatWindow({
   // 현재 사용자의 role 상태
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [targetUserRole, setTargetUserRole] = useState<string | null>(null);
+
+  // 메뉴 드래그 상태
+  const [menuPosition, setMenuPosition] = useState<{ left: number; top: number } | null>(null);
+  const menuDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
+    active: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
 
   // 현재 사용자의 role 조회
   useEffect(() => {
@@ -513,6 +527,89 @@ function ChatWindow({
     }
   };
 
+  const handleMenuDragStart = (e: React.PointerEvent) => {
+    if (!menuPosition) return;
+
+    menuDrag.current = {
+      active: true,
+      offsetX: e.clientX - menuPosition.left,
+      offsetY: e.clientY - menuPosition.top,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleMenuDragMove = (e: React.PointerEvent) => {
+    if (!menuDrag.current.active) return;
+
+    const menuWidth = 450;
+    const menuHeight = 400; // approximate height
+    const margin = 12;
+
+    const left = Math.min(
+      Math.max(margin, e.clientX - menuDrag.current.offsetX),
+      window.innerWidth - menuWidth - margin
+    );
+    const top = Math.min(
+      Math.max(margin, e.clientY - menuDrag.current.offsetY),
+      window.innerHeight - menuHeight - margin
+    );
+
+    setMenuPosition({ left, top });
+  };
+
+  const handleMenuDragEnd = (e: React.PointerEvent) => {
+    menuDrag.current.active = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // already released
+    }
+  };
+
+  const handleMessageMenuDragStart = (messageId: string, e: React.PointerEvent) => {
+    const position = messageMenuPositions[messageId];
+    if (!position) return;
+
+    messageMenuDrag.current = {
+      messageId,
+      offsetX: e.clientX - position.left,
+      offsetY: e.clientY - position.top,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleMessageMenuDragMove = (e: React.PointerEvent) => {
+    const { messageId } = messageMenuDrag.current;
+    if (!messageId) return;
+
+    const menuWidth = 192; // w-48 = 192px
+    const menuHeight = 200; // approximate
+    const margin = 12;
+
+    const left = Math.min(
+      Math.max(margin, e.clientX - messageMenuDrag.current.offsetX),
+      window.innerWidth - menuWidth - margin
+    );
+    const top = Math.min(
+      Math.max(margin, e.clientY - messageMenuDrag.current.offsetY),
+      window.innerHeight - menuHeight - margin
+    );
+
+    setMessageMenuPositions((prev) => ({
+      ...prev,
+      [messageId]: { left, top },
+    }));
+  };
+
+  const handleMessageMenuDragEnd = (e: React.PointerEvent) => {
+    messageMenuDrag.current.messageId = null;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // already released
+    }
+  };
+
   const handleOpenEventModal = () => {
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}T09:00`;
@@ -583,6 +680,17 @@ function ChatWindow({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              if (!isMenuOpen) {
+                // Initialize menu position near the button
+                const buttonRect = (e.target as HTMLElement).getBoundingClientRect();
+                const menuWidth = 450;
+                const margin = 12;
+
+                setMenuPosition({
+                  left: Math.max(margin, Math.min(buttonRect.right + 8, window.innerWidth - menuWidth - margin)),
+                  top: Math.max(margin, buttonRect.top),
+                });
+              }
               setIsMenuOpen(!isMenuOpen);
             }}
             className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] opacity-60 hover:opacity-100 transition-opacity"
@@ -591,8 +699,34 @@ function ChatWindow({
             <MoreVertical className="w-4 h-4" />
           </button>
           {/* 메뉴 드롭다운 */}
-          {isMenuOpen && (
-            <div className="absolute left-0 top-full mt-1 w-[450px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+          {isMenuOpen && menuPosition && (
+            <div
+              className="fixed w-[450px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-1)] shadow-2xl overflow-hidden z-[120]"
+              style={{ left: menuPosition.left, top: menuPosition.top }}
+              onPointerMove={handleMenuDragMove}
+              onPointerUp={handleMenuDragEnd}
+              onPointerCancel={handleMenuDragEnd}
+            >
+              {/* Draggable header */}
+              <div
+                className="flex items-center justify-between px-3 py-2 border-b border-[color:var(--chatdock-border-subtle)] cursor-move bg-[color:var(--chatdock-bg-elev-2)]"
+                onPointerDown={handleMenuDragStart}
+              >
+                <div className="text-sm font-semibold text-[color:var(--chatdock-fg-primary)]">채팅방 메뉴</div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMenuOpen(false);
+                    setMenuPosition(null);
+                  }}
+                  className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+                  aria-label="메뉴 닫기"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div>
               {/* AI 명령어 섹션 - 관리자 전용 */}
               {isAdmin && (
                 <div className="border-b border-[color:var(--chatdock-border-subtle)] py-2">
@@ -665,20 +799,6 @@ function ChatWindow({
                     <Bell className="w-4 h-4 flex-shrink-0" />
                     공지 목록 조회
                   </button>
-                  <button
-                    onClick={() => {
-                      if (isMuted) {
-                        onUnmuteRoom?.();
-                      } else {
-                        onMuteRoom?.();
-                      }
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <Bell className="w-4 h-4 flex-shrink-0" />
-                    {isMuted ? "메시지 보이기" : "메시지 가리기"}
-                  </button>
                 </div>
               </div>
 
@@ -702,6 +822,7 @@ function ChatWindow({
                   </button>
                 </div>
               )}
+              </div>
             </div>
           )}
         </div>
@@ -741,6 +862,20 @@ function ChatWindow({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (messageMenuOpen !== m.id) {
+                            // Initialize menu position near the button
+                            const buttonRect = (e.target as HTMLElement).getBoundingClientRect();
+                            const menuWidth = 192; // w-48
+                            const margin = 12;
+
+                            setMessageMenuPositions((prev) => ({
+                              ...prev,
+                              [m.id]: {
+                                left: Math.max(margin, Math.min(buttonRect.left - menuWidth - 8, window.innerWidth - menuWidth - margin)),
+                                top: Math.max(margin, buttonRect.top),
+                              },
+                            }));
+                          }
                           setMessageMenuOpen(messageMenuOpen === m.id ? null : m.id);
                         }}
                         className={cls(
@@ -752,8 +887,33 @@ function ChatWindow({
                         <MoreVertical className="w-3.5 h-3.5 text-[color:var(--chatdock-fg-muted)]" />
                       </button>
 
-                      {messageMenuOpen === m.id && (
-                        <div className="absolute right-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+                      {messageMenuOpen === m.id && messageMenuPositions[m.id] && (
+                        <div
+                          className="fixed w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-1)] shadow-2xl overflow-hidden z-[120]"
+                          style={{ left: messageMenuPositions[m.id].left, top: messageMenuPositions[m.id].top }}
+                          onPointerMove={handleMessageMenuDragMove}
+                          onPointerUp={handleMessageMenuDragEnd}
+                          onPointerCancel={handleMessageMenuDragEnd}
+                        >
+                          {/* Draggable header */}
+                          <div
+                            className="flex items-center justify-between px-3 py-1.5 border-b border-[color:var(--chatdock-border-subtle)] cursor-move bg-[color:var(--chatdock-bg-elev-2)]"
+                            onPointerDown={(e) => handleMessageMenuDragStart(m.id, e)}
+                          >
+                            <div className="text-xs font-semibold text-[color:var(--chatdock-fg-primary)]">메시지 메뉴</div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMessageMenuOpen(null);
+                              }}
+                              className="w-5 h-5 grid place-items-center rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+                              aria-label="메뉴 닫기"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div>
                           <button
                             onClick={() => {
                               setHiddenMessageIds(prev => {
@@ -799,6 +959,7 @@ function ChatWindow({
                               </button>
                             </>
                           )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -847,6 +1008,20 @@ function ChatWindow({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (messageMenuOpen !== m.id) {
+                            // Initialize menu position near the button
+                            const buttonRect = (e.target as HTMLElement).getBoundingClientRect();
+                            const menuWidth = 192; // w-48
+                            const margin = 12;
+
+                            setMessageMenuPositions((prev) => ({
+                              ...prev,
+                              [m.id]: {
+                                left: Math.max(margin, Math.min(buttonRect.right + 8, window.innerWidth - menuWidth - margin)),
+                                top: Math.max(margin, buttonRect.top),
+                              },
+                            }));
+                          }
                           setMessageMenuOpen(messageMenuOpen === m.id ? null : m.id);
                         }}
                         className={cls(
@@ -858,8 +1033,33 @@ function ChatWindow({
                         <MoreVertical className="w-3.5 h-3.5 text-[color:var(--chatdock-fg-muted)]" />
                       </button>
 
-                      {messageMenuOpen === m.id && (
-                        <div className="absolute left-0 top-full mt-1 w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+                      {messageMenuOpen === m.id && messageMenuPositions[m.id] && (
+                        <div
+                          className="fixed w-48 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-1)] shadow-2xl overflow-hidden z-[120]"
+                          style={{ left: messageMenuPositions[m.id].left, top: messageMenuPositions[m.id].top }}
+                          onPointerMove={handleMessageMenuDragMove}
+                          onPointerUp={handleMessageMenuDragEnd}
+                          onPointerCancel={handleMessageMenuDragEnd}
+                        >
+                          {/* Draggable header */}
+                          <div
+                            className="flex items-center justify-between px-3 py-1.5 border-b border-[color:var(--chatdock-border-subtle)] cursor-move bg-[color:var(--chatdock-bg-elev-2)]"
+                            onPointerDown={(e) => handleMessageMenuDragStart(m.id, e)}
+                          >
+                            <div className="text-xs font-semibold text-[color:var(--chatdock-fg-primary)]">메시지 메뉴</div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMessageMenuOpen(null);
+                              }}
+                              className="w-5 h-5 grid place-items-center rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+                              aria-label="메뉴 닫기"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div>
                           <button
                             onClick={() => {
                               setHiddenMessageIds(prev => {
@@ -905,6 +1105,7 @@ function ChatWindow({
                               </button>
                             </>
                           )}
+                          </div>
                         </div>
                       )}
                     </div>
