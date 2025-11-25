@@ -101,6 +101,7 @@ export const CHAT_ENDPOINTS = {
 
   // 채팅방 메시지 (백엔드 API)
   ROOM_MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`, // 채팅방 메시지 조회
+  ROOM_MEMBER_PROFILE: (roomId: number, userId: number) => `/chat/rooms/${roomId}/members/${userId}`, // 채팅방 내 멤버 프로필 조회
 
   // 공지사항 (백엔드 API)
   ANNOUNCEMENTS: (roomId: number) => `/chat/rooms/${roomId}/announcements`, // 공지사항 목록 조회
