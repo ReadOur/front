@@ -437,7 +437,7 @@ function ChatWindow({
 
     createRoomMutation.mutate({
       scope: "PRIVATE",
-      name: `${nickname ?? "사용자"}님과의 채팅`,
+      name: `${me.name} & ${nickname ?? "사용자"}`,
       description: "1:1 채팅방",
       memberIds: [currentUserIdNumber, targetUserId],
     });
