@@ -44,6 +44,8 @@ import {
   CreatePollRequest,
   VoteRequest,
   PollResultsResponse,
+  AiJobRequest,
+  AiJobResponse,
 } from "@/types";
 
 // ===== Query Keys =====
@@ -593,11 +595,11 @@ export function useUnmuteRoom(
  * AI 작업 요청
  */
 export function useRequestAI(
-  options?: UseMutationOptions<any, Error, { roomId: number; command: string; messageLimit?: number; note?: string }, unknown>
+  options?: UseMutationOptions<AiJobResponse, Error, { roomId: number } & AiJobRequest, unknown>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<any, Error, { roomId: number; command: string; messageLimit?: number; note?: string }, unknown>({
+  return useMutation<AiJobResponse, Error, { roomId: number } & AiJobRequest, unknown>({
     ...options,
     mutationFn: ({ roomId, ...data }) => chatService.requestAI(roomId, data),
     onSuccess: (data, variables, context) => {

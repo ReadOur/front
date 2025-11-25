@@ -44,6 +44,8 @@ import {
   CreatePollRequest,
   VoteRequest,
   PollResultsResponse,
+  AiJobRequest,
+  AiJobResponse,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -425,12 +427,8 @@ export async function unmuteRoom(roomId: number): Promise<void> {
 /**
  * AI 작업 요청
  */
-export async function requestAI(roomId: number, data: {
-  command: string;
-  messageLimit?: number;
-  note?: string;
-}): Promise<any> {
-  return apiClient.post<any>(CHAT_ENDPOINTS.AI_JOB(roomId), data);
+export async function requestAI(roomId: number, data: AiJobRequest): Promise<AiJobResponse> {
+  return apiClient.post<AiJobResponse>(CHAT_ENDPOINTS.AI_JOB(roomId), data);
 }
 
 // ===== 메시지 관리 =====
