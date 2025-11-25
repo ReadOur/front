@@ -853,7 +853,11 @@ export default function ChatDock() {
   };
 
   // User data
-  const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
+  const me: ChatUser = {
+    id: user?.id?.toString() || "me",
+    name: user?.name || user?.email || "나",
+    avatarUrl: ""
+  };
 
   // React Query client
   const queryClient = useQueryClient();
