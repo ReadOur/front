@@ -177,8 +177,9 @@ export function useLikePost(
       if (currentPost) {
         queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId), {
           ...currentPost,
-          isLiked: data.isLiked,
-          likeCount: data.likeCount,
+          isLiked: data?.isLiked ?? currentPost.isLiked,
+          // likeCount가 undefined/null이면 기존 값 유지 (NaN 방지)
+          likeCount: typeof data?.likeCount === 'number' ? data.likeCount : currentPost.likeCount,
         });
       }
 

@@ -663,12 +663,12 @@ export default function PostShow() {
               onClick={handleLike}
               disabled={likeMutation.isPending}  // 요청 중에는 비활성화
               aria-pressed={post.isLiked}
-              aria-label={`좋아요 ${post.likeCount}개`}
+              aria-label={`좋아요 ${post.likeCount ?? 0}개`}
               className="inline-flex items-center gap-1 sm:gap-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
               data-active={post.isLiked}
             >
               <span>{post.isLiked ? "❤️" : "🤍"}</span>
-              <strong className="text-[color:var(--color-fg-primary)]">{post.likeCount}</strong>
+              <strong className="text-[color:var(--color-fg-primary)]">{post.likeCount ?? 0}</strong>
             </button>
           </div>
         </header>
