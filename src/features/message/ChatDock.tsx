@@ -290,8 +290,14 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
+  type SelectedProfile = {
+    message: ChatMessage;
+    userId?: number;
+    nickname?: string;
+    role?: string;
+  };
   const [selectedProfileMessageId, setSelectedProfileMessageId] = useState<string | null>(null);
-  const selectedProfile = useMemo(() => {
+  const selectedProfile = useMemo<SelectedProfile | null>(() => {
     const message = messages.find((m) => m.id === selectedProfileMessageId);
     if (!message) return null;
 
