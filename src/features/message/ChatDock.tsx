@@ -630,40 +630,6 @@ function ChatWindow({
                     <MessageCircle className="w-4 h-4" />
                     추가 질문 제안
                   </button>
-                  {isAdmin && (
-                    <>
-                      <button
-                        onClick={() => {
-                          onRequestAI?.("SESSION_START", undefined);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        세션 시작
-                      </button>
-                      <button
-                        onClick={() => {
-                          onRequestAI?.("SESSION_END", undefined);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        세션 종료
-                      </button>
-                      <button
-                        onClick={() => {
-                          onRequestAI?.("SESSION_CLOSING", undefined);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        마감문 생성
-                      </button>
-                    </>
-                  )}
                   <button
                     onClick={() => {
                       setIsAIDockOpen(true);
