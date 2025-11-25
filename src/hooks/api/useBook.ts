@@ -213,11 +213,17 @@ export function useToggleWishlist(
       }
     },
     onSuccess: (data, variables, context) => {
-      // 서버 응답으로 최종 업데이트
-      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.wishlist() });
+      // 서버 응답의 isWishlisted 값으로 책 상세 정보 직접 업데이트
+      const previousBookDetail = queryClient.getQueryData(BOOK_QUERY_KEYS.detail(variables.bookId));
+      if (previousBookDetail) {
+        queryClient.setQueryData(BOOK_QUERY_KEYS.detail(variables.bookId), {
+          ...previousBookDetail,
+          isWishlisted: data.isWishlisted, // 서버 응답값 사용
+        });
+      }
 
-      // 책 상세 정보도 무효화하여 위시리스트 버튼 상태 갱신
-      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.detail(variables.bookId) });
+      // 위시리스트 목록 갱신 (추가/제거 반영)
+      queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.wishlist() });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
