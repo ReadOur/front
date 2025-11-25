@@ -479,6 +479,7 @@ export const chatService = {
   getRoomMessages,
   sendRoomMessage,
   createRoom,
+  getRoomMemberProfile,
 
   // 채팅방 관리
   joinRoom,
