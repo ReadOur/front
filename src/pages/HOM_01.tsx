@@ -467,24 +467,17 @@ export default function HOM_01() {
               )}
             </h2>
           </div>
-          <button
-            onClick={() => navigate("/books")}
-            className="text-sm text-[color:var(--color-accent-fg)] hover:underline flex items-center gap-1"
-          >
-            더보기
-            <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
+            {[...Array(5)].map((_, i) => (
               <div key={i} className="h-40 bg-[color:var(--color-bg-subtle)] rounded-lg animate-pulse" />
             ))}
           </div>
         ) : books && books.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {books.map((book) => (
+            {books.slice(0, 5).map((book) => (
               <BookCard
                 key={book.bookId}
                 book={book}
