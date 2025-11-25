@@ -71,7 +71,7 @@ export const BRD_06 = (): React.JSX.Element => {
 
   // 편집 모드에서 책 정보 로드 (REVIEW 카테고리인 경우)
   const { data: existingBookDetail } = useBookDetail(
-    existingPost?.bookId?.toString() || ""
+    existingPost?.bookId ? String(existingPost.bookId) : ""
   );
 
   // 수정 모드: 기존 데이터를 폼에 채우기
