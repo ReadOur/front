@@ -291,7 +291,6 @@ function ChatWindow({
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
   type SelectedProfile = {
-    message: ChatMessage;
     userId?: number;
     nickname?: string;
     role?: string;
@@ -305,7 +304,6 @@ function ChatWindow({
     const numericId = rawSenderId ? Number(rawSenderId) : undefined;
 
     return {
-      message,
       userId: numericId && !Number.isNaN(numericId) ? numericId : undefined,
       nickname: message.senderNickname,
       role: message.senderRole,
