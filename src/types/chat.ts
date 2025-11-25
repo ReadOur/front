@@ -17,6 +17,15 @@ export interface ChatUser {
   lastSeen?: string;
 }
 
+/**
+ * 채팅방 멤버 프로필 응답
+ */
+export interface RoomMemberProfile {
+  userId: number;
+  nickname: string;
+  role: string;
+}
+
 // ===== 채팅 메시지 =====
 
 /**
