@@ -291,8 +291,8 @@ function ChatWindow({
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
   const [selectedMemberProfile, setSelectedMemberProfile] = useState<{
-    roomId: number;
-    userId: number;
+    roomId?: number;
+    userId?: number;
     messageId: string;
     nickname?: string;
     role?: string;
@@ -350,13 +350,12 @@ function ChatWindow({
 
   const handleSenderProfileClick = (message: ChatMessage) => {
     const senderIdValue = (message.senderId ?? message.fromId)?.toString();
-    const resolvedRoomId = Number(roomId ?? thread.id);
-    const senderIdNumber = senderIdValue ? Number(senderIdValue) : NaN;
-
-    if (!senderIdValue || Number.isNaN(senderIdNumber) || Number.isNaN(resolvedRoomId)) {
-      toast.show({ title: "프로필을 확인할 수 없는 발신자입니다.", variant: "warning" });
-      return;
-    }
+    const resolvedRoomId = roomId ?? thread.id;
+    const senderIdNumber = senderIdValue && !Number.isNaN(Number(senderIdValue)) ? Number(senderIdValue) : undefined;
+    const resolvedRoomIdNumber =
+      resolvedRoomId !== undefined && !Number.isNaN(Number(resolvedRoomId))
+        ? Number(resolvedRoomId)
+        : undefined;
 
     if (selectedMemberProfile?.messageId === message.id) {
       setSelectedMemberProfile(null);
@@ -364,7 +363,7 @@ function ChatWindow({
     }
 
     setSelectedMemberProfile({
-      roomId: resolvedRoomId,
+      roomId: resolvedRoomIdNumber,
       userId: senderIdNumber,
       messageId: message.id,
       nickname: message.senderNickname,
@@ -372,9 +371,14 @@ function ChatWindow({
     });
   };
 
-  const handleCreateDirectRoom = (targetUserId: number, nickname?: string) => {
+  const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
     if (!currentUserIdNumber) {
       toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      return;
+    }
+
+    if (!targetUserId) {
+      toast.show({ title: "1:1 채팅을 만들 수 있는 사용자 정보가 없습니다.", variant: "warning" });
       return;
     }
 
