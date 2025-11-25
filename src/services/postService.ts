@@ -59,6 +59,7 @@ export async function likePost(postId: string): Promise<LikeResponse> {
 
 /**
  * 게시글 좋아요 취소
+ * - 백엔드가 같은 엔드포인트로 토글 처리하므로 like와 동일한 경로에 POST 요청
  */
 export async function unlikePost(postId: string): Promise<LikeResponse> {
   return apiClient.post<LikeResponse>(POST_ENDPOINTS.UNLIKE(postId));
