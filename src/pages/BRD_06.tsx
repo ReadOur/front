@@ -25,6 +25,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>(initialCategory);
   const [bookId, setBookId] = useState<number | undefined>(undefined);
+  const [chatRoomId, setChatRoomId] = useState<number | undefined>(undefined);
   const [recruitmentLimit, setRecruitmentLimit] = useState<number | undefined>(10);
   const [chatRoomName, setChatRoomName] = useState<string>("");
   const [chatRoomDescription, setChatRoomDescription] = useState<string>("");
@@ -64,6 +65,7 @@ export const BRD_06 = (): React.JSX.Element => {
       setWarnings(existingPost.warnings?.map(w => w.id.warning) || []);
       setCategory(existingPost.category);
       setBookId(existingPost.bookId);
+      setChatRoomId(existingPost.chatRoomId);
       setRecruitmentLimit(existingPost.recruitmentLimit);
       setChatRoomName(existingPost.chatRoomName || "");
       setChatRoomDescription(existingPost.chatRoomDescription || "");
@@ -131,6 +133,7 @@ export const BRD_06 = (): React.JSX.Element => {
         content: safeHtml,
         category: category,
         bookId: category === "REVIEW" ? bookId : undefined,
+        chatRoomId: category === "GROUP" ? chatRoomId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
