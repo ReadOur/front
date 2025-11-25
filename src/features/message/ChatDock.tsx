@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useWebSocketManager } from "@/hooks/useWebSocketManager";
@@ -13,6 +13,8 @@ import type { WebSocketMessage } from "@/hooks/useWebSocket";
 import AIDock from "@/features/ai/AIDock";
 import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
+import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
+import { userService } from "@/services/userService";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -38,6 +40,7 @@ export interface ChatMessage {
   id: string;
   threadId: string;
   fromId: string;
+  senderId?: string;
   text: string;
   createdAt: number; // epoch ms
   senderNickname?: string; // 발신자 닉네임
@@ -164,7 +167,6 @@ function ChatWindow({
                       __onResizeStart,
                       width = 320,
                       height = 420,
-                      roomId,
                       isOwner = false,
                       isMuted = false,
                     }: {
@@ -183,7 +185,6 @@ function ChatWindow({
   __onResizeStart?: (direction: string, e: React.PointerEvent) => void;
   width?: number;
   height?: number;
-  roomId?: number;
   isOwner?: boolean;
   isMuted?: boolean;
 }) {
@@ -420,7 +421,8 @@ function ChatWindow({
       {/* body */}
       <div ref={boxRef} className="flex-1 overflow-auto p-3 space-y-2">
         {messages.map((m) => {
-          const mine = m.fromId?.toString() === me.id?.toString();
+          const senderId = (m.fromId ?? m.senderId)?.toString();
+          const mine = senderId === me.id?.toString();
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
@@ -848,23 +850,43 @@ export default function ChatDock() {
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
 
+  const { data: myPage } = useQuery({
+    queryKey: USER_QUERY_KEYS.myPage(),
+    queryFn: userService.getMyPage,
+    enabled: !!accessToken,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const bringToFront = (id: string) => {
     zSeed.current += 1;
     setZMap(prev => ({ ...prev, [id]: zSeed.current }));
   };
 
   // User data
+  const tokenUserId = useMemo(() => {
+    if (!accessToken) return undefined;
+    try {
+      const payload = JSON.parse(atob(accessToken.split(".")[1] || ""));
+      const rawId = payload.userId ?? payload.sub ?? payload.id ?? payload.uid;
+      return rawId ? rawId.toString() : undefined;
+    } catch (error) {
+      console.warn("토큰에서 userId를 파싱하지 못했습니다:", error);
+      return undefined;
+    }
+  }, [accessToken]);
+
+  const myUserId = myPage?.userId ? myPage.userId.toString() : tokenUserId;
   const me: ChatUser = {
-    id: user?.id?.toString() || "me",
-    name: user?.name || user?.email || "나",
-    avatarUrl: ""
+    id: myUserId || "me",
+    name: myPage?.nickname || user?.name || user?.email || "나",
+    avatarUrl: "",
   };
 
   // React Query client
   const queryClient = useQueryClient();
 
   // 채팅방 목록 API 연결 (로그인된 경우에만)
-  const { data: myRoomsData, isLoading: isLoadingRooms } = useMyRooms(
+  const { data: myRoomsData, isLoading: _isLoadingRooms } = useMyRooms(
     { page: 0, size: 20 },
     { enabled: !!user }
   );
@@ -880,6 +902,7 @@ export default function ChatDock() {
         id: `ai-${Date.now()}`,
         threadId: variables.roomId.toString(),
         fromId: "ai",
+        senderId: "ai",
         text: data.result || "AI 응답을 받았습니다.",
         createdAt: Date.now(),
       };
@@ -952,6 +975,7 @@ export default function ChatDock() {
               id: room.lastMsg.id.toString(),
               threadId: room.roomId.toString(),
               fromId: "unknown",
+              senderId: "unknown",
               text: room.lastMsg.preview,
               createdAt: new Date(room.lastMsg.createdAt).getTime(),
             }
@@ -1119,7 +1143,7 @@ export default function ChatDock() {
 
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [loadingMessages, setLoadingMessages] = useState<Record<string, boolean>>({});
-  const [typing, setTyping] = useState<Record<string, string[]>>({});
+  const [typing] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
 
   // ===== 패널 자동 닫힘 타이머 관련 =====
@@ -1168,6 +1192,7 @@ export default function ChatDock() {
           id: msg.id.toString(),
           threadId: msg.roomId.toString(),
           fromId: msg.senderId.toString(),
+          senderId: msg.senderId.toString(),
           text: msg.body.text,
           createdAt: new Date(msg.createdAt).getTime(),
           senderNickname: msg.senderNickname,
@@ -1189,7 +1214,7 @@ export default function ChatDock() {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     });
-  }, [openThreadIds, queryClient]);
+  }, [loadingMessages, messages, openThreadIds, queryClient]);
 
   // ===== 웹소켓 연결 관리 =====
   // openThreadIds를 roomId(number)로 변환
@@ -1206,6 +1231,7 @@ export default function ChatDock() {
       id: message.id.toString(),
       threadId: threadId,
       fromId: message.senderId.toString(),
+      senderId: message.senderId.toString(),
       text: message.body.text || "",
       createdAt: new Date(message.createdAt).getTime(),
       senderNickname: message.senderNickname,
@@ -1288,6 +1314,11 @@ export default function ChatDock() {
   const sendMessage = (threadId: string, text: string) => {
     const roomId = parseInt(threadId, 10);
 
+    if (!myUserId) {
+      toast.show({ title: "사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", variant: "warning" });
+      return;
+    }
+
     // @ai 메시지 감지 및 처리
     if (text.trim().startsWith("@ai")) {
       // @ai 제거하고 나머지 파싱
@@ -1311,7 +1342,8 @@ export default function ChatDock() {
       const userMessage: ChatMessage = {
         id: `user-ai-${Date.now()}`,
         threadId: threadId,
-        fromId: me.id,
+        fromId: myUserId,
+        senderId: myUserId,
         text: text,
         createdAt: Date.now(),
       };
@@ -1326,7 +1358,7 @@ export default function ChatDock() {
 
     // 일반 메시지 전송
     sendMessageMutation.mutate({
-      senderId: accessToken,
+      senderId: myUserId,
       roomId,
       type: "TEXT",
       body: { text },

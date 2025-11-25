@@ -5,7 +5,7 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
-import { ApiResponse, ApiError } from "@/types";
+import { ApiResponse } from "@/types";
 import { getAccessToken } from "@/utils/auth";
 
 // ===== 환경변수 =====
@@ -113,8 +113,6 @@ axiosInstance.interceptors.response.use(
       baseURL: error.config?.baseURL,
       data: error.response?.data,
     });
-
-    const originalRequest = error.config;
 
     // 401 Unauthorized - 토큰 만료 또는 인증 실패
     // 자동 로그아웃하지 않고 에러만 반환 (컴포넌트에서 처리)

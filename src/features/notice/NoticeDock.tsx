@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { X, Minimize2, Bell, Plus, Edit2, Trash2 } from "lucide-react";
 import {
   useAnnouncements,

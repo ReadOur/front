@@ -9,7 +9,6 @@ import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import { POST_QUERY_KEYS } from "@/hooks/api/usePost"; // 경로는 프로젝트 구조에 맞게 조정
 
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -26,7 +25,6 @@ export const BRD_06 = (): React.JSX.Element => {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>(initialCategory);
   const [bookId, setBookId] = useState<number | undefined>(undefined);
-  const [chatRoomId, setChatRoomId] = useState<number | undefined>(undefined);
   const [recruitmentLimit, setRecruitmentLimit] = useState<number | undefined>(10);
   const [chatRoomName, setChatRoomName] = useState<string>("");
   const [chatRoomDescription, setChatRoomDescription] = useState<string>("");
@@ -66,7 +64,6 @@ export const BRD_06 = (): React.JSX.Element => {
       setWarnings(existingPost.warnings?.map(w => w.id.warning) || []);
       setCategory(existingPost.category);
       setBookId(existingPost.bookId);
-      setChatRoomId(existingPost.chatRoomId);
       setRecruitmentLimit(existingPost.recruitmentLimit);
       setChatRoomName(existingPost.chatRoomName || "");
       setChatRoomDescription(existingPost.chatRoomDescription || "");

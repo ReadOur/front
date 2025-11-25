@@ -141,20 +141,23 @@ export function useWebSocketManager({
 
   // 컴포넌트 언마운트 시 모든 연결 해제
   useEffect(() => {
+    const reconnectTimeouts = reconnectTimeoutsRef.current;
+    const websockets = websocketsRef.current;
+
     return () => {
       console.log("🔌 Cleaning up all WebSocket connections...");
       // 재연결 타이머 모두 취소
-      reconnectTimeoutsRef.current.forEach((timeoutId) => {
+      reconnectTimeouts.forEach((timeoutId) => {
         clearTimeout(timeoutId);
       });
-      reconnectTimeoutsRef.current.clear();
+      reconnectTimeouts.clear();
 
       // 모든 웹소켓 연결 종료
-      websocketsRef.current.forEach((ws, roomId) => {
+      websockets.forEach((ws, roomId) => {
         console.log(`🔌 Closing WebSocket for room ${roomId}...`);
         ws.close(1000, "Component unmounted");
       });
-      websocketsRef.current.clear();
+      websockets.clear();
     };
   }, []);
 

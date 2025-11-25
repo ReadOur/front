@@ -3,7 +3,6 @@
  */
 
 import { BaseEntity } from "./api";
-import { UserProfile } from "./user";
 
 // ===== 채팅 사용자 =====
 
@@ -210,9 +209,7 @@ export interface RoomsOverviewResponse {
 /**
  * 채팅방 Overview 조회 파라미터
  */
-export interface GetRoomsOverviewParams {
-  // accessToken으로 사용자 식별
-}
+export type GetRoomsOverviewParams = Record<string, never>;
 
 /**
  * 내 채팅방 목록 응답

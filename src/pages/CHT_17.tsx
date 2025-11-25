@@ -1,10 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { MessageCircle, Search, Star, Users, Send, Loader2, User, Plus, X, Pin, MoreVertical } from "lucide-react";
+import { MessageCircle, Search, Users, Send, Loader2, User, Plus, X, Pin, MoreVertical } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useChatContext } from "@/contexts/ChatContext";
-import { ChatThread, ChatUser, ChatCategory } from "@/features/message/ChatDock";
+import { ChatThread, ChatCategory } from "@/features/message/ChatDock";
 import { useRoomsOverview, useCreateRoom, useJoinRoom, useLeaveRoom, usePinRoom, useUnpinRoom } from "@/hooks/api/useChat";
-import { MyRoomItem, PublicRoomItem } from "@/types/chat";
 import Modal from "@/components/Modal/Modal";
 import { useToast } from "@/components/Toast/ToastProvider";
 
@@ -15,131 +14,6 @@ import { useToast } from "@/components/Toast/ToastProvider";
  * - 채팅방 클릭 시 Floating Dock에서 열기
  */
 
-// Mock 데이터 (실제로는 API에서 가져옴)
-const mockThreads: ChatThread[] = [
-  // 1:1 채팅
-  {
-    id: "t1",
-    users: [{ id: "u1", name: "콩콩", online: true }],
-    category: "DIRECT",
-    unreadCount: 2,
-    lastMessage: {
-      id: "m0",
-      threadId: "t1",
-      fromId: "u1",
-      text: "오늘 저녁 뭐 먹어?",
-      createdAt: Date.now() - 600000,
-    },
-  },
-  {
-    id: "t2",
-    users: [{ id: "u2", name: "쭈꾸미", online: false }],
-    category: "DIRECT",
-    lastMessage: {
-      id: "m1",
-      threadId: "t2",
-      fromId: "u2",
-      text: "파일 확인했어!",
-      createdAt: Date.now() - 3600000,
-    },
-  },
-  {
-    id: "t3",
-    users: [{ id: "u3", name: "자몽", online: true }],
-    category: "DIRECT",
-    lastMessage: {
-      id: "m2",
-      threadId: "t3",
-      fromId: "u3",
-      text: "굿굿",
-      createdAt: Date.now() - 7200000,
-    },
-  },
-  {
-    id: "t4",
-    users: [{ id: "u4", name: "망고", online: false }],
-    category: "DIRECT",
-    unreadCount: 5,
-    lastMessage: {
-      id: "m3",
-      threadId: "t4",
-      fromId: "u4",
-      text: "내일 미팅 시간 확인 부탁해요",
-      createdAt: Date.now() - 10800000,
-    },
-  },
-  // 단체 채팅
-  {
-    id: "t5",
-    users: [
-      { id: "u5", name: "딸기", online: true },
-      { id: "u6", name: "바나나" },
-      { id: "u7", name: "오렌지" },
-    ],
-    category: "GROUP",
-    unreadCount: 12,
-    lastMessage: {
-      id: "m4",
-      threadId: "t5",
-      fromId: "u5",
-      text: "스터디 그룹에 오신 걸 환영합니다!",
-      createdAt: Date.now() - 14400000,
-    },
-  },
-  {
-    id: "t6",
-    users: [
-      { id: "u8", name: "포도" },
-      { id: "u9", name: "키위" },
-      { id: "u10", name: "복숭아" },
-      { id: "u11", name: "수박" },
-    ],
-    category: "GROUP",
-    unreadCount: 3,
-    lastMessage: {
-      id: "m5",
-      threadId: "t6",
-      fromId: "u8",
-      text: "다음주 프로젝트 일정 공유드립니다",
-      createdAt: Date.now() - 18000000,
-    },
-  },
-  // 모임 채팅
-  {
-    id: "t7",
-    users: [
-      { id: "u12", name: "레몬" },
-      { id: "u13", name: "라임" },
-      { id: "u14", name: "귤" },
-    ],
-    category: "MEETING",
-    unreadCount: 8,
-    lastMessage: {
-      id: "m6",
-      threadId: "t7",
-      fromId: "u12",
-      text: "이번 주 토요일 독서 모임 참석 가능하신 분?",
-      createdAt: Date.now() - 21600000,
-    },
-  },
-  {
-    id: "t8",
-    users: [
-      { id: "u15", name: "사과", online: true },
-      { id: "u16", name: "배" },
-      { id: "u17", name: "감" },
-      { id: "u18", name: "밤" },
-    ],
-    category: "MEETING",
-    lastMessage: {
-      id: "m7",
-      threadId: "t8",
-      fromId: "u15",
-      text: "다음 모임 장소 투표합시다!",
-      createdAt: Date.now() - 28800000,
-    },
-  },
-];
 
 function formatRelativeTime(ms: number): string {
   const diff = Date.now() - ms;
@@ -387,7 +261,6 @@ const categoryLabels: Record<CategoryFilter, string> = {
 export default function CHT_17() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("ALL");
-  const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { openThread } = useChatContext();
 

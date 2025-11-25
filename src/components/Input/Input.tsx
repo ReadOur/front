@@ -13,7 +13,8 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, helperText, error, leftIcon, rightIcon, fullWidth, className, id, ...props }, ref) => {
-    const inputId = id || useId();
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
     const describedBy = error ? `${inputId}-error` : helperText ? `${inputId}-help` : undefined;
 
     return (
