@@ -313,7 +313,7 @@ function ChatWindow({
           </button>
           {/* 메뉴 드롭다운 */}
           {isMenuOpen && (
-            <div className="absolute right-full top-0 mr-2 w-[576px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+            <div className="absolute left-0 top-full mt-1 w-64 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
               {/* AI 명령어 섹션 */}
               <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
                 <div className="px-3 py-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
@@ -854,7 +854,11 @@ export default function ChatDock() {
   };
 
   // User data
-  const me: ChatUser = { id: "me", name: "두구다", avatarUrl: "" };
+  const me: ChatUser = {
+    id: user?.id?.toString() || "me",
+    name: user?.name || user?.email || "나",
+    avatarUrl: ""
+  };
 
   // React Query client
   const queryClient = useQueryClient();
