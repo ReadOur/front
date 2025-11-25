@@ -711,6 +711,8 @@ function ChatWindow({
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
+          const isProfileOpen = profileTarget?.messageId === m.id;
+          const profile = isProfileOpen ? profileTarget : null;
 
           return (
             <div key={m.id} className="relative group">
@@ -901,6 +903,47 @@ function ChatWindow({
                   </>
                 )}
               </div>
+
+              {isProfileOpen && (
+                <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold">{profile?.nickname ?? "사용자 정보"}</div>
+                      <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
+                        {profile?.role ? `권한: ${profile.role}` : "권한 정보 없음"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProfileTarget(null)}
+                      className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+                      aria-label="프로필 카드 닫기"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="text-sm space-y-1 text-[color:var(--chatdock-fg-primary)]">
+                    <div>닉네임: {profile?.nickname ?? "알 수 없음"}</div>
+                    <div>권한: {profile?.role ?? "정보 없음"}</div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => profile?.userId && handleCreateDirectRoom(profile.userId, profile.nickname)}
+                      disabled={!profile?.userId || createRoomMutation.isPending || !currentUserIdNumber}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                    >
+                      <span>💬</span>
+                      <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+                    </button>
+                    {!currentUserIdNumber && (
+                      <span className="text-xs text-[color:var(--chatdock-fg-muted)]">로그인 후 생성할 수 있습니다.</span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* AI 세션 끝 마커 */}
               {isAISessionEnd && (
