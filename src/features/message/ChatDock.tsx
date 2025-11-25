@@ -290,13 +290,30 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
-  const [selectedMemberProfile, setSelectedMemberProfile] = useState<{
-    roomId?: number;
-    userId?: number;
-    messageId: string;
-    nickname?: string;
-    role?: string;
-  } | null>(null);
+  const [selectedProfileMessageId, setSelectedProfileMessageId] = useState<string | null>(null);
+  const selectedProfileMessage = useMemo(
+    () => messages.find((message) => message.id === selectedProfileMessageId),
+    [messages, selectedProfileMessageId]
+  );
+  const selectedProfileUserId = useMemo(() => {
+    const rawSenderId = selectedProfileMessage?.senderId ?? selectedProfileMessage?.fromId;
+    if (!rawSenderId) return undefined;
+
+    const numericId = Number(rawSenderId);
+    return Number.isNaN(numericId) ? undefined : numericId;
+  }, [selectedProfileMessage]);
+  const selectedProfileNickname = selectedProfileMessage?.senderNickname;
+  const selectedProfileRole = selectedProfileMessage?.senderRole;
+
+  useEffect(() => {
+    if (selectedProfileMessageId && !selectedProfileMessage) {
+      setSelectedProfileMessageId(null);
+    }
+  }, [selectedProfileMessage, selectedProfileMessageId]);
+
+  useEffect(() => {
+    setSelectedProfileMessageId(null);
+  }, [roomId, thread.id]);
 
   const toast = useToast();
 
@@ -349,26 +366,12 @@ function ChatWindow({
   }, [isMenuOpen, messageMenuOpen]);
 
   const handleSenderProfileClick = (message: ChatMessage) => {
-    const senderIdValue = (message.senderId ?? message.fromId)?.toString();
-    const resolvedRoomId = roomId ?? thread.id;
-    const senderIdNumber = senderIdValue && !Number.isNaN(Number(senderIdValue)) ? Number(senderIdValue) : undefined;
-    const resolvedRoomIdNumber =
-      resolvedRoomId !== undefined && !Number.isNaN(Number(resolvedRoomId))
-        ? Number(resolvedRoomId)
-        : undefined;
-
-    if (selectedMemberProfile?.messageId === message.id) {
-      setSelectedMemberProfile(null);
+    if (selectedProfileMessageId === message.id) {
+      setSelectedProfileMessageId(null);
       return;
     }
 
-    setSelectedMemberProfile({
-      roomId: resolvedRoomIdNumber,
-      userId: senderIdNumber,
-      messageId: message.id,
-      nickname: message.senderNickname,
-      role: message.senderRole,
-    });
+    setSelectedProfileMessageId(message.id);
   };
 
   const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
@@ -625,7 +628,7 @@ function ChatWindow({
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
-          const isProfileOpen = selectedMemberProfile?.messageId === m.id;
+          const isProfileOpen = selectedProfileMessageId === m.id;
 
           return (
             <div key={m.id} className="relative group">
@@ -821,14 +824,14 @@ function ChatWindow({
                 <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-semibold">{selectedMemberProfile?.nickname ?? "사용자 정보"}</div>
+                      <div className="font-semibold">{selectedProfileNickname ?? "사용자 정보"}</div>
                       <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                        {selectedMemberProfile?.role ? `권한: ${selectedMemberProfile.role}` : "권한 정보 없음"}
+                        {selectedProfileRole ? `권한: ${selectedProfileRole}` : "권한 정보 없음"}
                       </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedMemberProfile(null)}
+                      onClick={() => setSelectedProfileMessageId(null)}
                       className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
                       aria-label="프로필 카드 닫기"
                     >
@@ -837,18 +840,17 @@ function ChatWindow({
                   </div>
 
                   <div className="text-sm space-y-1 text-[color:var(--chatdock-fg-primary)]">
-                    <div>닉네임: {selectedMemberProfile?.nickname ?? "알 수 없음"}</div>
-                    <div>권한: {selectedMemberProfile?.role ?? "정보 없음"}</div>
+                    <div>닉네임: {selectedProfileNickname ?? "알 수 없음"}</div>
+                    <div>권한: {selectedProfileRole ?? "정보 없음"}</div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() =>
-                        selectedMemberProfile?.userId &&
-                        handleCreateDirectRoom(selectedMemberProfile.userId, selectedMemberProfile?.nickname)
+                        selectedProfileUserId && handleCreateDirectRoom(selectedProfileUserId, selectedProfileNickname)
                       }
-                      disabled={!selectedMemberProfile?.userId || createRoomMutation.isPending || !currentUserIdNumber}
+                      disabled={!selectedProfileUserId || createRoomMutation.isPending || !currentUserIdNumber}
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
                     >
                       <span>💬</span>
