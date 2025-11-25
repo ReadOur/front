@@ -3,7 +3,7 @@ import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, C
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom, useRoomMemberProfile } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -622,6 +622,7 @@ function ChatWindow({
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
           const isProfileOpen = profileTarget?.messageId === m.id;
+          const profile = isProfileOpen ? selectedMemberProfile : undefined;
 
           return (
             <div key={m.id} className="relative group">
@@ -817,9 +818,10 @@ function ChatWindow({
                 <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-semibold">{profileTarget?.nickname ?? "사용자 정보"}</div>
+                      <div className="font-semibold">{profile?.nickname ?? profileTarget?.nickname ?? "사용자 정보"}</div>
                       <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                        {profileTarget?.role ? `권한: ${profileTarget.role}` : "권한 정보 없음"}
+                        ID {profileTarget?.userId}
+                        {profile?.role ? ` · 역할 ${profile.role}` : ""}
                       </div>
                     </div>
                     <button

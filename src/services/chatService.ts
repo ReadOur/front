@@ -46,6 +46,7 @@ import {
   PollResultsResponse,
   AiJobRequest,
   AiJobResponse,
+  RoomMemberProfile,
 } from "@/types";
 
 // ===== 채팅방 목록 (백엔드 API) =====
@@ -83,6 +84,15 @@ export async function getRoomMessages(params: GetRoomMessagesParams): Promise<Ro
     {
       params: before ? { before } : undefined,
     }
+  );
+}
+
+/**
+ * 채팅방 멤버 프로필 조회
+ */
+export async function getRoomMemberProfile(roomId: number, userId: number) {
+  return apiClient.get<RoomMemberProfile>(
+    CHAT_ENDPOINTS.ROOM_MEMBER_PROFILE(roomId, userId)
   );
 }
 
