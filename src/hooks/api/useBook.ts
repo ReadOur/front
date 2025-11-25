@@ -153,7 +153,11 @@ export function useToggleWishlist(
     WishlistResponse,
     Error,
     { bookId: string; isWishlisted: boolean },
-    { previousWishlist?: WishlistItem[] }
+    {
+      previousWishlist?: WishlistItem[];
+      previousBookDetail?: BookDetail;
+      previousDetailByISBN?: { queryKey: unknown; data: BookDetail }[];
+    }
   >
 ) {
   const queryClient = useQueryClient();
@@ -162,7 +166,11 @@ export function useToggleWishlist(
     WishlistResponse,
     Error,
     { bookId: string; isWishlisted: boolean },
-    { previousWishlist?: WishlistItem[] }
+    {
+      previousWishlist?: WishlistItem[];
+      previousBookDetail?: BookDetail;
+      previousDetailByISBN?: { queryKey: unknown; data: BookDetail }[];
+    }
   >({
     ...options,
     mutationFn: ({ bookId }) => bookService.toggleWishlist(bookId),
@@ -170,19 +178,36 @@ export function useToggleWishlist(
       // 낙관적 업데이트: 즉시 UI 반영
       await queryClient.cancelQueries({ queryKey: BOOK_QUERY_KEYS.wishlist() });
       await queryClient.cancelQueries({ queryKey: BOOK_QUERY_KEYS.detail(bookId) });
+      await queryClient.cancelQueries({ queryKey: [...BOOK_QUERY_KEYS.all, "detailByISBN"] });
 
       const previousWishlist = queryClient.getQueryData<WishlistItem[]>(
         BOOK_QUERY_KEYS.wishlist()
       );
 
       // 책 상세 정보의 isWishlisted 상태도 즉시 토글
-      const previousBookDetail = queryClient.getQueryData(BOOK_QUERY_KEYS.detail(bookId));
+      const previousBookDetail = queryClient.getQueryData<BookDetail>(
+        BOOK_QUERY_KEYS.detail(bookId)
+      );
       if (previousBookDetail) {
         queryClient.setQueryData(BOOK_QUERY_KEYS.detail(bookId), {
           ...previousBookDetail,
           isWishlisted: !isWishlisted,
         });
       }
+
+      // ISBN 기반 상세 정보도 함께 토글
+      const previousDetailByISBN = queryClient
+        .getQueriesData<BookDetail>({ queryKey: [...BOOK_QUERY_KEYS.all, "detailByISBN"] })
+        .filter(([, data]) => data?.bookId?.toString() === bookId);
+
+      previousDetailByISBN.forEach(([queryKey, data]) => {
+        if (data) {
+          queryClient.setQueryData(queryKey, {
+            ...data,
+            isWishlisted: !isWishlisted,
+          });
+        }
+      });
 
       // 위시리스트 목록 낙관적 업데이트 (있으면 제거, 없으면 추가)
       if (previousWishlist) {
@@ -198,7 +223,7 @@ export function useToggleWishlist(
         }
       }
 
-      return { previousWishlist, previousBookDetail };
+      return { previousWishlist, previousBookDetail, previousDetailByISBN };
     },
     onError: (err, variables, context) => {
       // 에러 시 롤백
@@ -207,6 +232,11 @@ export function useToggleWishlist(
       }
       if (context?.previousBookDetail) {
         queryClient.setQueryData(BOOK_QUERY_KEYS.detail(variables.bookId), context.previousBookDetail);
+      }
+      if (context?.previousDetailByISBN) {
+        context.previousDetailByISBN.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
       }
       if (options?.onError) {
         (options.onError as any)(err, variables, context);
@@ -221,6 +251,20 @@ export function useToggleWishlist(
           isWishlisted: data.isWishlisted, // 서버 응답값 사용
         });
       }
+
+      // ISBN 기반 상세 정보도 서버 응답값으로 업데이트
+      const detailByISBNQueries = queryClient
+        .getQueriesData<BookDetail>({ queryKey: [...BOOK_QUERY_KEYS.all, "detailByISBN"] })
+        .filter(([, detail]) => detail?.bookId?.toString() === variables.bookId);
+
+      detailByISBNQueries.forEach(([queryKey, detail]) => {
+        if (detail) {
+          queryClient.setQueryData(queryKey, {
+            ...detail,
+            isWishlisted: data.isWishlisted,
+          });
+        }
+      });
 
       // 위시리스트 목록 갱신 (추가/제거 반영)
       queryClient.invalidateQueries({ queryKey: BOOK_QUERY_KEYS.wishlist() });
