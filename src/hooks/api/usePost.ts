@@ -148,39 +148,53 @@ export function useLikePost(
       isLiked ? postService.unlikePost(postId) : postService.likePost(postId),
     onMutate: async ({ postId, isLiked }) => {
       // 낙관적 업데이트: 즉시 UI 반영
+      console.log('🔄 좋아요 요청 시작:', { postId, currentIsLiked: isLiked, action: isLiked ? 'unlike' : 'like' });
+
       await queryClient.cancelQueries({ queryKey: POST_QUERY_KEYS.detail(postId) });
 
       const previousPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(postId));
 
       if (previousPost) {
+        const newIsLiked = !isLiked;
+        const newLikeCount = isLiked ? previousPost.likeCount - 1 : previousPost.likeCount + 1;
+
         queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(postId), {
           ...previousPost,
-          isLiked: !isLiked,
-          likeCount: isLiked ? previousPost.likeCount - 1 : previousPost.likeCount + 1,
+          isLiked: newIsLiked,
+          likeCount: newLikeCount,
         });
+
+        console.log('🎯 낙관적 업데이트:', { newIsLiked, newLikeCount });
       }
 
       return { previousPost };
     },
     onError: (err, variables, context) => {
       // 에러 시 롤백
+      console.error('❌ 좋아요 요청 실패:', err);
       if (context?.previousPost) {
         queryClient.setQueryData(POST_QUERY_KEYS.detail(variables.postId), context.previousPost);
+        console.log('↩️ 이전 상태로 롤백');
       }
       if (options?.onError) {
         (options.onError as any)(err, variables, context);
       }
     },
     onSuccess: (data, variables, context) => {
+      // 디버깅: 백엔드 응답 로그
+      console.log('👍 좋아요 응답:', { data, postId: variables.postId, wasLiked: variables.isLiked });
+
       // 서버 응답으로 좋아요 관련 필드만 업데이트 (isApplied 등 다른 필드 보존)
       const currentPost = queryClient.getQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId));
-      if (currentPost) {
+      if (currentPost && data) {
         queryClient.setQueryData<Post>(POST_QUERY_KEYS.detail(variables.postId), {
           ...currentPost,
-          isLiked: data?.isLiked ?? currentPost.isLiked,
-          // likeCount가 undefined/null이면 기존 값 유지 (NaN 방지)
-          likeCount: typeof data?.likeCount === 'number' ? data.likeCount : currentPost.likeCount,
+          isLiked: data.isLiked,
+          likeCount: data.likeCount,
         });
+        console.log('✅ 캐시 업데이트 완료:', { isLiked: data.isLiked, likeCount: data.likeCount });
+      } else {
+        console.warn('⚠️ 캐시 업데이트 실패:', { currentPost, data });
       }
 
       // 사용자 정의 onSuccess 실행
