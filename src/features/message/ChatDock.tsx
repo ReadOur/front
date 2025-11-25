@@ -291,25 +291,26 @@ function ChatWindow({
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
   const [selectedProfileMessageId, setSelectedProfileMessageId] = useState<string | null>(null);
-  const selectedProfileMessage = useMemo(
-    () => messages.find((message) => message.id === selectedProfileMessageId),
-    [messages, selectedProfileMessageId]
-  );
-  const selectedProfileUserId = useMemo(() => {
-    const rawSenderId = selectedProfileMessage?.senderId ?? selectedProfileMessage?.fromId;
-    if (!rawSenderId) return undefined;
+  const selectedProfile = useMemo(() => {
+    const message = messages.find((m) => m.id === selectedProfileMessageId);
+    if (!message) return null;
 
-    const numericId = Number(rawSenderId);
-    return Number.isNaN(numericId) ? undefined : numericId;
-  }, [selectedProfileMessage]);
-  const selectedProfileNickname = selectedProfileMessage?.senderNickname;
-  const selectedProfileRole = selectedProfileMessage?.senderRole;
+    const rawSenderId = message.senderId ?? message.fromId;
+    const numericId = rawSenderId ? Number(rawSenderId) : undefined;
+
+    return {
+      message,
+      userId: numericId && !Number.isNaN(numericId) ? numericId : undefined,
+      nickname: message.senderNickname,
+      role: message.senderRole,
+    };
+  }, [messages, selectedProfileMessageId]);
 
   useEffect(() => {
-    if (selectedProfileMessageId && !selectedProfileMessage) {
+    if (selectedProfileMessageId && !selectedProfile) {
       setSelectedProfileMessageId(null);
     }
-  }, [selectedProfileMessage, selectedProfileMessageId]);
+  }, [selectedProfile, selectedProfileMessageId]);
 
   useEffect(() => {
     setSelectedProfileMessageId(null);
@@ -629,6 +630,7 @@ function ChatWindow({
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
           const isProfileOpen = selectedProfileMessageId === m.id;
+          const profile = isProfileOpen ? selectedProfile : null;
 
           return (
             <div key={m.id} className="relative group">
@@ -824,9 +826,9 @@ function ChatWindow({
                 <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-semibold">{selectedProfileNickname ?? "사용자 정보"}</div>
+                      <div className="font-semibold">{profile?.nickname ?? "사용자 정보"}</div>
                       <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                        {selectedProfileRole ? `권한: ${selectedProfileRole}` : "권한 정보 없음"}
+                        {profile?.role ? `권한: ${profile.role}` : "권한 정보 없음"}
                       </div>
                     </div>
                     <button
@@ -840,17 +842,15 @@ function ChatWindow({
                   </div>
 
                   <div className="text-sm space-y-1 text-[color:var(--chatdock-fg-primary)]">
-                    <div>닉네임: {selectedProfileNickname ?? "알 수 없음"}</div>
-                    <div>권한: {selectedProfileRole ?? "정보 없음"}</div>
+                    <div>닉네임: {profile?.nickname ?? "알 수 없음"}</div>
+                    <div>권한: {profile?.role ?? "정보 없음"}</div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        selectedProfileUserId && handleCreateDirectRoom(selectedProfileUserId, selectedProfileNickname)
-                      }
-                      disabled={!selectedProfileUserId || createRoomMutation.isPending || !currentUserIdNumber}
+                      onClick={() => profile?.userId && handleCreateDirectRoom(profile.userId, profile.nickname)}
+                      disabled={!profile?.userId || createRoomMutation.isPending || !currentUserIdNumber}
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
                     >
                       <span>💬</span>
