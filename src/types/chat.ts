@@ -250,6 +250,8 @@ export interface RoomMessage {
   id: number;
   roomId: number;
   senderId: string;
+  senderNickname?: string;
+  senderRole?: string;
   type: RoomMessageType;
   body: {
     text: string;

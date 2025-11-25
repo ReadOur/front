@@ -128,6 +128,7 @@ export interface ChatMessage {
   text: string;
   createdAt: number; // epoch ms
   senderNickname?: string; // 발신자 닉네임
+  senderRole?: string; // 발신자 역할
 }
 
 export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
@@ -294,13 +295,8 @@ function ChatWindow({
     userId: number;
     messageId: string;
     nickname?: string;
+    role?: string;
   } | null>(null);
-
-  const {
-    data: selectedMemberProfile,
-    isFetching: isProfileFetching,
-    error: profileError,
-  } = useRoomMemberProfile(profileTarget?.roomId, profileTarget?.userId, { enabled: !!profileTarget });
 
   const toast = useToast();
 
@@ -352,13 +348,6 @@ function ChatWindow({
     };
   }, [isMenuOpen, messageMenuOpen]);
 
-  useEffect(() => {
-    if (profileError && profileTarget) {
-      const message = (profileError as any)?.response?.data?.message || profileError.message || "사용자 정보를 불러오지 못했습니다.";
-      toast.show({ title: message, variant: "error" });
-    }
-  }, [profileError, profileTarget, toast]);
-
   const handleSenderProfileClick = (message: ChatMessage) => {
     const senderIdValue = (message.senderId ?? message.fromId)?.toString();
     const resolvedRoomId = Number(roomId ?? thread.id);
@@ -379,6 +368,7 @@ function ChatWindow({
       userId: senderIdNumber,
       messageId: message.id,
       nickname: message.senderNickname,
+      role: message.senderRole,
     });
   };
 
@@ -645,17 +635,7 @@ function ChatWindow({
                 </div>
               )}
 
-              <div className={cls("mb-1 flex", mine ? "justify-end" : "justify-start")}>
-                <button
-                  type="button"
-                  onClick={() => handleSenderProfileClick(m)}
-                  className="text-[10px] px-2 py-1 rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-muted)] hover:text-[color:var(--color-primary)] hover:border-[color:var(--color-primary)]"
-                >
-                  보낸 사람 ID: {senderId ?? "알 수 없음"}
-                </button>
-              </div>
-
-              <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}>
+              <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}> 
                 {mine ? (
                   <>
                     {/* 메시지 메뉴 버튼 (왼쪽) */}
@@ -747,8 +727,14 @@ function ChatWindow({
                       "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]",
                       isHidden && "opacity-30 blur-sm"
                     )}>
-                      {m.senderNickname && (
-                        <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
+                      {(
+                        <button
+                          type="button"
+                          onClick={() => handleSenderProfileClick(m)}
+                          className="text-[10px] font-semibold mb-1 opacity-80 underline-offset-2 hover:underline"
+                        >
+                          {m.senderNickname || "알 수 없는 사용자"}
+                        </button>
                       )}
                       <div className="text-sm leading-snug whitespace-pre-wrap break-words">
                         {isHidden ? "가려진 메시지" : m.text}
@@ -848,26 +834,15 @@ function ChatWindow({
                     </button>
                   </div>
 
-                  {isProfileFetching ? (
-                    <div className="flex items-center gap-2 text-[color:var(--chatdock-fg-muted)] text-sm">
-                      <Loader2 className="w-4 h-4 animate-spin" /> 프로필을 불러오는 중...
-                    </div>
-                  ) : profile ? (
-                    <div className="text-sm space-y-1 text-[color:var(--chatdock-fg-primary)]">
-                      <div>닉네임: {profile.nickname}</div>
-                      <div>역할: {profile.role}</div>
-                      <div>사용자 ID: {profile.userId}</div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-[color:var(--chatdock-fg-muted)]">
-                      프로필 정보를 불러올 수 없습니다.
-                    </div>
-                  )}
+                  <div className="text-sm space-y-1 text-[color:var(--chatdock-fg-primary)]">
+                    <div>닉네임: {profileTarget?.nickname ?? "알 수 없음"}</div>
+                    <div>권한: {profileTarget?.role ?? "정보 없음"}</div>
+                  </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => profileTarget?.userId && handleCreateDirectRoom(profileTarget.userId, profile?.nickname ?? profileTarget?.nickname)}
+                      onClick={() => profileTarget?.userId && handleCreateDirectRoom(profileTarget.userId, profileTarget?.nickname)}
                       disabled={!profileTarget?.userId || createRoomMutation.isPending || !currentUserIdNumber}
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
                     >
@@ -1457,6 +1432,7 @@ export default function ChatDock() {
           text: msg.body.text,
           createdAt: new Date(msg.createdAt).getTime(),
           senderNickname: msg.senderNickname,
+          senderRole: msg.senderRole,
         }));
 
         setMessages((prev) => ({
@@ -1496,6 +1472,7 @@ export default function ChatDock() {
       text: message.body.text || "",
       createdAt: new Date(message.createdAt).getTime(),
       senderNickname: message.senderNickname,
+      senderRole: message.senderRole,
     };
 
     // 메시지 목록에 추가
