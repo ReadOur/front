@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { X, Minimize2, Send, Sparkles } from "lucide-react";
 
 /**
@@ -19,9 +19,28 @@ interface AIDockProps {
   isOpen: boolean;
   onClose: () => void;
   onMinimize?: () => void;
+  anchorRef?: React.RefObject<HTMLElement>;
 }
 
-export default function AIDock({ isOpen, onClose, onMinimize }: AIDockProps) {
+export default function AIDock({ isOpen, onClose, onMinimize, anchorRef }: AIDockProps) {
+  const getInitialPosition = useCallback(() => {
+    const width = 384; // w-96
+    const height = 600;
+    const margin = 16;
+    const anchorRect = anchorRef?.current?.getBoundingClientRect();
+
+    if (anchorRect) {
+      const left = Math.min(Math.max(margin, anchorRect.right + 12), window.innerWidth - width - margin);
+      const top = Math.min(Math.max(margin, anchorRect.top), window.innerHeight - height - margin);
+      return { x: left, y: top };
+    }
+
+    return {
+      x: Math.max(margin, window.innerWidth - width - margin),
+      y: Math.max(margin, margin),
+    };
+  }, [anchorRef]);
+
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: "welcome",
@@ -33,11 +52,54 @@ export default function AIDock({ isOpen, onClose, onMinimize }: AIDockProps) {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState(() => getInitialPosition());
+  const dragInfo = useRef<{ isDragging: boolean; offsetX: number; offsetY: number }>({
+    isDragging: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
+  const wasOpen = useRef(isOpen);
 
   // 자동 스크롤
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleDragStart = (e: React.PointerEvent) => {
+    dragInfo.current = {
+      isDragging: true,
+      offsetX: e.clientX - position.x,
+      offsetY: e.clientY - position.y,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!dragInfo.current.isDragging) return;
+
+    const x = e.clientX - dragInfo.current.offsetX;
+    const y = e.clientY - dragInfo.current.offsetY;
+
+    const width = 384; // w-96
+    const height = 600;
+    const margin = 16;
+    const maxX = window.innerWidth - width - margin;
+    const maxY = window.innerHeight - height - margin;
+
+    setPosition({
+      x: Math.min(Math.max(margin, x), maxX),
+      y: Math.min(Math.max(margin, y), maxY),
+    });
+  };
+
+  const handleDragEnd = (e: React.PointerEvent) => {
+    dragInfo.current.isDragging = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // 이미 해제된 경우 무시
+    }
+  };
 
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -67,13 +129,49 @@ export default function AIDock({ isOpen, onClose, onMinimize }: AIDockProps) {
     }, 2000);
   };
 
+  useEffect(() => {
+    if (isOpen && !wasOpen.current) {
+      setPosition(getInitialPosition());
+    }
+    wasOpen.current = isOpen;
+  }, [getInitialPosition, isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div
       className="fixed right-4 bottom-4 w-96 h-[600px] flex flex-col overflow-hidden rounded-[var(--radius-lg)] bg-[color:var(--chatdock-bg-elev-2)] border border-[color:var(--chatdock-border-strong)] shadow-2xl z-50"
-      style={{ maxHeight: "calc(100vh - 2rem)" }}
+      style={{
+        maxHeight: "calc(100vh - 2rem)",
+        left: position.x,
+        top: position.y,
+        right: "auto",
+        bottom: "auto",
+      }}
+      onPointerMove={handleDragMove}
+      onPointerUp={handleDragEnd}
+      onPointerCancel={handleDragEnd}
     >
+      <button
+        className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
+      <button
+        className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
+      <button
+        className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
+      <button
+        className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+        onPointerDown={handleDragStart}
+        aria-label="창 위치 이동"
+      />
       {/* 헤더 */}
       <div className="h-14 flex items-center gap-2 px-4 border-b border-[color:var(--chatdock-border-subtle)] bg-gradient-to-r from-purple-500 to-blue-500">
         <Sparkles className="w-5 h-5 text-white" />

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -128,6 +128,7 @@ export interface ChatMessage {
   text: string;
   createdAt: number; // epoch ms
   senderNickname?: string; // 발신자 닉네임
+  senderRole?: string; // 발신자 역할
 }
 
 export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
@@ -251,8 +252,10 @@ function ChatWindow({
                       __onResizeStart,
                       width = 320,
                       height = 420,
+                      roomId,
                       isOwner = false,
                       isMuted = false,
+                      currentUserIdNumber,
                     }: {
   me: ChatUser;
   thread: ChatThread;
@@ -269,8 +272,10 @@ function ChatWindow({
   __onResizeStart?: (direction: string, e: React.PointerEvent) => void;
   width?: number;
   height?: number;
+  roomId?: number;
   isOwner?: boolean;
   isMuted?: boolean;
+  currentUserIdNumber?: number | null;
 }) {
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -285,6 +290,89 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
+  const [profileTarget, setProfileTarget] = useState<{
+    messageId: string | null;
+    userId?: number;
+    nickname?: string;
+    role?: string;
+  } | null>(null);
+  const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
+  const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
+    active: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
+  const dockContainerRef = useRef<HTMLDivElement>(null);
+
+  const resolveProfileFromMessage = useCallback((messageId: string | null) => {
+    if (!messageId) return null;
+
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) return null;
+
+    const rawSenderId = message.senderId ?? message.fromId;
+    const numericId = rawSenderId ? Number(rawSenderId) : undefined;
+
+    return {
+      messageId,
+      userId: numericId && !Number.isNaN(numericId) ? numericId : undefined,
+      nickname: message.senderNickname,
+      role: message.senderRole,
+    };
+  }, [messages]);
+
+  useEffect(() => {
+    setProfileTarget((prev) => resolveProfileFromMessage(prev?.messageId));
+    setProfileCardPosition((prev) => {
+      if (!prev || !profileTarget) return prev;
+
+      const cardWidth = 288;
+      const cardHeight = 180;
+      const margin = 12;
+
+      return {
+        left: Math.min(Math.max(margin, prev.left), window.innerWidth - cardWidth - margin),
+        top: Math.min(Math.max(margin, prev.top), window.innerHeight - cardHeight - margin),
+      };
+    });
+  }, [messages, resolveProfileFromMessage, profileTarget]);
+
+  useEffect(() => {
+    setProfileTarget(null);
+    setProfileCardPosition(null);
+  }, [roomId, thread.id]);
+
+  useEffect(() => {
+    if (!profileTarget || profileCardPosition) return;
+
+    const cardWidth = 288;
+    const cardHeight = 180;
+    const margin = 12;
+    const dockRect = dockContainerRef.current?.getBoundingClientRect();
+    const preferredLeft = dockRect ? dockRect.right + 12 : window.innerWidth - cardWidth - margin;
+    const preferredTop = dockRect ? dockRect.top + 48 : margin;
+
+    setProfileCardPosition({
+      left: Math.min(Math.max(margin, preferredLeft), window.innerWidth - cardWidth - margin),
+      top: Math.min(Math.max(margin, preferredTop), window.innerHeight - cardHeight - margin),
+    });
+  }, [profileTarget, profileCardPosition]);
+
+  const toast = useToast();
+
+  const createRoomMutation = useCreateRoom({
+    onSuccess: (data) => {
+      toast.show({
+        title: "1:1 채팅방을 생성했습니다.",
+        description: data.name,
+        variant: "success",
+      });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error.message || "채팅방 생성에 실패했습니다.";
+      toast.show({ title: message, variant: "error" });
+    },
+  });
 
   const [newEvent, setNewEvent] = useState<CreateEventData>({
     title: "",
@@ -319,6 +407,73 @@ function ChatWindow({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isMenuOpen, messageMenuOpen]);
+
+  const handleSenderProfileClick = (message: ChatMessage) => {
+    if (profileTarget?.messageId === message.id) {
+      setProfileTarget(null);
+      return;
+    }
+
+    setProfileTarget(resolveProfileFromMessage(message.id));
+  };
+
+  const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
+    if (!currentUserIdNumber) {
+      toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+      return;
+    }
+
+    if (!targetUserId) {
+      toast.show({ title: "1:1 채팅을 만들 수 있는 사용자 정보가 없습니다.", variant: "warning" });
+      return;
+    }
+
+    createRoomMutation.mutate({
+      scope: "PRIVATE",
+      name: `${nickname ?? "사용자"}님과의 채팅`,
+      description: "1:1 채팅방",
+      memberIds: [currentUserIdNumber, targetUserId],
+    });
+  };
+
+  const handleProfileCardDragStart = (e: React.PointerEvent) => {
+    if (!profileCardPosition) return;
+
+    profileCardDrag.current = {
+      active: true,
+      offsetX: e.clientX - profileCardPosition.left,
+      offsetY: e.clientY - profileCardPosition.top,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleProfileCardDragMove = (e: React.PointerEvent) => {
+    if (!profileCardDrag.current.active) return;
+
+    const cardWidth = 288;
+    const cardHeight = 180;
+    const margin = 12;
+
+    const left = Math.min(
+      Math.max(margin, e.clientX - profileCardDrag.current.offsetX),
+      window.innerWidth - cardWidth - margin
+    );
+    const top = Math.min(
+      Math.max(margin, e.clientY - profileCardDrag.current.offsetY),
+      window.innerHeight - cardHeight - margin
+    );
+
+    setProfileCardPosition({ left, top });
+  };
+
+  const handleProfileCardDragEnd = (e: React.PointerEvent) => {
+    profileCardDrag.current.active = false;
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // already released
+    }
+  };
 
   const handleOpenEventModal = () => {
     const today = new Date();
@@ -366,6 +521,7 @@ function ChatWindow({
 
   return (
     <div
+      ref={dockContainerRef}
       className="flex flex-col overflow-hidden relative
              rounded-[var(--radius-lg)]
              bg-[color:var(--chatdock-bg-elev-2)]
@@ -567,7 +723,7 @@ function ChatWindow({
                 </div>
               )}
 
-              <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}>
+              <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}> 
                 {mine ? (
                   <>
                     {/* 메시지 메뉴 버튼 (왼쪽) */}
@@ -659,8 +815,14 @@ function ChatWindow({
                       "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)]",
                       isHidden && "opacity-30 blur-sm"
                     )}>
-                      {m.senderNickname && (
-                        <div className="text-[10px] font-semibold mb-1 opacity-70">{m.senderNickname}</div>
+                      {(
+                        <button
+                          type="button"
+                          onClick={() => handleSenderProfileClick(m)}
+                          className="text-[10px] font-semibold mb-1 opacity-80 underline-offset-2 hover:underline"
+                        >
+                          {m.senderNickname || "알 수 없는 사용자"}
+                        </button>
                       )}
                       <div className="text-sm leading-snug whitespace-pre-wrap break-words">
                         {isHidden ? "가려진 메시지" : m.text}
@@ -782,6 +944,56 @@ function ChatWindow({
           </button>
         </div>
       </form>
+
+      {profileTarget && profileCardPosition && (
+        <div
+          className="fixed z-[120] w-72 rounded-[var(--radius-lg)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-2)] shadow-2xl"
+          style={{ top: profileCardPosition.top, left: profileCardPosition.left }}
+          onPointerMove={handleProfileCardDragMove}
+          onPointerUp={handleProfileCardDragEnd}
+          onPointerCancel={handleProfileCardDragEnd}
+        >
+          <div
+            className="flex items-start justify-between gap-2 px-3 py-2 border-b border-[color:var(--chatdock-border-subtle)] cursor-move"
+            onPointerDown={handleProfileCardDragStart}
+          >
+            <div>
+              <div className="font-semibold text-[color:var(--chatdock-fg-primary)]">{profileTarget.nickname ?? "사용자 정보"}</div>
+              <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
+                {profileTarget.role ? `권한: ${profileTarget.role}` : "권한 정보 없음"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setProfileTarget(null);
+                setProfileCardPosition(null);
+              }}
+              className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+              aria-label="프로필 카드 닫기"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="px-3 py-3 text-[color:var(--chatdock-fg-primary)]">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => profileTarget.userId && handleCreateDirectRoom(profileTarget.userId, profileTarget.nickname)}
+                disabled={!profileTarget.userId || createRoomMutation.isPending || !currentUserIdNumber}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] border border-[color:var(--color-primary)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+              >
+                <span>💬</span>
+                <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+              </button>
+              {!currentUserIdNumber && (
+                <span className="text-xs text-[color:var(--chatdock-fg-muted)]">로그인 후 생성할 수 있습니다.</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 리사이즈 핸들 - 8방향 */}
       {__onResizeStart && (
@@ -953,6 +1165,7 @@ function ChatWindow({
       {/* AI Dock */}
       <AIDock
         isOpen={isAIDockOpen}
+        anchorRef={dockContainerRef}
         onClose={() => setIsAIDockOpen(false)}
         onMinimize={() => setIsAIDockOpen(false)}
       />
@@ -995,6 +1208,7 @@ export default function ChatDock() {
   const tokenUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
 
   const myUserId = myPage?.userId ? myPage.userId.toString() : tokenUserId;
+  const myUserIdNumber = useMemo(() => (myUserId ? Number(myUserId) : null), [myUserId]);
   const me: ChatUser = {
     id: myUserId || "me",
     name: myPage?.nickname || user?.name || user?.email || "나",
@@ -1315,6 +1529,7 @@ export default function ChatDock() {
           text: msg.body.text,
           createdAt: new Date(msg.createdAt).getTime(),
           senderNickname: msg.senderNickname,
+          senderRole: msg.senderRole,
         }));
 
         setMessages((prev) => ({
@@ -1354,6 +1569,7 @@ export default function ChatDock() {
       text: message.body.text || "",
       createdAt: new Date(message.createdAt).getTime(),
       senderNickname: message.senderNickname,
+      senderRole: message.senderRole,
     };
 
     // 메시지 목록에 추가
@@ -1668,6 +1884,7 @@ export default function ChatDock() {
                 roomId={parseInt(id, 10)}
                 isOwner={false} // TODO: 백엔드에서 방장 정보 받아오기
                 isMuted={false} // TODO: 백엔드에서 뮤트 상태 받아오기
+                currentUserIdNumber={myUserIdNumber}
               />
             </div>
           );
