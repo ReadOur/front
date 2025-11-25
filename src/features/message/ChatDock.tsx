@@ -592,7 +592,7 @@ function ChatWindow({
           </button>
           {/* 메뉴 드롭다운 */}
           {isMenuOpen && (
-            <div className="absolute left-0 top-full mt-1 w-[800px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+            <div className="absolute left-0 top-full mt-1 w-[450px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
               {/* AI 명령어 섹션 - 관리자 전용 */}
               {isAdmin && (
                 <div className="border-b border-[color:var(--chatdock-border-subtle)] py-2">
