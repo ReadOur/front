@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom, useRoomMemberProfile } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -290,34 +290,36 @@ function ChatWindow({
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const messageMenuRef = useRef<HTMLDivElement>(null);
-  type SelectedProfile = {
+  const [profileTarget, setProfileTarget] = useState<{
+    messageId: string | null;
     userId?: number;
     nickname?: string;
     role?: string;
-  };
-  const [selectedProfileMessageId, setSelectedProfileMessageId] = useState<string | null>(null);
-  const selectedProfile = useMemo<SelectedProfile | null>(() => {
-    const message = messages.find((m) => m.id === selectedProfileMessageId);
+  } | null>(null);
+
+  const resolveProfileFromMessage = useCallback((messageId: string | null) => {
+    if (!messageId) return null;
+
+    const message = messages.find((m) => m.id === messageId);
     if (!message) return null;
 
     const rawSenderId = message.senderId ?? message.fromId;
     const numericId = rawSenderId ? Number(rawSenderId) : undefined;
 
     return {
+      messageId,
       userId: numericId && !Number.isNaN(numericId) ? numericId : undefined,
       nickname: message.senderNickname,
       role: message.senderRole,
     };
-  }, [messages, selectedProfileMessageId]);
+  }, [messages]);
 
   useEffect(() => {
-    if (selectedProfileMessageId && !selectedProfile) {
-      setSelectedProfileMessageId(null);
-    }
-  }, [selectedProfile, selectedProfileMessageId]);
+    setProfileTarget((prev) => resolveProfileFromMessage(prev?.messageId));
+  }, [messages, resolveProfileFromMessage]);
 
   useEffect(() => {
-    setSelectedProfileMessageId(null);
+    setProfileTarget(null);
   }, [roomId, thread.id]);
 
   const toast = useToast();
@@ -371,30 +373,15 @@ function ChatWindow({
   }, [isMenuOpen, messageMenuOpen]);
 
   const handleSenderProfileClick = (message: ChatMessage) => {
-    const senderIdValue = (message.senderId ?? message.fromId)?.toString();
-    const resolvedRoomId = Number(roomId ?? thread.id);
-    const senderIdNumber = senderIdValue ? Number(senderIdValue) : NaN;
-
-    if (!senderIdValue || Number.isNaN(senderIdNumber) || Number.isNaN(resolvedRoomId)) {
-      toast.show({ title: "프로필을 확인할 수 없는 발신자입니다.", variant: "warning" });
-      return;
-    }
-
     if (profileTarget?.messageId === message.id) {
       setProfileTarget(null);
       return;
     }
 
-    setProfileTarget({
-      roomId: resolvedRoomId,
-      userId: senderIdNumber,
-      messageId: message.id,
-      nickname: message.senderNickname,
-      role: message.senderRole,
-    });
+    setProfileTarget(resolveProfileFromMessage(message.id));
   };
 
-  const handleCreateDirectRoom = (targetUserId: number, nickname?: string) => {
+  const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
     if (!currentUserIdNumber) {
       toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
       return;
@@ -648,8 +635,8 @@ function ChatWindow({
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
-          const isProfileOpen = selectedProfileMessageId === m.id;
-          const profile = isProfileOpen ? selectedProfile : null;
+          const isProfileOpen = profileTarget?.messageId === m.id;
+          const profile = isProfileOpen ? profileTarget : null;
 
           return (
             <div key={m.id} className="relative group">
@@ -845,15 +832,14 @@ function ChatWindow({
                 <div className="mt-2 p-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="font-semibold">{profile?.nickname ?? profileTarget?.nickname ?? "사용자 정보"}</div>
+                      <div className="font-semibold">{profile?.nickname ?? "사용자 정보"}</div>
                       <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                        ID {profileTarget?.userId}
-                        {profile?.role ? ` · 역할 ${profile.role}` : ""}
+                        {profile?.role ? `권한: ${profile.role}` : "권한 정보 없음"}
                       </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => setSelectedProfileMessageId(null)}
+                      onClick={() => setProfileTarget(null)}
                       className="w-7 h-7 grid place-items-center rounded-[var(--radius-sm)] border border-[color:var(--chatdock-border-subtle)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
                       aria-label="프로필 카드 닫기"
                     >
