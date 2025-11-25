@@ -51,7 +51,7 @@ function getCategoryLabel(category: string): string {
 function calculateBadges(post: Post): { type: "hot" | "new" | "count"; value?: string | number }[] {
   const badges: { type: "hot" | "new" | "count"; value?: string | number }[] = [];
   if (post.commentCount && post.commentCount > 0) badges.push({ type: "count", value: post.commentCount });
-  if (post.likeCount >= 10) badges.push({ type: "hot" });
+  if ((post.likeCount ?? 0) >= 10) badges.push({ type: "hot" });
   const diffH = (Date.now() - new Date(post.createdAt).getTime()) / 36e5;
   if (diffH < 24) badges.push({ type: "new" });
   return badges;
@@ -379,7 +379,7 @@ export const BRD_List: React.FC = () => {
                     </div>
 
                     {/* 좋아요 */}
-                    <div className="text-center">{post.likeCount}</div>
+                    <div className="text-center">{post.likeCount ?? 0}</div>
 
                     {/* 작성자 */}
                     <div className="text-center truncate">{post.authorNickname}</div>
@@ -429,7 +429,7 @@ export const BRD_List: React.FC = () => {
                         </>
                       )}
                       <span className="ml-auto flex items-center gap-2">
-                        <span>❤️ {post.likeCount}</span>
+                        <span>❤️ {post.likeCount ?? 0}</span>
                         <span>👁 {post.hit}</span>
                       </span>
                     </div>
