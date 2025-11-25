@@ -109,6 +109,21 @@ export function useRoomMessages(params: GetRoomMessagesParams, options?: { enabl
 /**
  * 채팅방 멤버 프로필 조회
  */
+export function useRoomMemberProfile(
+  roomId: number | undefined,
+  userId: number | undefined,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<RoomMemberProfile>({
+    queryKey: CHAT_QUERY_KEYS.roomMemberProfile(roomId || 0, userId || 0),
+    queryFn: () => chatService.getRoomMemberProfile(roomId!, userId!),
+    enabled: options?.enabled !== false && !!roomId && !!userId,
+  });
+}
+
+/**
+ * 채팅 스레드 목록 조회
+ */
 export function useThreads(params?: GetThreadsParams) {
   return useQuery<PaginatedResponse<ChatThread>>({
     queryKey: CHAT_QUERY_KEYS.threadList(params),
