@@ -237,6 +237,9 @@ export default function PostShow() {
     }
 
     if (!postId || !post) return;
+
+    console.log('🖱️ 좋아요 버튼 클릭:', { postId, currentIsLiked: post.isLiked, currentLikeCount: post.likeCount });
+
     likeMutation.mutate({
       postId,
       isLiked: post.isLiked || false,  // 현재 좋아요 상태
