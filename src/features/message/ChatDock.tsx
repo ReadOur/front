@@ -419,7 +419,7 @@ function ChatWindow({
       {/* body */}
       <div ref={boxRef} className="flex-1 overflow-auto p-3 space-y-2">
         {messages.map((m) => {
-          const mine = m.fromId === me.id;
+          const mine = m.fromId?.toString() === me.id?.toString();
           const isHidden = hiddenMessageIds.has(m.id);
           const isAISessionStart = aiSessionStart === m.id;
           const isAISessionEnd = aiSessionEnd === m.id;
