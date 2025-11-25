@@ -5,6 +5,7 @@ import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
 import { TagInput } from "@/components/TagInput/TagInput";
 import { FileUpload } from "@/components/FileUpload/FileUpload";
 import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
+import { useBookSearch, useBookDetail } from "@/hooks/api/useBook";
 import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
@@ -25,6 +26,10 @@ export const BRD_06 = (): React.JSX.Element => {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>(initialCategory);
   const [bookId, setBookId] = useState<number | undefined>(undefined);
+  const [bookSearchQuery, setBookSearchQuery] = useState<string>("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
+  const [selectedBookInfo, setSelectedBookInfo] = useState<{ title: string; author: string } | null>(null);
+  const [showBookDropdown, setShowBookDropdown] = useState<boolean>(false);
   const [chatRoomId, setChatRoomId] = useState<number | undefined>(undefined);
   const [recruitmentLimit, setRecruitmentLimit] = useState<number | undefined>(10);
   const [chatRoomName, setChatRoomName] = useState<string>("");
@@ -51,10 +56,32 @@ export const BRD_06 = (): React.JSX.Element => {
     "미스터리",
   ];
 
+  // 책 검색어 debounce (300ms 후 실행)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(bookSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [bookSearchQuery]);
+
+  // 책 검색 (REVIEW 카테고리용) - debounced 검색어 사용
+  const { data: bookSearchResults, isLoading: isSearchingBooks } = useBookSearch({
+    type: "TITLE",
+    keyword: debouncedSearchQuery,
+    page: 0,
+    size: 3,
+  });
+
   // 수정 모드: 기존 게시글 로드
   const { data: existingPost, isLoading: isLoadingPost } = usePost(postId || "", {
     enabled: isEditMode,
   });
+
+  // 편집 모드에서 책 정보 로드 (REVIEW 카테고리이고 bookId가 있는 경우만)
+  // 빈 문자열은 useBookDetail의 enabled: !!bookId로 인해 API 호출되지 않음
+  const existingBookId = existingPost?.bookId ? String(existingPost.bookId) : "";
+  const { data: existingBookDetail } = useBookDetail(existingBookId);
 
   // 수정 모드: 기존 데이터를 폼에 채우기
   useEffect(() => {
@@ -73,6 +100,16 @@ export const BRD_06 = (): React.JSX.Element => {
       setAttachments(existingPost.attachments || []);
     }
   }, [isEditMode, existingPost]);
+
+  // 편집 모드에서 책 정보 설정
+  useEffect(() => {
+    if (isEditMode && existingBookDetail) {
+      setSelectedBookInfo({
+        title: existingBookDetail.bookname,
+        author: existingBookDetail.authors,
+      });
+    }
+  }, [isEditMode, existingBookDetail]);
 
   const queryClient = useQueryClient();
 
@@ -114,6 +151,12 @@ export const BRD_06 = (): React.JSX.Element => {
     // 제목 검증
     if (!title.trim()) {
       toast.show({ title: "제목을 입력해주세요.", variant: "warning" });
+      return;
+    }
+
+    // REVIEW 카테고리 책 ID 필수 검증
+    if (category === "REVIEW" && !bookId) {
+      toast.show({ title: "리뷰 작성 시 책을 선택해주세요.", variant: "warning" });
       return;
     }
 
@@ -227,18 +270,29 @@ export const BRD_06 = (): React.JSX.Element => {
               </select>
             </div>
 
-            {/* 책 ID 입력 (REVIEW 카테고리인 경우) */}
+            {/* 책 검색 (REVIEW 카테고리인 경우) */}
             {category === "REVIEW" && (
-              <div className="min-w-[200px]">
-                <label htmlFor="bookId" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
-                  책 ID {isEditMode && <span className="text-xs">(변경 불가)</span>}
+              <div className="min-w-[300px] relative">
+                <label htmlFor="bookSearch" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                  책 검색 {isEditMode && <span className="text-xs">(변경 불가)</span>}
                 </label>
                 <input
-                  id="bookId"
-                  type="number"
-                  value={bookId || ""}
-                  onChange={(e) => setBookId(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="책 ID를 입력하세요"
+                  id="bookSearch"
+                  type="text"
+                  value={selectedBookInfo ? `${selectedBookInfo.title} - ${selectedBookInfo.author}` : bookSearchQuery}
+                  onChange={(e) => {
+                    if (!isEditMode) {
+                      setBookSearchQuery(e.target.value);
+                      setShowBookDropdown(true);
+                      if (!e.target.value) {
+                        setBookId(undefined);
+                        setSelectedBookInfo(null);
+                      }
+                    }
+                  }}
+                  onFocus={() => !isEditMode && setShowBookDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowBookDropdown(false), 200)}
+                  placeholder="책 제목을 입력하세요"
                   disabled={isEditMode}
                   className="
                     w-full h-10 rounded-[var(--radius-md)]
@@ -250,6 +304,47 @@ export const BRD_06 = (): React.JSX.Element => {
                     disabled:opacity-60 disabled:cursor-not-allowed
                   "
                 />
+
+                {/* 검색 결과 드롭다운 */}
+                {showBookDropdown && bookSearchQuery.length > 0 && !selectedBookInfo && !isEditMode && (
+                  <div
+                    className="absolute top-full mt-2 w-full rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] shadow-lg z-10 max-h-[300px] overflow-y-auto"
+                  >
+                    {isSearchingBooks ? (
+                      <div className="p-4 text-center text-[color:var(--color-fg-muted)]">
+                        검색 중...
+                      </div>
+                    ) : bookSearchResults && bookSearchResults.content.length > 0 ? (
+                      <div>
+                        {bookSearchResults.content.slice(0, 3).map((book) => (
+                          <div
+                            key={book.bookId || book.isbn13}
+                            onClick={() => {
+                              if (book.bookId) {
+                                setBookId(book.bookId);
+                                setSelectedBookInfo({ title: book.bookname, author: book.authors });
+                                setBookSearchQuery("");
+                                setShowBookDropdown(false);
+                              }
+                            }}
+                            className="p-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-2)] transition border-b border-[color:var(--color-border-subtle)] last:border-b-0"
+                          >
+                            <div className="font-medium text-[color:var(--color-fg-primary)]">
+                              {book.bookname}
+                            </div>
+                            <div className="text-sm text-[color:var(--color-fg-muted)] mt-1">
+                              {book.authors}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-[color:var(--color-fg-muted)]">
+                        검색 결과가 없습니다
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

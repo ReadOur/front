@@ -10,6 +10,7 @@ import {
   useDeleteComment,
   useToggleRecruitmentApply,
 } from "@/hooks/api";
+import { useBookDetail } from "@/hooks/api/useBook";
 import { useCreateRoom } from "@/hooks/api/useChat";
 import { CreateCommentRequest } from "@/types";
 import { Loading } from "@/components/Loading";
@@ -18,8 +19,7 @@ import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
 import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
 import { isLoggedIn } from "@/utils/auth";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { getBookDetail } from "@/services/bookService";
+import { useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar/Avatar";
 /**
  * 게시글 상세 페이지 (BRD_05)
@@ -563,10 +563,10 @@ export default function PostShow() {
             >
               {/* 책 표지 */}
               <div className="flex-shrink-0 w-20 h-28 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
-                {bookDetail.coverImage ? (
+                {bookDetail.bookImageUrl ? (
                   <img
-                    src={bookDetail.coverImage}
-                    alt={bookDetail.title}
+                    src={bookDetail.bookImageUrl}
+                    alt={bookDetail.bookname}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -579,9 +579,9 @@ export default function PostShow() {
               {/* 책 정보 */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-[color:var(--color-fg-muted)] mb-1">리뷰 대상 도서</p>
-                <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-1 truncate">{bookDetail.title}</h3>
-                {bookDetail.author && (
-                  <p className="text-sm text-[color:var(--color-fg-secondary)] truncate">{bookDetail.author}</p>
+                <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-1 truncate">{bookDetail.bookname}</h3>
+                {bookDetail.authors && (
+                  <p className="text-sm text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
                 )}
                 {bookDetail.publisher && (
                   <p className="text-xs text-[color:var(--color-fg-muted)] mt-1">{bookDetail.publisher}</p>

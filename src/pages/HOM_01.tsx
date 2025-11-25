@@ -219,6 +219,7 @@ interface BookCardProps {
     authors: string;
     bookImageUrl: string;
     description: string;
+    isbn13: string;
     averageRating: number | null;
     reviewCount: number;
   };
@@ -406,7 +407,15 @@ export default function HOM_01() {
               <BookCard
                 key={book.bookId}
                 book={book}
-                onClick={() => navigate(`/books/${book.bookId}`)}
+                onClick={() => {
+                  // isbn13이 있으면 ISBN으로, 없으면 bookId로 이동
+                  if (book.isbn13) {
+                    navigate(`/books/isbn/${book.isbn13}`);
+                  } else {
+                    console.warn("ISBN13이 없어 bookId로 이동:", book.bookId);
+                    navigate(`/books/${book.bookId}`);
+                  }
+                }}
               />
             ))}
           </div>
