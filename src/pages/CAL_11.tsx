@@ -1,6 +1,6 @@
 // CAL_11.tsx - 캘린더 페이지
 import React, { useState, useMemo, useEffect } from "react";
-import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData, Scope } from "@/api/calendar";
+import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData } from "@/api/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function CAL_11() {

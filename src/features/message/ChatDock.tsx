@@ -16,6 +16,7 @@ import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
 import { extractUserIdFromToken } from "@/utils/auth";
+import { AiCommandType, AiJobResponse } from "@/types";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -28,6 +29,84 @@ import { extractUserIdFromToken } from "@/utils/auth";
 
 
 const cls = (...xs: (string | false | null | undefined)[]) => xs.filter(Boolean).join(" ");
+
+const AI_COMMAND_ALIASES: Record<string, AiCommandType> = {
+  summary: "PUBLIC_SUMMARY",
+  public_summary: "PUBLIC_SUMMARY",
+  pubsum: "PUBLIC_SUMMARY",
+  question: "GROUP_QUESTION_GENERATOR",
+  questions: "GROUP_QUESTION_GENERATOR",
+  q: "GROUP_QUESTION_GENERATOR",
+  keypoints: "GROUP_KEYPOINTS",
+  keypoint: "GROUP_KEYPOINTS",
+  start: "SESSION_START",
+  begin: "SESSION_START",
+  end: "SESSION_END",
+  finish: "SESSION_END",
+  closing: "SESSION_CLOSING",
+};
+
+function resolveAiCommand(rawCommand: string): AiCommandType | null {
+  const key = rawCommand.toLowerCase();
+  return AI_COMMAND_ALIASES[key] || null;
+}
+
+function parseAiShortcut(aiContent: string): { command: AiCommandType; note?: string } {
+  const [rawCommand, ...rest] = aiContent.split(/\s+/);
+  const normalizedCommand = resolveAiCommand(rawCommand);
+
+  if (normalizedCommand) {
+    const note = rest.join(" ").trim();
+    return { command: normalizedCommand, note: note || undefined };
+  }
+
+  const note = aiContent.trim();
+  return { command: "PUBLIC_SUMMARY", note: note || undefined };
+}
+
+function formatAiPayload(payload: AiJobResponse["payload"]): string {
+  if (!payload) {
+    return "AI가 반환한 데이터가 없습니다.";
+  }
+
+  if (payload.fallback) {
+    const reason = payload.reason ? ` (사유: ${payload.reason})` : "";
+    return `컨텍스트가 충분하지 않습니다${reason}`;
+  }
+
+  if (typeof payload === "string") {
+    return payload;
+  }
+
+  if ("summary" in payload && typeof payload.summary === "string") {
+    return payload.summary;
+  }
+
+  if ("message" in payload && typeof payload.message === "string") {
+    return payload.message;
+  }
+
+  return JSON.stringify(payload, null, 2);
+}
+
+function formatAiJobMessage(command: AiCommandType, response: AiJobResponse): string {
+  const parts = [`[${command}] 상태: ${response.status}`];
+
+  const payloadText = formatAiPayload(response.payload);
+  if (payloadText) {
+    parts.push(payloadText);
+  }
+
+  if (response.jobId) {
+    parts.push(`jobId: ${response.jobId}`);
+  }
+
+  if (typeof response.latencyMs === "number") {
+    parts.push(`지연 시간: ${response.latencyMs}ms`);
+  }
+
+  return parts.join("\n\n");
+}
 
 // ===== Types =====
 export interface ChatUser {
@@ -182,7 +261,7 @@ function ChatWindow({
   onClose: () => void;
   onMinimize: () => void;
   onSend: (text: string) => void;
-  onRequestAI?: (command: string, note?: string) => void;
+  onRequestAI?: (command: AiCommandType, note?: string) => void;
   onDeleteRoom?: () => void;
   onMuteRoom?: () => void;
   onUnmuteRoom?: () => void;
@@ -327,24 +406,69 @@ function ChatWindow({
                 </div>
                 <button
                   onClick={() => {
-                    onRequestAI?.("SUMMARY", "");
+                    const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
+                    onRequestAI?.("PUBLIC_SUMMARY", note);
                     setIsMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  대화 요약
+                  공개 대화 요약
                 </button>
                 <button
                   onClick={() => {
-                    onRequestAI?.("SUMMARY", "합의되지 않은 지점을 강조해줘");
+                    onRequestAI?.("GROUP_KEYPOINTS", undefined);
                     setIsMenuOpen(false);
                   }}
                   className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  합의 지점 분석
+                  토론 요점 정리
                 </button>
+                <button
+                  onClick={() => {
+                    onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  추가 질문 제안
+                </button>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => {
+                        onRequestAI?.("SESSION_START", undefined);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      세션 시작
+                    </button>
+                    <button
+                      onClick={() => {
+                        onRequestAI?.("SESSION_END", undefined);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      세션 종료
+                    </button>
+                    <button
+                      onClick={() => {
+                        onRequestAI?.("SESSION_CLOSING", undefined);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      마감문 생성
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setIsAIDockOpen(true);
@@ -898,7 +1022,7 @@ export default function ChatDock() {
         threadId: variables.roomId.toString(),
         fromId: "ai",
         senderId: "ai",
-        text: data.result || "AI 응답을 받았습니다.",
+        text: formatAiJobMessage(variables.command, data),
         createdAt: Date.now(),
       };
 
@@ -1319,17 +1443,12 @@ export default function ChatDock() {
       // @ai 제거하고 나머지 파싱
       const aiContent = text.trim().substring(3).trim();
 
-      // 명령어와 노트 파싱
-      // 형식: @ai COMMAND note...
-      const parts = aiContent.split(/\s+/);
-      const command = parts[0] || "SUMMARY"; // 기본 명령어는 SUMMARY
-      const note = parts.slice(1).join(" ") || undefined;
+      const { command, note } = parseAiShortcut(aiContent);
 
       // AI 요청 전송
       requestAIMutation.mutate({
         roomId,
         command,
-        messageLimit: 30,
         note,
       });
 
@@ -1527,7 +1646,6 @@ export default function ChatDock() {
                   requestAIMutation.mutate({
                     roomId,
                     command,
-                    messageLimit: 30,
                     note,
                   });
                 }}
