@@ -592,124 +592,94 @@ function ChatWindow({
           </button>
           {/* 메뉴 드롭다운 */}
           {isMenuOpen && (
-            <div className="absolute left-0 top-full mt-1 w-80 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
+            <div className="absolute left-0 top-full mt-1 w-[450px] rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)] shadow-lg overflow-hidden z-50">
               {/* AI 명령어 섹션 - 관리자 전용 */}
               {isAdmin && (
-                <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
-                  <div className="px-3 py-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
+                <div className="border-b border-[color:var(--chatdock-border-subtle)] py-2">
+                  <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
                     AI 명령
                   </div>
-                  <button
-                    onClick={() => {
-                      const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
-                      onRequestAI?.("PUBLIC_SUMMARY", note);
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    공개 대화 요약
-                  </button>
-                  <button
-                    onClick={() => {
-                      onRequestAI?.("GROUP_KEYPOINTS", undefined);
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    토론 요점 정리
-                  </button>
-                  <button
-                    onClick={() => {
-                      onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    추가 질문 제안
-                  </button>
-                  {isAdmin && (
-                    <>
-                      <button
-                        onClick={() => {
-                          onRequestAI?.("SESSION_START", undefined);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        세션 시작
-                      </button>
-                      <button
-                        onClick={() => {
-                          onRequestAI?.("SESSION_END", undefined);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        세션 종료
-                      </button>
-                      <button
-                        onClick={() => {
-                          onRequestAI?.("SESSION_CLOSING", undefined);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        마감문 생성
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={() => {
-                      setIsAIDockOpen(true);
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    AI 기능창 열기
-                  </button>
+                  <div className="grid grid-cols-2 gap-2 px-2">
+                    <button
+                      onClick={() => {
+                        const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
+                        onRequestAI?.("PUBLIC_SUMMARY", note);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                      공개 대화 요약
+                    </button>
+                    <button
+                      onClick={() => {
+                        onRequestAI?.("GROUP_KEYPOINTS", undefined);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                      토론 요점 정리
+                    </button>
+                    <button
+                      onClick={() => {
+                        onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                      추가 질문 제안
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsAIDockOpen(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                      AI 기능창 열기
+                    </button>
+                  </div>
                 </div>
               )}
 
               {/* 일반 기능 섹션 */}
-              <div className="border-b border-[color:var(--chatdock-border-subtle)] py-1">
-                <button
-                  onClick={handleOpenEventModal}
-                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                >
-                  <Calendar className="w-4 h-4" />
-                  일정 추가
-                </button>
-                <button
-                  onClick={() => {
-                    setIsNoticeDockOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                >
-                  <Bell className="w-4 h-4" />
-                  공지 목록 조회
-                </button>
-                <button
-                  onClick={() => {
-                    if (isMuted) {
-                      onUnmuteRoom?.();
-                    } else {
-                      onMuteRoom?.();
-                    }
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                >
-                  <Bell className="w-4 h-4" />
-                  {isMuted ? "메시지 보이기" : "메시지 가리기"}
-                </button>
+              <div className="border-b border-[color:var(--chatdock-border-subtle)] py-2">
+                <div className="grid grid-cols-2 gap-2 px-2">
+                  <button
+                    onClick={handleOpenEventModal}
+                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                  >
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
+                    일정 추가
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsNoticeDockOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                  >
+                    <Bell className="w-4 h-4 flex-shrink-0" />
+                    공지 목록 조회
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (isMuted) {
+                        onUnmuteRoom?.();
+                      } else {
+                        onMuteRoom?.();
+                      }
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                  >
+                    <Bell className="w-4 h-4 flex-shrink-0" />
+                    {isMuted ? "메시지 보이기" : "메시지 가리기"}
+                  </button>
+                </div>
               </div>
 
               {/* 방장 전용 기능 섹션 */}
