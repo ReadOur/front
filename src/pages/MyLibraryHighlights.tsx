@@ -66,7 +66,7 @@ export default function MyLibraryHighlights() {
               로딩 중...
             </div>
           ) : highlights.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {highlights.map((highlight) => (
                 <div
                   key={highlight.highlightId}

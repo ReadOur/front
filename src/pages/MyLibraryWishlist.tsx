@@ -54,7 +54,7 @@ export default function MyLibraryWishlist() {
               로딩 중...
             </div>
           ) : wishlist.length > 0 ? (
-            <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
+            <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2.5">
               {wishlist.map((book) => (
                 <div
                   key={book.bookId}

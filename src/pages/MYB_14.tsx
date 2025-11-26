@@ -209,7 +209,7 @@ export default function MYB_14() {
                       border-radius: 3px;
                     }
                   `}</style>
-                  <div className="book-scroll flex gap-4">
+                  <div className="book-scroll flex gap-2.5">
                     {wishlist.map((book) => (
                       <div
                         key={book.bookId}
@@ -282,8 +282,8 @@ export default function MYB_14() {
                   로딩 중...
                 </div>
               ) : reviewedBooks.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  <div className="book-scroll flex gap-4">
+                <div className="flex gap-2.5 overflow-x-auto pb-2">
+                  <div className="book-scroll flex gap-2.5">
                     {reviewedBooks.map((review) => (
                       <div
                         key={review.reviewId}
@@ -356,8 +356,8 @@ export default function MYB_14() {
                   로딩 중...
                 </div>
               ) : highlights.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  <div className="book-scroll flex gap-4">
+                <div className="flex gap-2.5 overflow-x-auto pb-2">
+                  <div className="book-scroll flex gap-2.5">
                     {highlights.map((highlight) => (
                       <div
                         key={highlight.highlightId}
