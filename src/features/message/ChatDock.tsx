@@ -642,7 +642,7 @@ function ChatWindow({
         endsAt: newEvent.endsAt.length === 16 ? `${newEvent.endsAt}:00` : newEvent.endsAt,
       };
 
-      await createEvent(eventData);
+      await createEvent(eventData); //TODO 바꿔야 할 부분.
       alert("일정이 추가되었습니다.");
       setIsEventModalOpen(false);
     } catch (error: any) {
