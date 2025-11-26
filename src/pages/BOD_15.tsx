@@ -83,7 +83,7 @@ export default function BOD_15() {
 
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
-    navigate(`/library/search?q=${encodeURIComponent(searchQuery)}`);
+    navigate(`/library/search?q=${encodeURIComponent(searchQuery)}&searchType=TITLE`);
   };
 
   const handleToggleWishlist = () => {
@@ -217,6 +217,8 @@ export default function BOD_15() {
         onSuccess: () => {
           setNewReviewContent("");
           setNewReviewRating(5);
+          // 리뷰 작성 후 게시글 작성 페이지로 이동
+          navigate(`/boards/new?category=REVIEW&bookId=${actualBookId}`);
         },
         onError: (error: any) => {
           const errorMessage = error.response?.data?.message || error.message || "리뷰 작성에 실패했습니다.";
@@ -457,10 +459,10 @@ export default function BOD_15() {
                       color = "white";
                       statusText = "대출 가능";
                     } else {
-                      // 대출 불가능
+                      // 대출 중
                       background = "#F4A261";
                       color = "white";
-                      statusText = "대출 불가능";
+                      statusText = "대출 중";
                     }
 
                     return (

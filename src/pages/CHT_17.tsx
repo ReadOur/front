@@ -395,7 +395,8 @@ export default function CHT_17() {
   };
 
   const filteredMyRooms = myRoomsData.filter(filterThread);
-  const filteredPublicRooms = publicRoomsData.filter(filterThread);
+  // 참여하지 않은 공개 채팅방만 표시
+  const filteredPublicRooms = publicRoomsData.filter(room => filterThread(room) && !room.joined);
   const filteredThreads = threads.filter(filterThread);
 
   return (
@@ -494,7 +495,7 @@ export default function CHT_17() {
 
               {/* 공개 채팅방 섹션 */}
               {filteredPublicRooms.length > 0 && (
-                <div>
+                <div className="border-t-2 border-[color:var(--color-border-subtle)]">
                   <div className="sticky top-0 bg-[color:var(--color-bg-subtle)] px-4 py-2 text-xs font-semibold text-[color:var(--color-fg-muted)] uppercase tracking-wider z-10">
                     공개 채팅방
                   </div>
