@@ -22,7 +22,7 @@ const CATEGORIES = [
   { key: "DISCUSSION", label: "토의" },
   { key: "QUESTION", label: "질문" },
   { key: "FREE", label: "자유" },
-  { key: "GROUP", label: "모임" },
+  { key: "GROUP", label: "모임 모집" },
 ] as const;
 
 // 검색 타입 정의
@@ -43,7 +43,7 @@ function getCategoryLabel(category: string): string {
     GENERAL: "일반",
     DISCUSSION: "토의",
     QUESTION: "질문",
-    GROUP: "모임",
+    GROUP: "모임 모집",
   };
   return categoryMap[category] || category;
 }
