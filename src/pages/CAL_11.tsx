@@ -628,6 +628,13 @@ export default function CAL_11() {
             />
             <span style={{ color: "#6B4F3F" }}>오늘</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{ background: "#FFD166" }}
+            />
+            <span style={{ color: "#6B4F3F" }}>일정 있음</span>
+          </div>
         </div>
 
         {/* 일정 추가 모달 */}

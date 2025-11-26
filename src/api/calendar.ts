@@ -38,8 +38,7 @@ export type Scope = 'USER' | 'ROOM' | 'GLOBAL' | 'ALL';
  */
 export interface GetEventsParams {
   viewDate: string;    // 현재 날짜 (YYYY-MM-DD 형식)
-  viewType: ViewType;  // 단위 (WEEK, MONTH)
-  scope: Scope;        // 조회 기준 (USER, ROOM, GLOBAL, ALL)
+  viewType: ViewType;  // 단위 (WEEK, MONTH);        // 조회 기준 (USER, ROOM, GLOBAL, ALL)
 }
 
 /**
