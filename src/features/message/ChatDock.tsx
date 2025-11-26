@@ -288,6 +288,7 @@ function ChatWindow({
   const [messageMenuOpen, setMessageMenuOpen] = useState<string | null>(null);
   const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
   const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(false);
   const messageMenuRef = useRef<HTMLDivElement>(null);
   const [messageMenuPositions, setMessageMenuPositions] = useState<Record<string, { left: number; top: number }>>({});
   const messageMenuDrag = useRef<{ messageId: string | null; offsetX: number; offsetY: number }>({
@@ -778,6 +779,31 @@ function ChatWindow({
                       <MessageCircle className="w-4 h-4 flex-shrink-0" />
                       AI 기능창 열기
                     </button>
+
+                    {/* AI 세션 시작/끝 토글 버튼 */}
+                    <button
+                      onClick={() => {
+                        if (!isSessionActive) {
+                          // 세션 시작
+                          onRequestAI?.("SESSION_START", undefined);
+                          setIsSessionActive(true);
+                        } else {
+                          // 세션 끝
+                          onRequestAI?.("SESSION_END", undefined);
+                          setIsSessionActive(false);
+                        }
+                        setIsMenuOpen(false);
+                      }}
+                      className={cls(
+                        "flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-left text-sm transition-colors",
+                        isSessionActive
+                          ? "bg-[color:var(--color-primary)] text-white hover:opacity-90"
+                          : "hover:bg-[color:var(--chatdock-bg-hover)]"
+                      )}
+                    >
+                      <div className={cls("w-2 h-2 rounded-full flex-shrink-0", isSessionActive ? "bg-white animate-pulse" : "bg-red-500")} />
+                      {isSessionActive ? "세션 종료" : "세션 시작"}
+                    </button>
                   </div>
                 </div>
               )}
@@ -848,15 +874,6 @@ function ChatWindow({
 
           return (
             <div key={m.id} className="relative group">
-              {/* AI 세션 시작 마커 */}
-              {isAISessionStart && (
-                <div className="flex items-center gap-2 mb-1 text-xs text-[color:var(--color-primary)]">
-                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
-                  <span className="font-semibold">AI 세션 시작</span>
-                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
-                </div>
-              )}
-
               <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}> 
                 {mine ? (
                   <>
@@ -1116,14 +1133,6 @@ function ChatWindow({
                 )}
               </div>
 
-              {/* AI 세션 끝 마커 */}
-              {isAISessionEnd && (
-                <div className="flex items-center gap-2 mt-1 text-xs text-[color:var(--color-primary)]">
-                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
-                  <span className="font-semibold">AI 세션 끝</span>
-                  <div className="h-px flex-1 bg-[color:var(--color-primary)]/30" />
-                </div>
-              )}
             </div>
           );
         })}
