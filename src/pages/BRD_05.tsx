@@ -21,6 +21,8 @@ import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
 import { isLoggedIn } from "@/utils/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar/Avatar";
+import { extractUserIdFromToken } from "@/utils/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * HTML 엔티티 디코딩 함수
@@ -65,6 +67,7 @@ export default function PostShow() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const { accessToken } = useAuth();
 
   // 댓글 입력 필드의 상태 관리
   const [commentText, setCommentText] = useState("");
@@ -430,9 +433,20 @@ export default function PostShow() {
       return;
     }
 
-    // TODO: 현재 사용자 ID 가져오기 (AuthContext 또는 JWT에서)
-    // 임시로 1을 사용 (실제로는 로그인한 사용자 ID를 사용해야 함)
-    const currentUserId = 1;
+    // 현재 사용자 ID 가져오기
+    const currentUserIdStr = extractUserIdFromToken(accessToken);
+    const currentUserId = currentUserIdStr ? Number(currentUserIdStr) : null;
+
+    if (!currentUserId) {
+      alert("사용자 정보를 가져올 수 없습니다.");
+      return;
+    }
+
+    // 자기 자신과의 채팅방은 생성하지 않음
+    if (currentUserId === targetUserId) {
+      alert("자기 자신과는 채팅할 수 없습니다.");
+      return;
+    }
 
     createRoomMutation.mutate({
       scope: "PRIVATE",
@@ -455,8 +469,20 @@ export default function PostShow() {
       return;
     }
 
-    // TODO: 현재 사용자 ID 가져오기 (AuthContext 또는 JWT에서)
-    const currentUserId = 1;
+    // 현재 사용자 ID 가져오기
+    const currentUserIdStr = extractUserIdFromToken(accessToken);
+    const currentUserId = currentUserIdStr ? Number(currentUserIdStr) : null;
+
+    if (!currentUserId) {
+      alert("사용자 정보를 가져올 수 없습니다.");
+      return;
+    }
+
+    // 자기 자신과의 채팅방은 생성하지 않음
+    if (currentUserId === targetUserId) {
+      alert("자기 자신과는 채팅할 수 없습니다.");
+      return;
+    }
 
     createRoomMutation.mutate({
       scope: "PRIVATE",
