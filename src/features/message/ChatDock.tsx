@@ -348,6 +348,9 @@ function ChatWindow({
   // role에 따른 권한 확인
   const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
   const isOwner = currentUserRole === "OWNER";
+
+  // AI 기능 접근 권한: 공개 채팅방(MEETING)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
+  const canAccessAI = thread.category === "MEETING" || isAdmin;
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
@@ -727,9 +730,9 @@ function ChatWindow({
                 </button>
               </div>
               <div>
-              {/* AI 명령어 섹션 - 관리자 전용 */}
-              {isAdmin && (
-                <div className="border-b border-[color:var(--chatdock-border-subtle)] py-2">
+              {/* AI 명령어 섹션 - 공개 채팅방은 모두, 모임 채팅방은 관리자 전용 */}
+              {canAccessAI && (
+                <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                   <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
                     AI 명령
                   </div>
@@ -780,7 +783,7 @@ function ChatWindow({
               )}
 
               {/* 일반 기능 섹션 */}
-              <div className="border-b border-[color:var(--chatdock-border-subtle)] py-2">
+              <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                 <div className="grid grid-cols-2 gap-2 px-2">
                   <button
                     onClick={handleOpenEventModal}

@@ -21,6 +21,17 @@ import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
 import { isLoggedIn } from "@/utils/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar/Avatar";
+
+/**
+ * HTML 엔티티 디코딩 함수
+ * - &gt;, &lt;, &amp; 등의 HTML 엔티티를 실제 문자로 변환
+ */
+function decodeHtmlEntities(text: string): string {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 /**
  * 게시글 상세 페이지 (BRD_05)
  *
@@ -556,41 +567,6 @@ export default function PostShow() {
           }`}
           aria-hidden={post.isSpoiler && !isSpoilerRevealed}
         >
-          {/* ========== 책 리뷰 정보 (REVIEW 카테고리인 경우) ========== */}
-          {post.category === "REVIEW" && post.bookId && bookDetail && (
-            <div
-              onClick={() => navigate(`/books/${post.bookId}`)}
-              className="mb-4 p-4 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg flex items-start gap-4 cursor-pointer hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
-            >
-              {/* 책 표지 */}
-              <div className="flex-shrink-0 w-20 h-28 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
-                {bookDetail.bookImageUrl ? (
-                  <img
-                    src={bookDetail.bookImageUrl}
-                    alt={bookDetail.bookname}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[color:var(--color-fg-muted)] text-2xl">
-                    📚
-                  </div>
-                )}
-              </div>
-
-              {/* 책 정보 */}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-[color:var(--color-fg-muted)] mb-1">리뷰 대상 도서</p>
-                <h3 className="text-base font-bold text-[color:var(--color-fg-primary)] mb-1 truncate">{bookDetail.bookname}</h3>
-                {bookDetail.authors && (
-                  <p className="text-sm text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
-                )}
-                {bookDetail.publisher && (
-                  <p className="text-xs text-[color:var(--color-fg-muted)] mt-1">{bookDetail.publisher}</p>
-                )}
-              </div>
-            </div>
-          )}
-
           <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* 게시글 제목 및 작성자 */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -673,6 +649,41 @@ export default function PostShow() {
             </button>
           </div>
         </header>
+
+        {/* ========== 책 리뷰 정보 (REVIEW 카테고리인 경우) ========== */}
+        {post.category === "REVIEW" && post.bookId && bookDetail && (
+          <div
+            onClick={() => navigate(`/books/${post.bookId}`)}
+            className="mt-3 p-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg flex items-start gap-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
+          >
+            {/* 책 표지 - 크기를 절반으로 축소 */}
+            <div className="flex-shrink-0 w-10 h-14 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
+              {bookDetail.bookImageUrl ? (
+                <img
+                  src={bookDetail.bookImageUrl}
+                  alt={bookDetail.bookname}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[color:var(--color-fg-muted)] text-lg">
+                  📚
+                </div>
+              )}
+            </div>
+
+            {/* 책 정보 - 텍스트 크기 축소 */}
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-[color:var(--color-fg-muted)] mb-0.5">리뷰 대상 도서</p>
+              <h3 className="text-xs font-bold text-[color:var(--color-fg-primary)] mb-0.5 truncate">{bookDetail.bookname}</h3>
+              {bookDetail.authors && (
+                <p className="text-[10px] text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
+              )}
+              {bookDetail.publisher && (
+                <p className="text-[10px] text-[color:var(--color-fg-muted)]">{bookDetail.publisher}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 첨부파일 영역 */}
         {/* attachments 배열이 있고 길이가 0보다 크면 표시 */}
@@ -820,7 +831,7 @@ export default function PostShow() {
               post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
             }`}
             aria-hidden={post.isSpoiler && !isSpoilerRevealed}
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(decodeHtmlEntities(post.content)) }}
           />
 
           {post.isSpoiler && !isSpoilerRevealed && (
