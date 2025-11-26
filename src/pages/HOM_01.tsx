@@ -383,7 +383,7 @@ export default function HOM_01() {
           <div className="flex items-center gap-3">
             <BookMarked className="w-6 h-6 text-blue-500" />
             <h2 className="text-2xl font-bold text-[color:var(--color-fg)]">
-              {popularBooksData?.criteria ? `${popularBooksData.criteria}를 위한 추천 도서` : "추천도서"}
+              {popularBooksData?.criteria ? `${popularBooksData.criteria}을 위한 추천 도서` : "추천도서"}
             </h2>
           </div>
         </div>
