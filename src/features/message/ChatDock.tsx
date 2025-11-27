@@ -10,7 +10,7 @@ import { createEvent, CreateEventData } from "@/api/calendar";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useWebSocketManager } from "@/hooks/useWebSocketManager";
 import type { WebSocketMessage } from "@/hooks/useWebSocket";
-import AIDock from "@/features/ai/AIDock";
+import AIDock, { AIMessage } from "@/features/ai/AIDock";
 import NoticeDock from "@/features/notice/NoticeDock";
 import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
@@ -106,6 +106,25 @@ function formatAiJobMessage(command: AiCommandType, response: AiJobResponse): st
   }
 
   return parts.join("\n\n");
+}
+
+const AI_COMMAND_LABELS: Record<AiCommandType, string> = {
+  PUBLIC_SUMMARY: "공개 대화 요약",
+  GROUP_QUESTION_GENERATOR: "추가 질문 제안",
+  GROUP_KEYPOINTS: "토론 요점 정리",
+  GROUP_CLOSING: "토론 마무리",
+  SESSION_START: "세션 시작",
+  SESSION_SUMMARY_SLICE: "세션 중간 요약",
+  SESSION_END: "세션 종료",
+  SESSION_CLOSING: "세션 클로징",
+};
+
+function formatAiRequestMessage(command: AiCommandType, note?: string) {
+  const label = AI_COMMAND_LABELS[command] || command;
+  if (note) {
+    return `[${label}] ${note}`;
+  }
+  return `[${label}] 요청을 실행합니다.`;
 }
 
 // ===== Types =====
@@ -267,6 +286,12 @@ function ChatWindow({
   onDeleteRoom?: () => void;
   onMuteRoom?: () => void;
   onUnmuteRoom?: () => void;
+  aiMessages?: AIMessage[];
+  aiIsLoading?: boolean;
+  onAIDockSend?: (text: string) => void;
+  isAIDockOpen?: boolean;
+  onOpenAIDock?: () => void;
+  onCloseAIDock?: () => void;
   __onDragStart?: (e: React.PointerEvent) => void;
   __onResizeStart?: (direction: string, e: React.PointerEvent) => void;
   width?: number;
@@ -279,7 +304,6 @@ function ChatWindow({
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [isAIDockOpen, setIsAIDockOpen] = useState(false);
   const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -302,6 +326,10 @@ function ChatWindow({
     nickname?: string;
     role?: string;
   } | null>(null);
+
+  const aiDockMessagesSafe = aiMessages ?? [];
+  const aiDockLoadingSafe = aiIsLoading ?? false;
+  const aiDockOpen = isAIDockOpen ?? false;
 
   // 현재 사용자의 role 상태
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
@@ -794,7 +822,7 @@ function ChatWindow({
                     )}
                     <button
                       onClick={() => {
-                        setIsAIDockOpen(true);
+                        onOpenAIDock?.();
                         setIsMenuOpen(false);
                       }}
                       className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -1425,10 +1453,13 @@ function ChatWindow({
 
       {/* AI Dock */}
       <AIDock
-        isOpen={isAIDockOpen}
+        isOpen={aiDockOpen}
         anchorRef={dockContainerRef}
-        onClose={() => setIsAIDockOpen(false)}
-        onMinimize={() => setIsAIDockOpen(false)}
+        onClose={() => onCloseAIDock?.()}
+        onMinimize={() => onCloseAIDock?.()}
+        messages={aiDockMessagesSafe}
+        isLoading={aiDockLoadingSafe}
+        onSend={onAIDockSend}
       />
 
       {/* Notice Dock */}
@@ -1488,31 +1519,113 @@ export default function ChatDock() {
   // 메시지 전송 mutation
   const sendMessageMutation = useSendRoomMessage();
 
+  const [aiDockMessagesByRoom, setAiDockMessagesByRoom] = useState<Record<string, AIMessage[]>>({});
+  const [aiDockLoadingByRoom, setAiDockLoadingByRoom] = useState<Record<string, boolean>>({});
+  const [aiDockOpenByRoom, setAiDockOpenByRoom] = useState<Record<string, boolean>>({});
+
   // AI 요청 mutation
-  const requestAIMutation = useRequestAI({
-    onSuccess: (data, variables) => {
-      // AI 응답을 채팅 메시지로 표시
-      const aiMessage: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        threadId: variables.roomId.toString(),
-        fromId: "ai",
-        senderId: "ai",
-        text: formatAiJobMessage(variables.command, data),
-        createdAt: Date.now(),
-      };
+  const requestAIMutation = useRequestAI();
 
-      setMessages((prev) => ({
+  const ensureAiDockState = useCallback((roomId: string) => {
+    setAiDockMessagesByRoom((prev) => {
+      if (prev[roomId]) return prev;
+      return {
         ...prev,
-        [variables.roomId.toString()]: [...(prev[variables.roomId.toString()] || []), aiMessage],
-      }));
+        [roomId]: [
+          {
+            id: `welcome-${roomId}`,
+            type: "ai",
+            text: "안녕하세요! AI 어시스턴트입니다. 무엇을 도와드릴까요?",
+            timestamp: Date.now(),
+          },
+        ],
+      };
+    });
+  }, []);
 
-      toast.show({ title: "AI 작업이 완료되었습니다.", variant: "success" });
+  const addAiDockMessage = useCallback(
+    (roomId: string, message: Omit<AIMessage, "id" | "timestamp"> & Partial<Pick<AIMessage, "id" | "timestamp">>) => {
+      setAiDockMessagesByRoom((prev) => {
+        const baseMessages =
+          prev[roomId] || [
+            {
+              id: `welcome-${roomId}`,
+              type: "ai",
+              text: "안녕하세요! AI 어시스턴트입니다. 무엇을 도와드릴까요?",
+              timestamp: Date.now(),
+            },
+          ];
+
+        const nextMessage: AIMessage = {
+          id: message.id ?? `ai-${Date.now()}`,
+          timestamp: message.timestamp ?? Date.now(),
+          ...message,
+        } as AIMessage;
+
+        return {
+          ...prev,
+          [roomId]: [...baseMessages, nextMessage],
+        };
+      });
     },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || error.message || "AI 요청에 실패했습니다.";
-      toast.show({ title: errorMessage, variant: "error" });
+    []
+  );
+
+  const setAiDockLoading = useCallback((roomId: string, isLoading: boolean) => {
+    setAiDockLoadingByRoom((prev) => ({ ...prev, [roomId]: isLoading }));
+  }, []);
+
+  const openAiDock = useCallback(
+    (roomId: string) => {
+      ensureAiDockState(roomId);
+      setAiDockOpenByRoom((prev) => ({ ...prev, [roomId]: true }));
     },
-  });
+    [ensureAiDockState]
+  );
+
+  const closeAiDock = useCallback((roomId: string) => {
+    setAiDockOpenByRoom((prev) => ({ ...prev, [roomId]: false }));
+  }, []);
+
+  const triggerAiRequest = useCallback(
+    (roomId: number, command: AiCommandType, note?: string) => {
+      const roomKey = roomId.toString();
+      openAiDock(roomKey);
+      setAiDockLoading(roomKey, true);
+      addAiDockMessage(roomKey, { type: "user", text: formatAiRequestMessage(command, note) });
+
+      requestAIMutation.mutate(
+        { roomId, command, note },
+        {
+          onSuccess: (data) => {
+            addAiDockMessage(roomKey, { type: "ai", text: formatAiJobMessage(command, data) });
+            toast.show({ title: "AI 작업이 완료되었습니다.", variant: "success" });
+          },
+          onError: (error: any) => {
+            const errorMessage = error.response?.data?.message || error.message || "AI 요청에 실패했습니다.";
+            addAiDockMessage(roomKey, { type: "ai", text: `요청 실패: ${errorMessage}` });
+            toast.show({ title: errorMessage, variant: "error" });
+          },
+          onSettled: () => {
+            setAiDockLoading(roomKey, false);
+          },
+        }
+      );
+    },
+    [addAiDockMessage, openAiDock, requestAIMutation, setAiDockLoading, toast]
+  );
+
+  const handleAiDockSend = useCallback(
+    (roomId: string, text: string) => {
+      if (!text.trim()) return;
+      const numericRoomId = parseInt(roomId, 10);
+      if (Number.isNaN(numericRoomId)) return;
+
+      const { command, note } = parseAiShortcut(text.trim());
+      triggerAiRequest(numericRoomId, command, note);
+    },
+    [triggerAiRequest]
+  );
 
   // 방 삭제 mutation
   const deleteRoomMutation = useDeleteRoom({
@@ -1923,11 +2036,7 @@ export default function ChatDock() {
       const { command, note } = parseAiShortcut(aiContent);
 
       // AI 요청 전송
-      requestAIMutation.mutate({
-        roomId,
-        command,
-        note,
-      });
+      triggerAiRequest(roomId, command, note);
 
       // 사용자 메시지도 채팅에 표시 (선택적)
       const userMessage: ChatMessage = {
@@ -2120,12 +2229,14 @@ export default function ChatDock() {
                 onSend={(text) => sendMessage(id, text)}
                 onRequestAI={(command, note) => {
                   const roomId = parseInt(id, 10);
-                  requestAIMutation.mutate({
-                    roomId,
-                    command,
-                    note,
-                  });
+                  triggerAiRequest(roomId, command, note);
                 }}
+                aiMessages={aiDockMessagesByRoom[id] || []}
+                aiIsLoading={aiDockLoadingByRoom[id] || false}
+                isAIDockOpen={aiDockOpenByRoom[id] || false}
+                onOpenAIDock={() => openAiDock(id)}
+                onCloseAIDock={() => closeAiDock(id)}
+                onAIDockSend={(text) => handleAiDockSend(id, text)}
                 onDeleteRoom={() => {
                   const roomId = parseInt(id, 10);
                   deleteRoomMutation.mutate(roomId);
