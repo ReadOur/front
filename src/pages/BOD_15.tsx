@@ -19,6 +19,17 @@ import {
 } from "@/hooks/api";
 import { useAuth } from "@/contexts/AuthContext";
 
+/**
+ * HTML 엔티티를 디코딩하는 함수
+ * @param text - 디코딩할 텍스트
+ * @returns 디코딩된 텍스트
+ */
+function decodeHtmlEntities(text: string): string {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 export default function BOD_15() {
   const { bookId, isbn } = useParams<{ bookId?: string; isbn?: string }>();
   const navigate = useNavigate();
@@ -407,7 +418,7 @@ export default function BOD_15() {
             {book.bookImageUrl ? (
               <img
                 src={book.bookImageUrl}
-                alt={book.bookname}
+                alt={decodeHtmlEntities(book.bookname)}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -424,7 +435,7 @@ export default function BOD_15() {
           <div className="flex-1">
             <div className="flex items-center gap-4 mb-4">
               <h1 className="text-3xl font-bold" style={{ color: "black" }}>
-                {book.bookname}
+                {decodeHtmlEntities(book.bookname)}
               </h1>
               {/* 위시리스트 하트 버튼 */}
               <button
@@ -439,9 +450,9 @@ export default function BOD_15() {
 
             {/* 작가 및 출판사 */}
             <div className="text-xl mb-4" style={{ color: "#6B4F3F" }}>
-              {book.authors && <span>{book.authors}</span>}
+              {book.authors && <span>{decodeHtmlEntities(book.authors)}</span>}
               {book.authors && book.publisher && <span className="mx-2">|</span>}
-              {book.publisher && <span>{book.publisher}</span>}
+              {book.publisher && <span>{decodeHtmlEntities(book.publisher)}</span>}
               {book.publicationYear && <span className="mx-2">({book.publicationYear})</span>}
             </div>
 
@@ -542,7 +553,7 @@ export default function BOD_15() {
           <div>
             {/* 책 설명 */}
             <p className="text-xl mb-8 whitespace-pre-wrap" style={{ color: "black" }}>
-              {book.description}
+              {decodeHtmlEntities(book.description)}
             </p>
 
             {/* 연관 게시글 섹션 */}
@@ -564,7 +575,7 @@ export default function BOD_15() {
                       style={{ background: "#E9E5DC" }}
                     >
                       <h3 className="text-xl font-bold mb-2" style={{ color: "black" }}>
-                        {post.title}
+                        {decodeHtmlEntities(post.title)}
                       </h3>
                       <div className="flex items-center gap-4 text-base" style={{ color: "#6B4F3F" }}>
                         <span>{post.authorNickname}</span>
@@ -675,8 +686,8 @@ export default function BOD_15() {
                             <div>
                               <p className="text-lg whitespace-pre-wrap" style={{ color: "#1E1E1E" }}>
                                 {review.content.length > 100 && !expandedReviews.has(review.reviewId)
-                                  ? `${review.content.substring(0, 100)}...`
-                                  : review.content}
+                                  ? `${decodeHtmlEntities(review.content.substring(0, 100))}...`
+                                  : decodeHtmlEntities(review.content)}
                               </p>
                               {review.content.length > 100 && (
                                 <button
@@ -877,8 +888,8 @@ export default function BOD_15() {
                           <div>
                             <p className="text-xl mb-2" style={{ color: "#1E1E1E" }}>
                               "{highlight.content.length > 100 && !expandedHighlights.has(highlight.highlightId)
-                                ? `${highlight.content.substring(0, 100)}...`
-                                : highlight.content}"
+                                ? `${decodeHtmlEntities(highlight.content.substring(0, 100))}...`
+                                : decodeHtmlEntities(highlight.content)}"
                             </p>
                             {highlight.content.length > 100 && (
                               <button

@@ -621,14 +621,21 @@ export default function PostShow() {
                     <p className="font-semibold text-[color:var(--color-fg-primary)]">{post.authorNickname}</p>
                     <p className="text-xs text-[color:var(--color-fg-muted)]">작성자</p>
                   </div>
-                  <button
-                    onClick={() => handleCreateDirectChat(post.authorId, post.authorNickname)}
-                    disabled={createRoomMutation.isPending}
-                    className="w-full flex items-center gap-2 px-4 py-3 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors disabled:opacity-50"
-                  >
-                    <span>💬</span>
-                    <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
-                  </button>
+                  {/* 현재 사용자와 작성자가 다를 때만 1:1 채팅 버튼 표시 */}
+                  {(() => {
+                    const currentUserIdStr = extractUserIdFromToken(accessToken);
+                    const currentUserId = currentUserIdStr ? Number(currentUserIdStr) : null;
+                    return currentUserId !== post.authorId;
+                  })() && (
+                    <button
+                      onClick={() => handleCreateDirectChat(post.authorId, post.authorNickname)}
+                      disabled={createRoomMutation.isPending}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors disabled:opacity-50"
+                    >
+                      <span>💬</span>
+                      <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -953,14 +960,21 @@ export default function PostShow() {
                             <p className="font-semibold text-[color:var(--color-fg-primary)]">{comment.authorNickname}</p>
                             <p className="text-xs text-[color:var(--color-fg-muted)]">댓글 작성자</p>
                           </div>
-                          <button
-                            onClick={() => handleCreateCommentDirectChat(comment.authorId, comment.authorNickname)}
-                            disabled={createRoomMutation.isPending}
-                            className="w-full flex items-center gap-2 px-4 py-3 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors disabled:opacity-50"
-                          >
-                            <span>💬</span>
-                            <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
-                          </button>
+                          {/* 현재 사용자와 댓글 작성자가 다를 때만 1:1 채팅 버튼 표시 */}
+                          {(() => {
+                            const currentUserIdStr = extractUserIdFromToken(accessToken);
+                            const currentUserId = currentUserIdStr ? Number(currentUserIdStr) : null;
+                            return currentUserId !== comment.authorId;
+                          })() && (
+                            <button
+                              onClick={() => handleCreateCommentDirectChat(comment.authorId, comment.authorNickname)}
+                              disabled={createRoomMutation.isPending}
+                              className="w-full flex items-center gap-2 px-4 py-3 text-left text-[color:var(--color-fg-primary)] hover:bg-[color:var(--color-bg-hover)] transition-colors disabled:opacity-50"
+                            >
+                              <span>💬</span>
+                              <span>{createRoomMutation.isPending ? "채팅방 생성 중..." : "1:1 채팅방 만들기"}</span>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
