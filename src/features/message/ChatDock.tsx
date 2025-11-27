@@ -611,7 +611,7 @@ function ChatWindow({
 
     try {
       const profile = await chatService.getRoomMemberProfile(roomId, actualCurrentUserId);
-      const hasPermission = ["ADMIN", "OWNER", "MANAGER"].includes(profile.role);
+      const hasPermission = ["OWNER", "MANAGER"].includes(profile.role);
 
       setNoticePermission({ status: "success", hasPermission });
     } catch (error: any) {
