@@ -1,6 +1,7 @@
 // BOD_15.tsx - 책 상세 페이지
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useBookDetail,
   useBookDetailByISBN,
@@ -22,6 +23,7 @@ export default function BOD_15() {
   const { bookId, isbn } = useParams<{ bookId?: string; isbn?: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [newHighlightContent, setNewHighlightContent] = useState("");
@@ -217,6 +219,10 @@ export default function BOD_15() {
         onSuccess: () => {
           setNewReviewContent("");
           setNewReviewRating(5);
+          // 책 상세 정보와 리뷰 목록 갱신
+          queryClient.invalidateQueries({ queryKey: ["book-detail", actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
+          queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
           // 리뷰 작성 후 게시글 작성 페이지로 이동
           navigate(`/boards/new?category=REVIEW&bookId=${actualBookId}`);
         },
@@ -258,6 +264,10 @@ export default function BOD_15() {
           setEditingReviewId(null);
           setEditReviewContent("");
           setEditReviewRating(5);
+          // 책 상세 정보와 리뷰 목록 갱신
+          queryClient.invalidateQueries({ queryKey: ["book-detail", actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
+          queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
         },
         onError: () => {
           alert("리뷰 수정에 실패했습니다.");
@@ -276,6 +286,12 @@ export default function BOD_15() {
         reviewId,
       },
       {
+        onSuccess: () => {
+          // 책 상세 정보와 리뷰 목록 갱신
+          queryClient.invalidateQueries({ queryKey: ["book-detail", actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
+          queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
+        },
         onError: () => {
           alert("리뷰 삭제에 실패했습니다.");
         },
