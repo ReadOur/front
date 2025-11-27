@@ -452,16 +452,22 @@ function ChatWindow({
   );
 
   const isPublicThread = thread.category === "PUBLIC";
+  const isGroupThread = thread.category === "GROUP";
+  const isPrivateThread = thread.category === "PRIVATE";
+  const isManagerOrAbove =
+    currentUserRole === "MANAGER" || currentUserRole === "OWNER" || currentUserRole === "ADMIN";
 
-  const canAccessAI = isPublicThread
-    ? aiPermissions.publicSummary.allowed
-    : Object.values(aiPermissions).some((permission) => permission.allowed);
   const canManageGroupAI =
     aiPermissions.groupKeypoints.allowed ||
     aiPermissions.groupQuestions.allowed ||
     aiPermissions.sessionStart.allowed ||
     aiPermissions.sessionEnd.allowed;
   const canControlSession = aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed;
+  const canShowAISection = (isPublicThread && aiPermissions.publicSummary.allowed) || canManageGroupAI;
+  const canOpenAIDock = (isPublicThread && aiPermissions.publicSummary.allowed) || canManageGroupAI;
+  const canCreateEvent =
+    isPrivateThread || (isPublicThread && isManagerOrAbove) || (isGroupThread && isManagerOrAbove);
+  const canAddNotice = isPrivateThread || isManagerOrAbove;
 
   const requestAICommand = useCallback(
     (command: AiCommandType, note?: string) => {
@@ -886,22 +892,24 @@ function ChatWindow({
                 </button>
               </div>
               <div>
-              {/* AI 요약 섹션 - 공개 채팅방은 요약만, 모임 채팅방은 관리자 전용 전체 기능 */}
-              {canAccessAI && (
+              {/* AI 요약 섹션 - 범위/권한에 따라 노출 */}
+              {canShowAISection && (
                 <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                   <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">AI</div>
                   <div className="grid grid-cols-2 gap-2 px-2">
-                    <button
-                      onClick={() => {
-                        const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
-                        requestAICommand("PUBLIC_SUMMARY", note);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      공개 대화 요약
-                    </button>
+                    {aiPermissions.publicSummary.allowed && (
+                      <button
+                        onClick={() => {
+                          const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
+                          requestAICommand("PUBLIC_SUMMARY", note);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        공개 대화 요약
+                      </button>
+                    )}
 
                     {/* 토론 요점 정리 - GROUP 전용 */}
                     {canManageGroupAI && (
@@ -930,7 +938,7 @@ function ChatWindow({
                         추가 질문 제안
                       </button>
                     )}
-                    {thread.category !== "PUBLIC" && (
+                    {canOpenAIDock && (
                       <button
                         onClick={() => {
                           onOpenAIDock?.();
@@ -976,14 +984,16 @@ function ChatWindow({
               {/* 일반 기능 섹션 */}
               <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                 <div className="grid grid-cols-2 gap-2 px-2">
-                  <button
-                    onClick={handleOpenEventModal}
-                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <Calendar className="w-4 h-4 flex-shrink-0" />
-                    일정 추가
-                  </button>
-                  {isAdmin && (
+                  {canCreateEvent && (
+                    <button
+                      onClick={handleOpenEventModal}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      일정 추가
+                    </button>
+                  )}
+                  {canAddNotice && (
                     <button
                       onClick={() => {
                         toast.show({ title: "공지 추가 기능은 NoticeDock에서 제공됩니다.", variant: "info" });
