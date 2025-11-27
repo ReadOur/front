@@ -664,8 +664,15 @@ export default function CAL_11() {
           console.log('[CAL_11] 모달 렌더링 시작');
           return (
             <div
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20"
-              style={{ zIndex: 9999 }}
+              className="fixed bg-black bg-opacity-50 flex items-start justify-center"
+              style={{
+                zIndex: 9999,
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                paddingTop: '20px'
+              }}
             >
             <div
               className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
