@@ -77,13 +77,27 @@ export async function createRoom(data: CreateRoomRequest): Promise<CreateRoomRes
 
   // 백엔드 응답이 { status, body, message } 형태로 래핑된 경우 body 추출
   // apiClient 인터셉터가 제대로 작동하지 않는 경우를 대비
+  let unwrappedData = result;
   if (result && typeof result === 'object' && 'body' in result) {
     console.log('🔍 Extracting body from wrapped response:', result.body);
-    return result.body as CreateRoomResponse;
+    unwrappedData = result.body;
   }
 
-  console.log('🔍 Using result as-is (already unwrapped):', result);
-  return result as CreateRoomResponse;
+  console.log('🔍 Unwrapped data:', unwrappedData);
+
+  // 백엔드는 id를 사용하지만, 프론트엔드는 roomId를 기대
+  // 필드명 변환
+  const response: CreateRoomResponse = {
+    roomId: unwrappedData.id,
+    name: unwrappedData.name,
+    description: unwrappedData.description || '',
+    scope: unwrappedData.scope,
+    category: unwrappedData.category,
+    createdAt: unwrappedData.createdAt,
+  };
+
+  console.log('🔍 Mapped response:', response);
+  return response;
 }
 
 /**
