@@ -8,7 +8,7 @@ import { X, Minimize2, Send, Sparkles } from "lucide-react";
  * - 추후 AI API 연동 예정
  */
 
-interface AIMessage {
+export interface AIMessage {
   id: string;
   type: "user" | "ai";
   text: string;
@@ -20,9 +20,12 @@ interface AIDockProps {
   onClose: () => void;
   onMinimize?: () => void;
   anchorRef?: React.RefObject<HTMLElement>;
+  messages: AIMessage[];
+  isLoading?: boolean;
+  onSend?: (text: string) => void;
 }
 
-export default function AIDock({ isOpen, onClose, onMinimize, anchorRef }: AIDockProps) {
+export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, messages, isLoading, onSend }: AIDockProps) {
   const getInitialPosition = useCallback(() => {
     const width = 384; // w-96
     const height = 600;
@@ -41,16 +44,7 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef }: AIDoc
     };
   }, [anchorRef]);
 
-  const [messages, setMessages] = useState<AIMessage[]>([
-    {
-      id: "welcome",
-      type: "ai",
-      text: "안녕하세요! AI 어시스턴트입니다. 무엇을 도와드릴까요?",
-      timestamp: Date.now(),
-    },
-  ]);
   const [inputText, setInputText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(() => getInitialPosition());
   const dragInfo = useRef<{ isDragging: boolean; offsetX: number; offsetY: number }>({
@@ -102,31 +96,11 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef }: AIDoc
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || isLoading) return;
+    if (!inputText.trim() || isLoading || !onSend) return;
 
-    const userMessage: AIMessage = {
-      id: `user-${Date.now()}`,
-      type: "user",
-      text: inputText,
-      timestamp: Date.now(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const text = inputText;
     setInputText("");
-    setIsLoading(true);
-
-    // TODO: AI API 연동
-    // 임시: 2초 후 응답
-    setTimeout(() => {
-      const aiMessage: AIMessage = {
-        id: `ai-${Date.now()}`,
-        type: "ai",
-        text: "AI 응답 기능은 추후 구현 예정입니다.",
-        timestamp: Date.now(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 2000);
+    onSend(text);
   };
 
   useEffect(() => {
