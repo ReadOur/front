@@ -214,13 +214,24 @@ export default function NoticeDock({
 
   const permissionState = useMemo(() => permissionStatus, [permissionStatus]);
   const shouldShowCreateButton = true; // 항상 버튼 표시 (권한 없으면 비활성화)
-  const isCreateDisabled = permissionState !== "success" || !hasPermission;
+  const isCreateDisabled = permissionState !== "success" || hasPermission !== true;
   const createButtonLabel =
     permissionState === "checking"
       ? "권한 확인 중"
       : permissionState === "error"
         ? "권한 재확인 필요"
         : "공지 작성";
+
+  // 디버깅: 권한 상태 추적
+  console.log('📢 NoticeDock Permission State:', {
+    permissionStatus,
+    permissionState,
+    hasPermission,
+    isCreateDisabled,
+    shouldShowCreateButton,
+    isCreating,
+    roomId,
+  });
 
   if (!isOpen) return null;
 
@@ -270,7 +281,18 @@ export default function NoticeDock({
         </div>
         {shouldShowCreateButton && !isCreating && !selectedNotice && !isEditing && (
           <button
-            onClick={() => setIsCreating(true)}
+            onClick={() => {
+              console.log('🖱️ 공지 작성 버튼 클릭!', {
+                isCreateDisabled,
+                hasPermission,
+                permissionState,
+              });
+              if (!isCreateDisabled) {
+                setIsCreating(true);
+              } else {
+                console.warn('⚠️ 버튼이 비활성화 상태입니다.');
+              }
+            }}
             disabled={isCreateDisabled}
             className="w-28 h-9 px-2 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white text-xs border border-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
             title={createButtonLabel}
