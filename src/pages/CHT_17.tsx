@@ -258,9 +258,9 @@ type CategoryFilter = "ALL" | ChatCategory;
 
 const categoryLabels: Record<CategoryFilter, string> = {
   ALL: "전체",
-  DIRECT: "1:1",
-  GROUP: "단체",
-  MEETING: "모임",
+  PRIVATE: "1:1",
+  GROUP: "모임",
+  PUBLIC: "공개",
 };
 
 export default function CHT_17() {
@@ -354,7 +354,7 @@ export default function CHT_17() {
     const myRooms: ChatThread[] = data.myRooms.items.map((room) => ({
       id: room.roomId.toString(),
       users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
-      category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
+      category: "GROUP" as ChatCategory, // 임시: 모임으로 표시 (백엔드에서 실제 카테고리 받아야 함)
       unreadCount: room.unreadCount,
       lastMessage: room.lastMsg
         ? {
@@ -370,7 +370,7 @@ export default function CHT_17() {
     const publicRooms: (ChatThread & { joined: boolean })[] = data.publicRooms.items.map((room) => ({
       id: room.roomId.toString(),
       users: [{ id: "unknown", name: room.name }],
-      category: "MEETING" as ChatCategory, // 공개방은 MEETING으로 표시
+      category: "PUBLIC" as ChatCategory, // 공개방은 PUBLIC으로 표시
       unreadCount: 0,
       lastMessage: undefined,
       joined: room.joined, // 참여 여부 유지
@@ -400,9 +400,9 @@ export default function CHT_17() {
   // 카테고리별 읽지 않은 메시지 수 계산
   const unreadCounts = {
     ALL: threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0),
-    DIRECT: threads.filter(t => t.category === "DIRECT").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    PRIVATE: threads.filter(t => t.category === "PRIVATE").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
     GROUP: threads.filter(t => t.category === "GROUP").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
-    MEETING: threads.filter(t => t.category === "MEETING").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
+    PUBLIC: threads.filter(t => t.category === "PUBLIC").reduce((sum, t) => sum + (t.unreadCount || 0), 0),
   };
 
   // 필터링 함수
@@ -454,9 +454,9 @@ export default function CHT_17() {
           </div>
           {/* 카테고리 탭 */}
           <div className="flex gap-1 p-1 bg-[color:var(--color-bg-subtle)] rounded-[var(--radius-md)]">
-            {(["ALL", "DIRECT", "GROUP", "MEETING"] as CategoryFilter[]).map((category) => {
+            {(["ALL", "PRIVATE", "GROUP", "PUBLIC"] as CategoryFilter[]).map((category) => {
               const isActive = selectedCategory === category;
-              const Icon = category === "DIRECT" ? User : category === "GROUP" ? Users : category === "MEETING" ? MessageCircle : MessageCircle;
+              const Icon = category === "PRIVATE" ? User : category === "GROUP" ? Users : category === "PUBLIC" ? MessageCircle : MessageCircle;
               const unreadCount = unreadCounts[category];
 
               return (

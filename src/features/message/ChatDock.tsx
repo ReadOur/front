@@ -131,14 +131,14 @@ export interface ChatMessage {
   senderRole?: string; // 발신자 역할
 }
 
-export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
+export type ChatCategory = "PRIVATE" | "GROUP" | "PUBLIC";
 
 export interface ChatThread {
   id: string;
   users: ChatUser[]; // participants
   lastMessage?: ChatMessage;
   unreadCount?: number;
-  category: ChatCategory; // 1:1, 단체, 모임
+  category: ChatCategory; // 1:1(PRIVATE), 모임(GROUP), 공개(PUBLIC)
   isPinned?: boolean; // 상단 고정 여부
   joined?: boolean; // 참여 여부 (공개 채팅방용)
 }
