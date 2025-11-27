@@ -1811,7 +1811,24 @@ export default function ChatDock() {
       const isOpen = openThreadIds.includes(threadId);
 
       // scope를 ChatCategory로 매핑
-      const category: ChatCategory = room.scope as ChatCategory;
+      // 백엔드가 scope를 반환하지 않을 경우 임시 fallback 로직
+      let category: ChatCategory;
+      if (room.scope) {
+        category = room.scope as ChatCategory;
+      } else {
+        // TODO: 백엔드에서 scope 추가 후 이 fallback 로직 제거
+        // 임시 로직: 1:1 채팅방 이름 패턴으로 추측
+        if (room.name.includes('님과의 채팅')) {
+          category = "PRIVATE";
+        } else {
+          category = "GROUP"; // 기본값
+        }
+        console.warn('⚠️ Room scope not provided by backend, using fallback logic', {
+          roomId: room.roomId,
+          name: room.name,
+          guessedCategory: category,
+        });
+      }
 
       console.log('🏠 Room mapping:', {
         roomId: room.roomId,
