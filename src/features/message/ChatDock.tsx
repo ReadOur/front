@@ -174,7 +174,7 @@ export interface ChatThread {
   joined?: boolean; // 참여 여부 (공개 채팅방용)
 }
 
-const GROUP_AI_ALLOWED_ROLES = new Set(["OWNER", "MANAGER", "ADMIN"]);
+const GROUP_AI_ALLOWED_ROLES = new Set(["OWNER", "MANAGER"]);
 
 function canUseAI(
   category: ChatCategory | undefined,
@@ -916,7 +916,7 @@ function ChatWindow({
                     )}
 
                     {/* 토론 요점 정리 - GROUP 전용 */}
-                    {canManageGroupAI && (
+                    {isGroupThread && aiPermissions.groupKeypoints.allowed && (
                       <button
                         onClick={() => {
                           requestAICommand("GROUP_KEYPOINTS", undefined);
@@ -930,7 +930,7 @@ function ChatWindow({
                     )}
 
                     {/* 추가 질문 제안 - GROUP 전용 */}
-                    {canManageGroupAI && (
+                    {isGroupThread && aiPermissions.groupQuestions.allowed && (
                       <button
                         onClick={() => {
                           requestAICommand("GROUP_QUESTION_GENERATOR", undefined);
@@ -942,7 +942,9 @@ function ChatWindow({
                         추가 질문 제안
                       </button>
                     )}
-                    {canOpenAIDock && (
+                    {/* AI 요약창 열기 - PUBLIC(모두) 또는 GROUP(관리자) */}
+                    {((isPublicThread && aiPermissions.publicSummary.allowed) ||
+                      (isGroupThread && canManageGroupAI)) && (
                       <button
                         onClick={() => {
                           onOpenAIDock?.();
@@ -955,8 +957,8 @@ function ChatWindow({
                       </button>
                     )}
 
-                    {/* AI 세션 시작/끝 토글 버튼 - AI 세션 명령이 허용된 방에서만 노출 */}
-                    {canControlSession && (
+                    {/* AI 세션 시작/끝 토글 버튼 - GROUP 전용 */}
+                    {isGroupThread && (aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed) && (
                       <button
                         onClick={() => {
                           if (!isSessionActive) {
