@@ -660,26 +660,33 @@ export default function CAL_11() {
         </div>
 
         {/* 일정 추가 모달 */}
-        {isAddModalOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]"
-            onClick={() => {
-              if (!modalJustOpened) {
-                console.log('[CAL_11] 모달 배경 클릭으로 닫기');
-                setIsAddModalOpen(false);
-              } else {
-                console.log('[CAL_11] 모달 방금 열림 - 배경 클릭 무시');
-              }
-            }}
-          >
+        {isAddModalOpen && (() => {
+          console.log('[CAL_11] 모달 렌더링 시작');
+          return (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+              style={{ zIndex: 9999 }}
+            >
             <div
               className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
               onClick={(e) => e.stopPropagation()}
               style={{ background: "#FFF9F2" }}
             >
-              <h3 className="text-2xl font-bold mb-6" style={{ color: "#6B4F3F" }}>
-                새 일정 추가
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold" style={{ color: "#6B4F3F" }}>
+                  새 일정 추가
+                </h3>
+                <button
+                  onClick={() => {
+                    console.log('[CAL_11] X 버튼으로 모달 닫기');
+                    setIsAddModalOpen(false);
+                  }}
+                  className="text-2xl hover:opacity-70 transition"
+                  style={{ color: "#6B4F3F" }}
+                >
+                  ✕
+                </button>
+              </div>
 
               <div className="space-y-4">
                 {/* 제목 */}
@@ -774,14 +781,20 @@ export default function CAL_11() {
               {/* 버튼 */}
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => {
+                    console.log('[CAL_11] 취소 버튼으로 모달 닫기');
+                    setIsAddModalOpen(false);
+                  }}
                   className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
                   style={{ background: "#E9E5DC", color: "#6B4F3F" }}
                 >
                   취소
                 </button>
                 <button
-                  onClick={handleAddEvent}
+                  onClick={() => {
+                    console.log('[CAL_11] 추가 버튼 클릭');
+                    handleAddEvent();
+                  }}
                   className="flex-1 px-6 py-3 rounded hover:opacity-80 transition font-semibold"
                   style={{ background: "#90BE6D", color: "white" }}
                 >
@@ -790,7 +803,8 @@ export default function CAL_11() {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* 년도/월 선택 모달 */}
         {isYearMonthSelectorOpen && (
