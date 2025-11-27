@@ -71,7 +71,19 @@ export async function getMyRooms(params: GetMyRoomsParams): Promise<MyRoomsRespo
  * 채팅방 생성
  */
 export async function createRoom(data: CreateRoomRequest): Promise<CreateRoomResponse> {
-  return apiClient.post<CreateRoomResponse>(CHAT_ENDPOINTS.CREATE_ROOM, data);
+  console.log('🔍 createRoom called with:', data);
+  const result = await apiClient.post<any>(CHAT_ENDPOINTS.CREATE_ROOM, data);
+  console.log('🔍 createRoom raw result:', result);
+
+  // 백엔드 응답이 { status, body, message } 형태로 래핑된 경우 body 추출
+  // apiClient 인터셉터가 제대로 작동하지 않는 경우를 대비
+  if (result && typeof result === 'object' && 'body' in result) {
+    console.log('🔍 Extracting body from wrapped response:', result.body);
+    return result.body as CreateRoomResponse;
+  }
+
+  console.log('🔍 Using result as-is (already unwrapped):', result);
+  return result as CreateRoomResponse;
 }
 
 /**
