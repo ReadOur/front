@@ -710,7 +710,7 @@ export default function PostShow() {
                     <img
                       src={bookDetail.bookImageUrl}
                       alt={bookDetail.bookname}
-                      className="w-full h-full object-cover"
+                      className="block w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[color:var(--color-fg-muted)] text-base sm:text-lg">
@@ -719,15 +719,15 @@ export default function PostShow() {
                   )}
                 </div>
 
-                {/* 책 정보 - 텍스트 크기 축소 */}
+                {/* 책 정보 - 텍스트 크기 소폭 확장 (가독성 향상) */}
                 <div className="flex-1 min-w-0 space-y-0.5">
-                  <p className="text-[9px] sm:text-[10px] text-[color:var(--color-fg-muted)] mb-0">리뷰 대상 도서</p>
-                  <h3 className="text-[11px] sm:text-xs font-bold text-[color:var(--color-fg-primary)] truncate">{bookDetail.bookname}</h3>
+                  <p className="text-[12px] sm:text-[13px] text-[color:var(--color-fg-muted)] mb-0">리뷰 대상 도서</p>
+                  <h3 className="text-[14px] sm:text-sm font-bold text-[color:var(--color-fg-primary)] truncate">{bookDetail.bookname}</h3>
                   {bookDetail.authors && (
-                    <p className="text-[9px] sm:text-[10px] text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
+                    <p className="text-[12px] sm:text-[13px] text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
                   )}
                   {bookDetail.publisher && (
-                    <p className="text-[9px] sm:text-[10px] text-[color:var(--color-fg-muted)] truncate">{bookDetail.publisher}</p>
+                    <p className="text-[12px] sm:text-[13px] text-[color:var(--color-fg-muted)] truncate">{bookDetail.publisher}</p>
                   )}
                 </div>
               </div>
