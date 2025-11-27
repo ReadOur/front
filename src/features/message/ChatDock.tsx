@@ -441,13 +441,21 @@ function ChatWindow({
   const toast = useToast();
 
   const aiPermissions = useMemo(
-    () => ({
-      publicSummary: canUseAI(thread.category, currentUserRole, "PUBLIC_SUMMARY"),
-      groupKeypoints: canUseAI(thread.category, currentUserRole, "GROUP_KEYPOINTS"),
-      groupQuestions: canUseAI(thread.category, currentUserRole, "GROUP_QUESTION_GENERATOR"),
-      sessionStart: canUseAI(thread.category, currentUserRole, "SESSION_START"),
-      sessionEnd: canUseAI(thread.category, currentUserRole, "SESSION_END"),
-    }),
+    () => {
+      const permissions = {
+        publicSummary: canUseAI(thread.category, currentUserRole, "PUBLIC_SUMMARY"),
+        groupKeypoints: canUseAI(thread.category, currentUserRole, "GROUP_KEYPOINTS"),
+        groupQuestions: canUseAI(thread.category, currentUserRole, "GROUP_QUESTION_GENERATOR"),
+        sessionStart: canUseAI(thread.category, currentUserRole, "SESSION_START"),
+        sessionEnd: canUseAI(thread.category, currentUserRole, "SESSION_END"),
+      };
+      console.log('🔐 AI Permissions calculated:', {
+        category: thread.category,
+        currentUserRole,
+        permissions,
+      });
+      return permissions;
+    },
     [currentUserRole, thread.category]
   );
 
@@ -611,7 +619,7 @@ function ChatWindow({
 
     try {
       const profile = await chatService.getRoomMemberProfile(roomId, actualCurrentUserId);
-      const hasPermission = ["ADMIN", "OWNER", "MANAGER"].includes(profile.role);
+      const hasPermission = ["OWNER", "MANAGER"].includes(profile.role);
 
       setNoticePermission({ status: "success", hasPermission });
     } catch (error: any) {

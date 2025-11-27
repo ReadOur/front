@@ -213,7 +213,7 @@ export default function NoticeDock({
   };
 
   const permissionState = useMemo(() => permissionStatus, [permissionStatus]);
-  const shouldShowCreateButton = permissionState !== "success" || hasPermission;
+  const shouldShowCreateButton = true; // 항상 버튼 표시 (권한 없으면 비활성화)
   const isCreateDisabled = permissionState !== "success" || !hasPermission;
   const createButtonLabel =
     permissionState === "checking"
@@ -270,7 +270,7 @@ export default function NoticeDock({
         </div>
         {shouldShowCreateButton && !isCreating && !selectedNotice && !isEditing && (
           <button
-            onClick={() => !isCreateDisabled && setIsCreating(true)}
+            onClick={() => setIsCreating(true)}
             disabled={isCreateDisabled}
             className="w-28 h-9 px-2 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white text-xs border border-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
             title={createButtonLabel}
