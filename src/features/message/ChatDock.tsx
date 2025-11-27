@@ -795,30 +795,32 @@ function ChatWindow({
                       AI 요약창 열기
                     </button>
 
-                    {/* AI 세션 시작/끝 토글 버튼 */}
-                    <button
-                      onClick={() => {
-                        if (!isSessionActive) {
-                          // 세션 시작
-                          onRequestAI?.("SESSION_START", undefined);
-                          setIsSessionActive(true);
-                        } else {
-                          // 세션 끝
-                          onRequestAI?.("SESSION_END", undefined);
-                          setIsSessionActive(false);
-                        }
-                        setIsMenuOpen(false);
-                      }}
-                      className={cls(
-                        "flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-left text-sm transition-colors",
-                        isSessionActive
-                          ? "bg-[color:var(--color-primary)] text-white hover:opacity-90"
-                          : "hover:bg-[color:var(--chatdock-bg-hover)]"
-                      )}
-                    >
-                      <div className={cls("w-2 h-2 rounded-full flex-shrink-0", isSessionActive ? "bg-white animate-pulse" : "bg-red-500")} />
-                      {isSessionActive ? "세션 종료" : "세션 시작"}
-                    </button>
+                    {/* AI 세션 시작/끝 토글 버튼 - 공개 채팅방에서는 사용 불가 */}
+                    {thread.category !== "PUBLIC" && (
+                      <button
+                        onClick={() => {
+                          if (!isSessionActive) {
+                            // 세션 시작
+                            onRequestAI?.("SESSION_START", undefined);
+                            setIsSessionActive(true);
+                          } else {
+                            // 세션 끝
+                            onRequestAI?.("SESSION_END", undefined);
+                            setIsSessionActive(false);
+                          }
+                          setIsMenuOpen(false);
+                        }}
+                        className={cls(
+                          "flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-left text-sm transition-colors",
+                          isSessionActive
+                            ? "bg-[color:var(--color-primary)] text-white hover:opacity-90"
+                            : "hover:bg-[color:var(--chatdock-bg-hover)]"
+                        )}
+                      >
+                        <div className={cls("w-2 h-2 rounded-full flex-shrink-0", isSessionActive ? "bg-white animate-pulse" : "bg-red-500")} />
+                        {isSessionActive ? "세션 종료" : "세션 시작"}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
