@@ -174,6 +174,34 @@ export interface ChatThread {
   joined?: boolean; // 참여 여부 (공개 채팅방용)
 }
 
+const GROUP_AI_ALLOWED_ROLES = new Set(["OWNER", "MANAGER", "ADMIN"]);
+
+function canUseAI(
+  category: ChatCategory | undefined,
+  role: string | null | undefined,
+  command: AiCommandType
+): { allowed: boolean; reason?: string } {
+  if (category === "PRIVATE") {
+    return { allowed: false, reason: "1:1 채팅방에서는 AI 기능을 사용할 수 없습니다." };
+  }
+
+  if (category === "PUBLIC") {
+    if (command === "PUBLIC_SUMMARY") {
+      return { allowed: true };
+    }
+    return { allowed: false, reason: "공개 채팅방에서는 공개 대화 요약만 이용할 수 있습니다." };
+  }
+
+  if (category === "GROUP") {
+    if (!role || !GROUP_AI_ALLOWED_ROLES.has(role)) {
+      return { allowed: false, reason: "모임 채팅방에서는 관리자 이상만 AI 기능을 사용할 수 있습니다." };
+    }
+    return { allowed: true };
+  }
+
+  return { allowed: false, reason: "AI 기능을 사용할 수 없습니다." };
+}
+
 // ===== Chat window =====
 function Avatar({ user, size = 24 }: { user: ChatUser; size?: number }) {
   if (user.avatarUrl) {
@@ -299,7 +327,7 @@ function ChatWindow({
   typingUserIds?: string[];
   onClose: () => void;
   onMinimize: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string, currentUserRole?: string | null) => void;
   onRequestAI?: (command: AiCommandType, note?: string) => void;
   onDeleteRoom?: () => void;
   onMuteRoom?: () => void;
@@ -412,18 +440,36 @@ function ChatWindow({
 
   const toast = useToast();
 
-  const isPublicRoom = thread.category === "PUBLIC";
-  const canManageGroupAI = thread.category === "GROUP" && isAdmin;
-  // AI 기능 접근 권한: 공개 채팅방(PUBLIC)은 요약만, 모임 채팅방(GROUP)은 MANAGER 이상만 전체 기능 사용
-  const canAccessAI = isPublicRoom || canManageGroupAI;
-  const requestAICommand = useCallback((command: AiCommandType, note?: string) => {
-    if (isPublicRoom && command !== "PUBLIC_SUMMARY") {
-      toast.show({ title: "공개 채팅방에서는 공개 대화 요약만 이용할 수 있습니다.", variant: "warning" });
-      return;
-    }
+  const aiPermissions = useMemo(
+    () => ({
+      publicSummary: canUseAI(thread.category, currentUserRole, "PUBLIC_SUMMARY"),
+      groupKeypoints: canUseAI(thread.category, currentUserRole, "GROUP_KEYPOINTS"),
+      groupQuestions: canUseAI(thread.category, currentUserRole, "GROUP_QUESTION_GENERATOR"),
+      sessionStart: canUseAI(thread.category, currentUserRole, "SESSION_START"),
+      sessionEnd: canUseAI(thread.category, currentUserRole, "SESSION_END"),
+    }),
+    [currentUserRole, thread.category]
+  );
 
-    onRequestAI?.(command, note);
-  }, [isPublicRoom, onRequestAI, toast]);
+  const canAccessAI = Object.values(aiPermissions).some((permission) => permission.allowed);
+  const canManageGroupAI =
+    aiPermissions.groupKeypoints.allowed ||
+    aiPermissions.groupQuestions.allowed ||
+    aiPermissions.sessionStart.allowed ||
+    aiPermissions.sessionEnd.allowed;
+
+  const requestAICommand = useCallback(
+    (command: AiCommandType, note?: string) => {
+      const permission = canUseAI(thread.category, currentUserRole, command);
+      if (!permission.allowed) {
+        toast.show({ title: permission.reason || "AI 기능을 사용할 수 없습니다.", variant: "warning" });
+        return;
+      }
+
+      onRequestAI?.(command, note);
+    },
+    [currentUserRole, onRequestAI, thread.category, toast]
+  );
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
@@ -1276,7 +1322,7 @@ function ChatWindow({
           e.preventDefault();
           const v = text.trim();
           if (!v) return;
-          onSend(v);
+          onSend(v, currentUserRole);
           setText("");
         }}
         className="p-2 border-t border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-1)]"
@@ -2084,12 +2130,17 @@ export default function ChatDock() {
   const closeThread = (id: string) => closeThreadInContext(id);
   const minimizeThread = (id: string) => minimizeThreadInContext(id);
 
-  const sendMessage = (threadId: string, text: string) => {
+  const sendMessage = (threadId: string, text: string, currentUserRole?: string | null) => {
     const roomId = parseInt(threadId, 10);
     const targetThread = threads.find((t) => t.id === threadId);
 
     if (!myUserId) {
       toast.show({ title: "사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", variant: "warning" });
+      return;
+    }
+
+    if (!targetThread) {
+      toast.show({ title: "채팅방 정보를 찾을 수 없습니다.", variant: "error" });
       return;
     }
 
@@ -2100,8 +2151,9 @@ export default function ChatDock() {
 
       const { command, note } = parseAiShortcut(aiContent);
 
-      if (targetThread?.category === "PUBLIC" && command !== "PUBLIC_SUMMARY") {
-        toast.show({ title: "공개 채팅방에서는 공개 대화 요약만 이용할 수 있습니다.", variant: "warning" });
+      const permission = canUseAI(targetThread.category, currentUserRole, command);
+      if (!permission.allowed) {
+        toast.show({ title: permission.reason || "AI 기능을 사용할 수 없습니다.", variant: "warning" });
         return;
       }
 
@@ -2296,7 +2348,7 @@ export default function ChatDock() {
                 typingUserIds={typingIds}
                 onClose={() => closeThread(id)}
                 onMinimize={() => minimizeThread(id)}
-                onSend={(text) => sendMessage(id, text)}
+                onSend={(text, currentUserRole) => sendMessage(id, text, currentUserRole)}
                 onRequestAI={(command, note) => {
                   const roomId = parseInt(id, 10);
                   triggerAiRequest(roomId, command, note);
