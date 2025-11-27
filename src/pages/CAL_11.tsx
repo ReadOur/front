@@ -9,6 +9,7 @@ export default function CAL_11() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
+  const [modalJustOpened, setModalJustOpened] = useState(false);
 
   // 일정 카테고리 필터 (null: 전체, 'USER': 개인 일정, 'ROOM': 방 일정)
   const [selectedScope, setSelectedScope] = useState<'USER' | 'ROOM' | null>(null);
@@ -62,8 +63,9 @@ export default function CAL_11() {
   const month = currentDate.getMonth(); // 0-11
 
   useEffect(() => {
-    console.debug('[CAL_11] isAddModalOpen 상태 변경:', isAddModalOpen);
-  }, [isAddModalOpen]);
+    console.log('[CAL_11] isAddModalOpen 상태 변경:', isAddModalOpen);
+    console.log('[CAL_11] 모달 렌더링 조건 확인:', { isAddModalOpen, modalJustOpened });
+  }, [isAddModalOpen, modalJustOpened]);
 
   // 일정 데이터 가져오기
   useEffect(() => {
@@ -162,6 +164,12 @@ export default function CAL_11() {
     });
     console.debug('[CAL_11] 일정 추가 모달 열림 트리거', { todayStr });
     setIsAddModalOpen(true);
+    setModalJustOpened(true);
+
+    // 300ms 후 modalJustOpened 플래그 해제
+    setTimeout(() => {
+      setModalJustOpened(false);
+    }, 300);
   };
 
   // 일정 추가
@@ -655,7 +663,14 @@ export default function CAL_11() {
         {isAddModalOpen && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]"
-            onClick={() => setIsAddModalOpen(false)}
+            onClick={() => {
+              if (!modalJustOpened) {
+                console.log('[CAL_11] 모달 배경 클릭으로 닫기');
+                setIsAddModalOpen(false);
+              } else {
+                console.log('[CAL_11] 모달 방금 열림 - 배경 클릭 무시');
+              }
+            }}
           >
             <div
               className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
