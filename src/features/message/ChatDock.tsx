@@ -364,8 +364,20 @@ function ChatWindow({
   const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
   const isOwner = currentUserRole === "OWNER";
 
-  // AI 기능 접근 권한: 공개 채팅방(PUBLIC)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
-  const canAccessAI = thread.category === "PUBLIC" || (thread.category === "GROUP" && isAdmin);
+  const toast = useToast();
+
+  const isPublicRoom = thread.category === "PUBLIC";
+  const canManageGroupAI = thread.category === "GROUP" && isAdmin;
+  // AI 기능 접근 권한: 공개 채팅방(PUBLIC)은 요약만, 모임 채팅방(GROUP)은 MANAGER 이상만 전체 기능 사용
+  const canAccessAI = isPublicRoom || canManageGroupAI;
+  const requestAICommand = useCallback((command: AiCommandType, note?: string) => {
+    if (isPublicRoom && command !== "PUBLIC_SUMMARY") {
+      toast.show({ title: "공개 채팅방에서는 공개 대화 요약만 이용할 수 있습니다.", variant: "warning" });
+      return;
+    }
+
+    onRequestAI?.(command, note);
+  }, [isPublicRoom, onRequestAI, toast]);
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
@@ -427,8 +439,6 @@ function ChatWindow({
       top: Math.min(Math.max(margin, preferredTop), window.innerHeight - cardHeight - margin),
     });
   }, [profileTarget, profileCardPosition]);
-
-  const toast = useToast();
 
   const createRoomMutation = useCreateRoom({
     onSuccess: (data) => {
@@ -779,17 +789,17 @@ function ChatWindow({
                 </button>
               </div>
               <div>
-              {/* AI 요약 섹션 - 공개 채팅방은 모두, 모임 채팅방은 관리자 전용 */}
+              {/* AI 요약 섹션 - 공개 채팅방은 요약만, 모임 채팅방은 관리자 전용 전체 기능 */}
               {canAccessAI && (
                 <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                   <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
-                    AI 요약
+                    AI 요약 (공개 방: 요약만, 모임 방: 관리자 전용)
                   </div>
                   <div className="grid grid-cols-2 gap-2 px-2">
                     <button
                       onClick={() => {
                         const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
-                        onRequestAI?.("PUBLIC_SUMMARY", note);
+                        requestAICommand("PUBLIC_SUMMARY", note);
                         setIsMenuOpen(false);
                       }}
                       className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -799,10 +809,10 @@ function ChatWindow({
                     </button>
 
                     {/* 토론 요점 정리 - GROUP 전용 */}
-                    {thread.category === "GROUP" && (
+                    {canManageGroupAI && (
                       <button
                         onClick={() => {
-                          onRequestAI?.("GROUP_KEYPOINTS", undefined);
+                          requestAICommand("GROUP_KEYPOINTS", undefined);
                           setIsMenuOpen(false);
                         }}
                         className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -813,10 +823,10 @@ function ChatWindow({
                     )}
 
                     {/* 추가 질문 제안 - GROUP 전용 */}
-                    {thread.category === "GROUP" && (
+                    {canManageGroupAI && (
                       <button
                         onClick={() => {
-                          onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
+                          requestAICommand("GROUP_QUESTION_GENERATOR", undefined);
                           setIsMenuOpen(false);
                         }}
                         className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -825,28 +835,30 @@ function ChatWindow({
                         추가 질문 제안
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        setIsAIDockOpen(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      AI 요약창 열기
-                    </button>
+                    {!isPublicRoom && (
+                      <button
+                        onClick={() => {
+                          setIsAIDockOpen(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        AI 요약창 열기
+                      </button>
+                    )}
 
                     {/* AI 세션 시작/끝 토글 버튼 - 공개 채팅방에서는 사용 불가 */}
-                    {thread.category !== "PUBLIC" && (
+                    {canManageGroupAI && (
                       <button
                         onClick={() => {
                           if (!isSessionActive) {
                             // 세션 시작
-                            onRequestAI?.("SESSION_START", undefined);
+                            requestAICommand("SESSION_START", undefined);
                             setIsSessionActive(true);
                           } else {
                             // 세션 끝
-                            onRequestAI?.("SESSION_END", undefined);
+                            requestAICommand("SESSION_END", undefined);
                             setIsSessionActive(false);
                           }
                           setIsMenuOpen(false);
@@ -1945,6 +1957,7 @@ export default function ChatDock() {
 
   const sendMessage = (threadId: string, text: string) => {
     const roomId = parseInt(threadId, 10);
+    const targetThread = threads.find((t) => t.id === threadId);
 
     if (!myUserId) {
       toast.show({ title: "사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", variant: "warning" });
@@ -1957,6 +1970,11 @@ export default function ChatDock() {
       const aiContent = text.trim().substring(3).trim();
 
       const { command, note } = parseAiShortcut(aiContent);
+
+      if (targetThread?.category === "PUBLIC" && command !== "PUBLIC_SUMMARY") {
+        toast.show({ title: "공개 채팅방에서는 공개 대화 요약만 이용할 수 있습니다.", variant: "warning" });
+        return;
+      }
 
       // AI 요청 전송
       requestAIMutation.mutate({
@@ -2156,6 +2174,10 @@ export default function ChatDock() {
                 onSend={(text) => sendMessage(id, text)}
                 onRequestAI={(command, note) => {
                   const roomId = parseInt(id, 10);
+                  if (t.category === "PUBLIC" && command !== "PUBLIC_SUMMARY") {
+                    toast.show({ title: "공개 채팅방에서는 공개 대화 요약만 이용할 수 있습니다.", variant: "warning" });
+                    return;
+                  }
                   requestAIMutation.mutate({
                     roomId,
                     command,
