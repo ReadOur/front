@@ -230,51 +230,41 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-bg)] hover:bg-[color:var(--color-bg-subtle)] hover:border-[color:var(--color-border-hover)] transition-all duration-200 p-4"
+      className="cursor-pointer hover:opacity-80 transition"
     >
-      <div className="flex flex-col items-center">
-        {/* 책 이미지 */}
-        <div className="w-32 h-44 flex-shrink-0 rounded overflow-hidden bg-gray-200 mb-3">
-          {book.bookImageUrl ? (
-            <img
-              src={book.bookImageUrl}
-              alt={book.bookname}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <BookOpen className="w-10 h-10" />
-            </div>
-          )}
-        </div>
-
-        {/* 책 정보 */}
-        <div className="w-full text-center">
-          <h3 className="text-base font-semibold text-[color:var(--color-fg)] group-hover:text-[color:var(--color-accent-fg)] transition-colors line-clamp-2 mb-1">
-            {book.bookname}
-          </h3>
-          <p className="text-sm text-[color:var(--color-fg-muted)] mb-2 truncate">{book.authors}</p>
-
-          {/* 책 설명 */}
-          {book.description && (
-            <p className="text-sm text-[color:var(--color-fg-muted)] line-clamp-2 mb-2">
-              {book.description}
+      {/* 책 이미지 */}
+      <div
+        className="w-full aspect-[3/4] rounded-lg overflow-hidden mb-1"
+        style={{ background: "#E9E5DC" }}
+      >
+        {book.bookImageUrl ? (
+          <img
+            src={book.bookImageUrl}
+            alt={book.bookname}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center p-1">
+            <p
+              className="text-center text-xs line-clamp-3"
+              style={{ color: "black", lineHeight: "1.2" }}
+            >
+              {book.bookname}
             </p>
-          )}
-
-          {/* 평점 및 리뷰 수 */}
-          <div className="flex items-center justify-center gap-2 text-sm">
-            {book.averageRating != null && (
-              <span className="text-yellow-500 font-semibold">
-                ⭐ {book.averageRating.toFixed(1)}
-              </span>
-            )}
-            <span className="text-[color:var(--color-fg-muted)]">
-              리뷰 {book.reviewCount ?? 0}개
-            </span>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* 책 정보 */}
+      <h3
+        className="text-xs font-semibold mb-0.5 line-clamp-2"
+        style={{ color: "#1E1E1E" }}
+      >
+        {book.bookname}
+      </h3>
+      <p className="text-xs line-clamp-1" style={{ color: "#666" }}>
+        {book.authors}
+      </p>
     </div>
   );
 };
@@ -389,18 +379,18 @@ export default function HOM_01() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center">
-                <div className="w-32 h-44 bg-[color:var(--color-bg-subtle)] rounded-lg animate-pulse mb-3" />
-                <div className="w-full h-4 bg-[color:var(--color-bg-subtle)] rounded animate-pulse mb-2" />
-                <div className="w-3/4 h-3 bg-[color:var(--color-bg-subtle)] rounded animate-pulse" />
+          <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2.5">
+            {[...Array(10)].map((_, i) => (
+              <div key={i}>
+                <div className="w-full aspect-[3/4] bg-[color:var(--color-bg-subtle)] rounded-lg animate-pulse mb-1" />
+                <div className="w-full h-3 bg-[color:var(--color-bg-subtle)] rounded animate-pulse mb-1" />
+                <div className="w-3/4 h-2 bg-[color:var(--color-bg-subtle)] rounded animate-pulse" />
               </div>
             ))}
           </div>
         ) : books && books.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {books.slice(0, 4).map((book) => (
+          <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2.5">
+            {books.slice(0, 10).map((book) => (
               <BookCard
                 key={book.bookId}
                 book={book}
