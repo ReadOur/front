@@ -307,6 +307,15 @@ function ChatWindow({
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [targetUserRole, setTargetUserRole] = useState<string | null>(null);
 
+  // 현재 사용자 ID 추출 (props로 전달되지 않았을 경우 토큰에서 추출)
+  const actualCurrentUserId = React.useMemo(() => {
+    if (currentUserIdNumber !== undefined && currentUserIdNumber !== null) {
+      return currentUserIdNumber;
+    }
+    const userIdStr = extractUserIdFromToken(localStorage.getItem("accessToken") || "");
+    return userIdStr ? Number(userIdStr) : null;
+  }, [currentUserIdNumber]);
+
   // 메뉴 드래그 상태
   const [menuPosition, setMenuPosition] = useState<{ left: number; top: number } | null>(null);
   const menuDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
@@ -359,15 +368,6 @@ function ChatWindow({
     offsetY: 0,
   });
   const dockContainerRef = useRef<HTMLDivElement>(null);
-
-  // 현재 사용자 ID 추출 (props로 전달되지 않았을 경우 토큰에서 추출)
-  const actualCurrentUserId = React.useMemo(() => {
-    if (currentUserIdNumber !== undefined && currentUserIdNumber !== null) {
-      return currentUserIdNumber;
-    }
-    const userIdStr = extractUserIdFromToken(localStorage.getItem("accessToken") || "");
-    return userIdStr ? Number(userIdStr) : null;
-  }, [currentUserIdNumber]);
 
   const resolveProfileFromMessage = useCallback((messageId: string | null) => {
     if (!messageId) return null;
