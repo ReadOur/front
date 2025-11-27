@@ -359,8 +359,8 @@ function ChatWindow({
   const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
   const isOwner = currentUserRole === "OWNER";
 
-  // AI 기능 접근 권한: 공개 채팅방(MEETING, PUBLIC)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
-  const canAccessAI = thread.category === "MEETING" || thread.category === "PUBLIC" || (thread.category === "GROUP" && isAdmin);
+  // AI 기능 접근 권한: 공개 채팅방(PUBLIC)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
+  const canAccessAI = thread.category === "PUBLIC" || (thread.category === "GROUP" && isAdmin);
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
