@@ -843,18 +843,19 @@ function ChatWindow({
                     <Calendar className="w-4 h-4 flex-shrink-0" />
                     일정 추가
                   </button>
-                  <button
-                    onClick={() => {
-                      // TODO: 공지 생성 모달 열기 구현 필요
-                      toast.show({ title: "공지 생성 기능은 NoticeDock에서 제공됩니다.", variant: "info" });
-                      setIsNoticeDockOpen(true);
-                      setIsMenuOpen(false);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                  >
-                    <Bell className="w-4 h-4 flex-shrink-0" />
-                    공지 생성
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        toast.show({ title: "공지 추가 기능은 NoticeDock에서 제공됩니다.", variant: "info" });
+                        setIsNoticeDockOpen(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <Bell className="w-4 h-4 flex-shrink-0" />
+                      공지 추가
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setIsNoticeDockOpen(true);
@@ -1435,7 +1436,7 @@ function ChatWindow({
         isOpen={isNoticeDockOpen}
         onClose={() => setIsNoticeDockOpen(false)}
         onMinimize={() => setIsNoticeDockOpen(false)}
-        hasPermission={false} // TODO: 실제 권한 체크 로직 추가
+        hasPermission={isAdmin}
         roomId={Number(thread.id)}
       />
     </div>
