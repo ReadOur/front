@@ -131,14 +131,14 @@ export interface ChatMessage {
   senderRole?: string; // 발신자 역할
 }
 
-export type ChatCategory = "DIRECT" | "GROUP" | "MEETING";
+export type ChatCategory = "PRIVATE" | "GROUP" | "PUBLIC";
 
 export interface ChatThread {
   id: string;
   users: ChatUser[]; // participants
   lastMessage?: ChatMessage;
   unreadCount?: number;
-  category: ChatCategory; // 1:1, 단체, 모임
+  category: ChatCategory; // 1:1(PRIVATE), 모임(GROUP), 공개(PUBLIC)
   isPinned?: boolean; // 상단 고정 여부
   joined?: boolean; // 참여 여부 (공개 채팅방용)
 }
@@ -359,8 +359,8 @@ function ChatWindow({
   const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
   const isOwner = currentUserRole === "OWNER";
 
-  // AI 기능 접근 권한: 공개 채팅방(MEETING, PUBLIC)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
-  const canAccessAI = thread.category === "MEETING" || thread.category === "PUBLIC" || (thread.category === "GROUP" && isAdmin);
+  // AI 기능 접근 권한: 공개 채팅방(PUBLIC)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
+  const canAccessAI = thread.category === "PUBLIC" || (thread.category === "GROUP" && isAdmin);
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
@@ -764,26 +764,34 @@ function ChatWindow({
                       <MessageCircle className="w-4 h-4 flex-shrink-0" />
                       공개 대화 요약
                     </button>
-                    <button
-                      onClick={() => {
-                        onRequestAI?.("GROUP_KEYPOINTS", undefined);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      토론 요점 정리
-                    </button>
-                    <button
-                      onClick={() => {
-                        onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      추가 질문 제안
-                    </button>
+
+                    {/* 토론 요점 정리 - GROUP 전용 */}
+                    {thread.category === "GROUP" && (
+                      <button
+                        onClick={() => {
+                          onRequestAI?.("GROUP_KEYPOINTS", undefined);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        토론 요점 정리
+                      </button>
+                    )}
+
+                    {/* 추가 질문 제안 - GROUP 전용 */}
+                    {thread.category === "GROUP" && (
+                      <button
+                        onClick={() => {
+                          onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        추가 질문 제안
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setIsAIDockOpen(true);
@@ -795,30 +803,32 @@ function ChatWindow({
                       AI 요약창 열기
                     </button>
 
-                    {/* AI 세션 시작/끝 토글 버튼 */}
-                    <button
-                      onClick={() => {
-                        if (!isSessionActive) {
-                          // 세션 시작
-                          onRequestAI?.("SESSION_START", undefined);
-                          setIsSessionActive(true);
-                        } else {
-                          // 세션 끝
-                          onRequestAI?.("SESSION_END", undefined);
-                          setIsSessionActive(false);
-                        }
-                        setIsMenuOpen(false);
-                      }}
-                      className={cls(
-                        "flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-left text-sm transition-colors",
-                        isSessionActive
-                          ? "bg-[color:var(--color-primary)] text-white hover:opacity-90"
-                          : "hover:bg-[color:var(--chatdock-bg-hover)]"
-                      )}
-                    >
-                      <div className={cls("w-2 h-2 rounded-full flex-shrink-0", isSessionActive ? "bg-white animate-pulse" : "bg-red-500")} />
-                      {isSessionActive ? "세션 종료" : "세션 시작"}
-                    </button>
+                    {/* AI 세션 시작/끝 토글 버튼 - 공개 채팅방에서는 사용 불가 */}
+                    {thread.category !== "PUBLIC" && (
+                      <button
+                        onClick={() => {
+                          if (!isSessionActive) {
+                            // 세션 시작
+                            onRequestAI?.("SESSION_START", undefined);
+                            setIsSessionActive(true);
+                          } else {
+                            // 세션 끝
+                            onRequestAI?.("SESSION_END", undefined);
+                            setIsSessionActive(false);
+                          }
+                          setIsMenuOpen(false);
+                        }}
+                        className={cls(
+                          "flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-left text-sm transition-colors",
+                          isSessionActive
+                            ? "bg-[color:var(--color-primary)] text-white hover:opacity-90"
+                            : "hover:bg-[color:var(--chatdock-bg-hover)]"
+                        )}
+                      >
+                        <div className={cls("w-2 h-2 rounded-full flex-shrink-0", isSessionActive ? "bg-white animate-pulse" : "bg-red-500")} />
+                        {isSessionActive ? "세션 종료" : "세션 시작"}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -833,6 +843,19 @@ function ChatWindow({
                     <Calendar className="w-4 h-4 flex-shrink-0" />
                     일정 추가
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        toast.show({ title: "공지 추가 기능은 NoticeDock에서 제공됩니다.", variant: "info" });
+                        setIsNoticeDockOpen(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                    >
+                      <Bell className="w-4 h-4 flex-shrink-0" />
+                      공지 추가
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setIsNoticeDockOpen(true);
@@ -1413,7 +1436,7 @@ function ChatWindow({
         isOpen={isNoticeDockOpen}
         onClose={() => setIsNoticeDockOpen(false)}
         onMinimize={() => setIsNoticeDockOpen(false)}
-        hasPermission={false} // TODO: 실제 권한 체크 로직 추가
+        hasPermission={isAdmin}
         roomId={Number(thread.id)}
       />
     </div>

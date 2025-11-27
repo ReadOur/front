@@ -373,7 +373,7 @@ export default function NoticeDock({
                 {selectedNotice.content}
               </p>
             </div>
-            {hasPermission && (selectedNotice.author.role === "OWNER" || selectedNotice.author.role === "MANAGER") && (
+            {hasPermission && (
               <div className="flex gap-2">
                 <button
                   onClick={handleEditStart}
