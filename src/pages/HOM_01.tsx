@@ -214,19 +214,24 @@ const RecruitmentPostCard: React.FC<RecruitmentPostCardProps> = ({ post, onClick
  */
 interface BookCardProps {
   book: {
-    bookId: number;
+    bookId?: number;
     bookname: string;
     authors: string;
-    bookImageUrl: string;
-    description: string;
+    bookImageUrl?: string;
+    bookImageURL?: string;
+    description?: string;
     isbn13: string;
-    averageRating: number | null;
-    reviewCount: number;
+    averageRating?: number | null;
+    reviewCount?: number;
+    loanCount?: number;
   };
   onClick: () => void;
 }
 
 const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
+  // bookImageUrl 또는 bookImageURL 중 하나를 사용
+  const imageUrl = book.bookImageUrl || (book as any).bookImageURL;
+
   return (
     <div
       onClick={onClick}
@@ -237,22 +242,31 @@ const BookCard: React.FC<BookCardProps> = ({ book, onClick }) => {
         className="w-full aspect-[3/4] rounded-lg overflow-hidden mb-1"
         style={{ background: "#E9E5DC" }}
       >
-        {book.bookImageUrl ? (
+        {imageUrl ? (
           <img
-            src={book.bookImageUrl}
+            src={imageUrl}
             alt={book.bookname}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              // 이미지 로딩 실패 시 fallback
+              e.currentTarget.style.display = 'none';
+              if (e.currentTarget.nextElementSibling) {
+                (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+              }
+            }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center p-1">
-            <p
-              className="text-center text-xs line-clamp-3"
-              style={{ color: "black", lineHeight: "1.2" }}
-            >
-              {book.bookname}
-            </p>
-          </div>
-        )}
+        ) : null}
+        <div
+          className="w-full h-full flex items-center justify-center p-1"
+          style={{ display: imageUrl ? 'none' : 'flex' }}
+        >
+          <p
+            className="text-center text-xs line-clamp-3"
+            style={{ color: "black", lineHeight: "1.2" }}
+          >
+            {book.bookname}
+          </p>
+        </div>
       </div>
 
       {/* 책 정보 */}
@@ -390,16 +404,15 @@ export default function HOM_01() {
           </div>
         ) : books && books.length > 0 ? (
           <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2.5">
-            {books.slice(0, 10).map((book) => (
+            {books.slice(0, 10).map((book, index) => (
               <BookCard
-                key={book.bookId}
+                key={book.bookId || book.isbn13 || index}
                 book={book}
                 onClick={() => {
-                  // isbn13이 있으면 ISBN으로, 없으면 bookId로 이동
+                  // isbn13으로 이동
                   if (book.isbn13) {
                     navigate(`/books/isbn/${book.isbn13}`);
-                  } else {
-                    console.warn("ISBN13이 없어 bookId로 이동:", book.bookId);
+                  } else if (book.bookId) {
                     navigate(`/books/${book.bookId}`);
                   }
                 }}
