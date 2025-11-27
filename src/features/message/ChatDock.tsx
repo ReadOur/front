@@ -1007,19 +1007,6 @@ function ChatWindow({
                       일정 추가
                     </button>
                   )}
-                  {canAddNotice && (
-                    <button
-                      onClick={() => {
-                        toast.show({ title: "공지 추가 기능은 NoticeDock에서 제공됩니다.", variant: "info" });
-                        setIsNoticeDockOpen(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <Bell className="w-4 h-4 flex-shrink-0" />
-                      공지 추가
-                    </button>
-                  )}
                   <button
                     onClick={() => {
                       setIsNoticeDockOpen(true);
@@ -1028,7 +1015,7 @@ function ChatWindow({
                     className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
                   >
                     <Bell className="w-4 h-4 flex-shrink-0" />
-                    공지 목록 조회
+                    공지
                   </button>
                 </div>
               </div>
