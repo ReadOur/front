@@ -845,6 +845,18 @@ function ChatWindow({
                   </button>
                   <button
                     onClick={() => {
+                      // TODO: 공지 생성 모달 열기 구현 필요
+                      toast.show({ title: "공지 생성 기능은 NoticeDock에서 제공됩니다.", variant: "info" });
+                      setIsNoticeDockOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                  >
+                    <Bell className="w-4 h-4 flex-shrink-0" />
+                    공지 생성
+                  </button>
+                  <button
+                    onClick={() => {
                       setIsNoticeDockOpen(true);
                       setIsMenuOpen(false);
                     }}
