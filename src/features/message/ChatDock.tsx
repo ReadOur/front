@@ -462,7 +462,7 @@ function ChatWindow({
     aiPermissions.groupQuestions.allowed ||
     aiPermissions.sessionStart.allowed ||
     aiPermissions.sessionEnd.allowed;
-  const canControlSession = aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed;
+  const canControlSession = isGroupThread && (aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed);
   const canShowAISection =
     (isPublicThread && aiPermissions.publicSummary.allowed) ||
     (isGroupThread && canManageGroupAI);
