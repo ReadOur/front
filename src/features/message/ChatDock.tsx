@@ -108,6 +108,18 @@ function formatAiJobMessage(command: AiCommandType, response: AiJobResponse): st
   return parts.join("\n\n");
 }
 
+function buildAiErrorMessage(error: any): string {
+  const status = error?.response?.status as number | undefined;
+  const serverMessage =
+    error?.response?.data?.message || error?.response?.data?.error || error?.message;
+
+  if (status && status >= 400 && status < 600) {
+    return `AI 요청 실패 (${status})${serverMessage ? `: ${serverMessage}` : ''}`;
+  }
+
+  return serverMessage || "AI 요청에 실패했습니다.";
+}
+
 const AI_COMMAND_LABELS: Record<AiCommandType, string> = {
   PUBLIC_SUMMARY: "공개 대화 요약",
   GROUP_QUESTION_GENERATOR: "추가 질문 제안",
@@ -267,6 +279,12 @@ function ChatWindow({
                       onDeleteRoom,
                       onMuteRoom,
                       onUnmuteRoom,
+                      aiMessages,
+                      aiIsLoading,
+                      onAIDockSend,
+                      isAIDockOpen,
+                      onOpenAIDock,
+                      onCloseAIDock,
                       __onDragStart,
                       __onResizeStart,
                       width = 320,
@@ -1640,7 +1658,7 @@ export default function ChatDock() {
       setAiDockLoading(roomKey, true);
       addAiDockMessage(roomKey, { type: "user", text: formatAiRequestMessage(command, note) });
 
-      requestAIMutation.mutate(
+          requestAIMutation.mutate(
         { roomId, command, note },
         {
           onSuccess: (data) => {
@@ -1648,7 +1666,7 @@ export default function ChatDock() {
             toast.show({ title: "AI 작업이 완료되었습니다.", variant: "success" });
           },
           onError: (error: any) => {
-            const errorMessage = error.response?.data?.message || error.message || "AI 요청에 실패했습니다.";
+            const errorMessage = buildAiErrorMessage(error);
             addAiDockMessage(roomKey, { type: "ai", text: `요청 실패: ${errorMessage}` });
             toast.show({ title: errorMessage, variant: "error" });
           },
