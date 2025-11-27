@@ -1810,10 +1810,21 @@ export default function ChatDock() {
       // 채팅방이 열려있으면 (focus 상태) unreadCount를 0으로 설정
       const isOpen = openThreadIds.includes(threadId);
 
+      // scope를 ChatCategory로 매핑
+      const category: ChatCategory = room.scope as ChatCategory;
+
+      console.log('🏠 Room mapping:', {
+        roomId: room.roomId,
+        name: room.name,
+        scope: room.scope,
+        category,
+        rawRoom: room,
+      });
+
       return {
         id: threadId,
         users: [{ id: "unknown", name: room.name }],
-        category: "GROUP" as ChatCategory, // 임시: 실제로는 백엔드에서 카테고리 받아야 함
+        category,
         unreadCount: isOpen ? 0 : room.unreadCount,
         isPinned: room.pinned,
         lastMessage: room.lastMsg

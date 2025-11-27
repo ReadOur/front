@@ -167,6 +167,7 @@ export interface PinThreadResponse {
 export interface MyRoomItem {
   roomId: number;
   name: string;
+  scope: RoomScope; // 채팅방 범위 (PRIVATE/GROUP/PUBLIC)
   lastMsg: {
     id: number;
     preview: string;
@@ -307,9 +308,9 @@ export interface GetRoomMessagesParams {
 export type RoomCategory = "DIRECT" | "GROUP" | "MEETING";
 
 /**
- * 채팅방 Scope 타입 (1:1 vs 그룹)
+ * 채팅방 Scope 타입 (1:1 vs 그룹 vs 공개)
  */
-export type RoomScope = "PRIVATE" | "PUBLIC";
+export type RoomScope = "PRIVATE" | "GROUP" | "PUBLIC";
 
 /**
  * 채팅방 생성 요청
