@@ -530,11 +530,13 @@ export default function CHT_17() {
 
       {/* 채팅방 생성 모달 */}
       <Modal
-        isOpen={isCreateRoomModalOpen}
+        open={isCreateRoomModalOpen}
         onClose={() => setIsCreateRoomModalOpen(false)}
-        title="모임 채팅방 만들기"
       >
         <div className="space-y-4">
+          <h2 className="text-xl font-bold text-[color:var(--color-fg-primary)] mb-4">
+            새 채팅방 만들기
+          </h2>
           <div>
             <label className="block text-sm font-medium text-[color:var(--color-fg-primary)] mb-2">
               채팅방 이름 <span className="text-red-500">*</span>
