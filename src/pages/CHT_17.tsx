@@ -194,16 +194,22 @@ function ThreadListItem({ thread, isPublic = false, joined = true }: ThreadListI
           </p>
         )}
         <div className="flex items-center gap-2 mt-2">
-          {thread.unreadCount && thread.unreadCount > 0 ? (
-            <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[color:var(--color-accent)] text-[color:var(--color-fg-primary)] rounded-full">
-              {thread.unreadCount}
-            </span>
-          ) : null}
-          {/* 참여하지 않은 공개 채팅방 표시 */}
-          {thread.joined === false && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-600 dark:text-green-400 rounded-full border border-green-500/30">
-              {joinRoomMutation.isPending ? (
-                <>
+        {thread.unreadCount && thread.unreadCount > 0 ? (
+          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[color:var(--color-accent)] text-[color:var(--color-fg-primary)] rounded-full">
+            {thread.unreadCount}
+          </span>
+        ) : null}
+        {/* 공개 채팅방 참여 여부 표시 */}
+        {isPublic && joined && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-[color:var(--color-accent)]/15 text-[color:var(--color-accent)] rounded-full border border-[color:var(--color-accent)]/30">
+            참여중
+          </span>
+        )}
+        {/* 참여하지 않은 공개 채팅방 표시 */}
+        {thread.joined === false && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-500/20 text-green-600 dark:text-green-400 rounded-full border border-green-500/30">
+            {joinRoomMutation.isPending ? (
+              <>
                   <Loader2 className="w-3 h-3 animate-spin" />
                   참여 중...
                 </>
