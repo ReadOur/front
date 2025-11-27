@@ -1,5 +1,5 @@
 // CAL_11.tsx - 캘린더 페이지
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { getEvents, createEvent, updateEvent, deleteEvent, CalendarEvent, CreateEventData } from "@/api/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -9,6 +9,8 @@ export default function CAL_11() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
+
+  const addModalRef = useRef<HTMLDivElement | null>(null);
 
   // 일정 카테고리 필터 (null: 전체, 'USER': 개인 일정, 'ROOM': 방 일정)
   const [selectedScope, setSelectedScope] = useState<'USER' | 'ROOM' | null>(null);
@@ -60,6 +62,10 @@ export default function CAL_11() {
   // 현재 연도, 월
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
+
+  useEffect(() => {
+    console.debug('[CAL_11] isAddModalOpen 상태 변경:', isAddModalOpen);
+  }, [isAddModalOpen]);
 
   // 일정 데이터 가져오기
   useEffect(() => {
@@ -144,7 +150,11 @@ export default function CAL_11() {
   };
 
   // 일정 추가 모달 열기
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = (event?: React.MouseEvent<HTMLButtonElement>) => {
+    console.debug('[CAL_11] 일정 추가 버튼 클릭', {
+      pointer: event ? { x: event.clientX, y: event.clientY } : null,
+      target: event?.currentTarget,
+    });
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}T09:00:00`;
 
@@ -156,8 +166,21 @@ export default function CAL_11() {
       endsAt: todayStr,
       allDay: false,
     });
+    console.debug('[CAL_11] 일정 추가 모달 열림 트리거', { todayStr });
     setIsAddModalOpen(true);
   };
+
+  useEffect(() => {
+    if (isAddModalOpen && addModalRef.current) {
+      const rect = addModalRef.current.getBoundingClientRect();
+      console.debug('[CAL_11] 일정 추가 모달 렌더링 위치', {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+    }
+  }, [isAddModalOpen]);
 
   // 일정 추가
   const handleAddEvent = async () => {
@@ -503,6 +526,7 @@ export default function CAL_11() {
         <div className="flex items-center justify-between mb-6">
           {/* 일정 추가 버튼 */}
           <button
+            type="button"
             onClick={handleOpenAddModal}
             className="px-6 py-2 rounded hover:opacity-80 transition font-semibold"
             style={{ background: "#90BE6D", color: "white" }}
@@ -638,11 +662,12 @@ export default function CAL_11() {
         {/* 일정 추가 모달 */}
         {isAddModalOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]"
             onClick={() => setIsAddModalOpen(false)}
           >
             <div
               className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4"
+              ref={addModalRef}
               onClick={(e) => e.stopPropagation()}
               style={{ background: "#FFF9F2" }}
             >
