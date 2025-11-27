@@ -705,7 +705,7 @@ export default function PostShow() {
                 className="mt-1 sm:mt-2 p-2 sm:p-2.5 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg flex items-start gap-2 sm:gap-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
               >
                 {/* 책 표지 - 크기를 절반으로 축소 */}
-                <div className="flex-shrink-0 w-8 h-12 sm:w-10 sm:h-14 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
+                <div className="flex-shrink-0 w-4 h-6 sm:w-5 sm:h-7 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
                   {bookDetail.bookImageUrl ? (
                     <img
                       src={bookDetail.bookImageUrl}
