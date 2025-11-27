@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { X, Minimize2, Bell, Plus, Edit2, Trash2 } from "lucide-react";
+import React, { useState, useRef, useMemo } from "react";
+import { X, Minimize2, Bell, Plus, Edit2, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import {
   useAnnouncements,
   useCreateAnnouncement,
@@ -23,6 +23,9 @@ interface NoticeDockProps {
   onMinimize?: () => void;
   hasPermission?: boolean; // 공지 작성 권한 여부
   roomId?: number; // 채팅방 ID (공지를 조회할 대상)
+  permissionStatus?: "idle" | "checking" | "success" | "error";
+  permissionErrorMessage?: string;
+  onRetryPermission?: () => void;
 }
 
 export default function NoticeDock({
@@ -31,6 +34,9 @@ export default function NoticeDock({
   onMinimize,
   hasPermission = false,
   roomId = 1, // 기본값: 임시로 1번 룸 사용
+  permissionStatus = "idle",
+  permissionErrorMessage,
+  onRetryPermission,
 }: NoticeDockProps) {
   // 공지사항 API 연동
   const [page, setPage] = useState(0);
@@ -206,6 +212,16 @@ export default function NoticeDock({
     setIsEditing(false);
   };
 
+  const permissionState = useMemo(() => permissionStatus, [permissionStatus]);
+  const shouldShowCreateButton = permissionState !== "success" || hasPermission;
+  const isCreateDisabled = permissionState !== "success" || !hasPermission;
+  const createButtonLabel =
+    permissionState === "checking"
+      ? "권한 확인 중"
+      : permissionState === "error"
+        ? "권한 재확인 필요"
+        : "공지 작성";
+
   if (!isOpen) return null;
 
   return (
@@ -252,13 +268,18 @@ export default function NoticeDock({
             {isLoading ? "로딩 중..." : `${announcements.length}개의 공지`}
           </div>
         </div>
-        {hasPermission && !isCreating && !selectedNotice && !isEditing && (
+        {shouldShowCreateButton && !isCreating && !selectedNotice && !isEditing && (
           <button
-            onClick={() => setIsCreating(true)}
-            className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white"
-            title="공지 작성"
+            onClick={() => !isCreateDisabled && setIsCreating(true)}
+            disabled={isCreateDisabled}
+            className="w-28 h-9 px-2 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white text-xs border border-white/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            title={createButtonLabel}
           >
-            <Plus className="w-4 h-4" />
+            <div className="flex items-center gap-1">
+              {permissionState === "checking" && <Loader2 className="w-4 h-4 animate-spin" />}
+              <Plus className="w-4 h-4" />
+              <span>{createButtonLabel}</span>
+            </div>
           </button>
         )}
         {onMinimize && (
@@ -278,6 +299,43 @@ export default function NoticeDock({
           <X className="w-4 h-4" />
         </button>
       </div>
+
+      {(permissionState === "checking" || permissionState === "error") && (
+        <div
+          className={
+            permissionState === "error"
+              ? "m-3 rounded-[var(--radius-md)] border border-red-200 bg-red-50 px-3 py-2 text-red-700"
+              : "m-3 rounded-[var(--radius-md)] border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800"
+          }
+        >
+          <div className="flex items-start gap-2">
+            <div className="pt-0.5">
+              {permissionState === "error" ? (
+                <AlertTriangle className="w-4 h-4" />
+              ) : (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <div className="text-sm font-semibold">
+                {permissionState === "error" ? "공지 권한을 확인하지 못했습니다." : "공지 권한을 확인하고 있습니다."}
+              </div>
+              {permissionState === "error" && permissionErrorMessage && (
+                <div className="text-xs leading-snug break-words">{permissionErrorMessage}</div>
+              )}
+            </div>
+            {permissionState === "error" && onRetryPermission && (
+              <button
+                type="button"
+                onClick={onRetryPermission}
+                className="px-3 py-1 text-xs font-semibold rounded-[var(--radius-sm)] bg-white text-red-700 border border-red-200 hover:bg-red-100"
+              >
+                다시 시도
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 공지 작성/수정 폼 */}
       {(isCreating || isEditing) && (

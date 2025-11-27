@@ -281,6 +281,11 @@ function ChatWindow({
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isAIDockOpen, setIsAIDockOpen] = useState(false);
   const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
+  const [noticePermission, setNoticePermission] = useState<{
+    status: "idle" | "checking" | "success" | "error";
+    hasPermission?: boolean;
+    errorMessage?: string;
+  }>({ status: "idle" });
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 메시지별 메뉴 관련 상태
@@ -481,6 +486,34 @@ function ChatWindow({
 
     setProfileTarget(resolveProfileFromMessage(message.id));
   };
+
+  const loadNoticePermission = useCallback(async () => {
+    if (!roomId || !actualCurrentUserId) return;
+
+    setNoticePermission({ status: "checking" });
+
+    try {
+      const profile = await chatService.getRoomMemberProfile(roomId, actualCurrentUserId);
+      const hasPermission = ["ADMIN", "OWNER", "MANAGER"].includes(profile.role);
+
+      setNoticePermission({ status: "success", hasPermission });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error.message || "공지 권한을 확인하지 못했습니다.";
+
+      setNoticePermission({ status: "error", errorMessage: message });
+      toast.show({
+        title: "공지 권한 확인 실패",
+        description: message,
+        variant: "error",
+      });
+    }
+  }, [actualCurrentUserId, roomId, toast]);
+
+  useEffect(() => {
+    if (!isNoticeDockOpen) return;
+
+    loadNoticePermission();
+  }, [isNoticeDockOpen, loadNoticePermission]);
 
   const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
     if (!actualCurrentUserId) {
@@ -1436,7 +1469,10 @@ function ChatWindow({
         isOpen={isNoticeDockOpen}
         onClose={() => setIsNoticeDockOpen(false)}
         onMinimize={() => setIsNoticeDockOpen(false)}
-        hasPermission={isAdmin}
+        hasPermission={noticePermission.status === "success" ? noticePermission.hasPermission : undefined}
+        permissionStatus={noticePermission.status}
+        permissionErrorMessage={noticePermission.errorMessage}
+        onRetryPermission={loadNoticePermission}
         roomId={Number(thread.id)}
       />
     </div>
