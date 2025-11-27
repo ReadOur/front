@@ -764,26 +764,34 @@ function ChatWindow({
                       <MessageCircle className="w-4 h-4 flex-shrink-0" />
                       공개 대화 요약
                     </button>
-                    <button
-                      onClick={() => {
-                        onRequestAI?.("GROUP_KEYPOINTS", undefined);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      토론 요점 정리
-                    </button>
-                    <button
-                      onClick={() => {
-                        onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      추가 질문 제안
-                    </button>
+
+                    {/* 토론 요점 정리 - GROUP 전용 */}
+                    {thread.category === "GROUP" && (
+                      <button
+                        onClick={() => {
+                          onRequestAI?.("GROUP_KEYPOINTS", undefined);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        토론 요점 정리
+                      </button>
+                    )}
+
+                    {/* 추가 질문 제안 - GROUP 전용 */}
+                    {thread.category === "GROUP" && (
+                      <button
+                        onClick={() => {
+                          onRequestAI?.("GROUP_QUESTION_GENERATOR", undefined);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        추가 질문 제안
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setIsAIDockOpen(true);
