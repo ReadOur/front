@@ -838,9 +838,7 @@ function ChatWindow({
               {/* AI 요약 섹션 - 공개 채팅방은 요약만, 모임 채팅방은 관리자 전용 전체 기능 */}
               {canAccessAI && (
                 <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
-                  <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
-                    AI 요약 (공개 방: 요약만, 모임 방: 관리자 전용)
-                  </div>
+                  <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">AI</div>
                   <div className="grid grid-cols-2 gap-2 px-2">
                     <button
                       onClick={() => {
