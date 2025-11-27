@@ -509,9 +509,19 @@ export default function CAL_11() {
           {/* 일정 추가 버튼 */}
           <button
             type="button"
-            onClick={handleOpenAddModal}
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('[CAL_11] 일정 추가 버튼 클릭됨');
+              handleOpenAddModal();
+            }}
             className="px-6 py-2 rounded hover:opacity-80 transition font-semibold"
-            style={{ background: "#90BE6D", color: "white" }}
+            style={{
+              background: "#90BE6D",
+              color: "white",
+              position: "relative",
+              zIndex: 10,
+              cursor: "pointer"
+            }}
           >
             + 일정 추가
           </button>
