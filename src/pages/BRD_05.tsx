@@ -450,6 +450,7 @@ export default function PostShow() {
 
     createRoomMutation.mutate({
       scope: "PRIVATE",
+      category: "DIRECT",
       name: `${targetUsername}님과의 채팅`,
       description: "1:1 채팅방",
       memberIds: [currentUserId, targetUserId],
@@ -486,6 +487,7 @@ export default function PostShow() {
 
     createRoomMutation.mutate({
       scope: "PRIVATE",
+      category: "DIRECT",
       name: `${targetUsername}님과의 채팅`,
       description: "1:1 채팅방",
       memberIds: [currentUserId, targetUserId],

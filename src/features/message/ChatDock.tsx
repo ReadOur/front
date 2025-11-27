@@ -350,8 +350,8 @@ function ChatWindow({
   const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
   const isOwner = currentUserRole === "OWNER";
 
-  // AI 기능 접근 권한: 공개 채팅방(MEETING)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
-  const canAccessAI = thread.category === "MEETING" || isAdmin;
+  // AI 기능 접근 권한: 공개 채팅방(MEETING, PUBLIC)은 모두 가능, 모임 채팅방(GROUP)은 MANAGER 이상만
+  const canAccessAI = thread.category === "MEETING" || thread.category === "PUBLIC" || (thread.category === "GROUP" && isAdmin);
   const [profileCardPosition, setProfileCardPosition] = useState<{ left: number; top: number } | null>(null);
   const profileCardDrag = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
     active: false,
@@ -486,6 +486,7 @@ function ChatWindow({
 
     createRoomMutation.mutate({
       scope: "PRIVATE",
+      category: "DIRECT",
       name: `${me.name} & ${nickname ?? "사용자"}`,
       description: "1:1 채팅방",
       memberIds: [currentUserIdNumber, targetUserId],
@@ -731,11 +732,11 @@ function ChatWindow({
                 </button>
               </div>
               <div>
-              {/* AI 명령어 섹션 - 공개 채팅방은 모두, 모임 채팅방은 관리자 전용 */}
+              {/* AI 요약 섹션 - 공개 채팅방은 모두, 모임 채팅방은 관리자 전용 */}
               {canAccessAI && (
                 <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                   <div className="px-3 pb-1 text-xs text-[color:var(--chatdock-fg-muted)] font-semibold">
-                    AI 명령
+                    AI 요약
                   </div>
                   <div className="grid grid-cols-2 gap-2 px-2">
                     <button
@@ -777,7 +778,7 @@ function ChatWindow({
                       className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
                     >
                       <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      AI 기능창 열기
+                      AI 요약창 열기
                     </button>
 
                     {/* AI 세션 시작/끝 토글 버튼 */}
