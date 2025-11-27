@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   usePost,
@@ -136,6 +136,19 @@ export default function PostShow() {
   });
 
   const queryClient = useQueryClient();
+
+  // 본문 HTML 가공 (요약 텍스트 추출용)
+  // - useMemo로 DOMPurify/DOM 파싱 비용을 post?.content 변경 시점에만 실행
+  const sanitizedContent = useMemo(
+    () => DOMPurify.sanitize(decodeHtmlEntities(post?.content ?? "")),
+    [post?.content]
+  );
+
+  const plainContentSummary = useMemo(() => {
+    const temp = document.createElement("div");
+    temp.innerHTML = sanitizedContent;
+    return temp.textContent?.replace(/\s+/g, " ").trim() ?? "";
+  }, [sanitizedContent]);
 
   // 6. 책 정보 조회 (REVIEW 카테고리인 경우)
   const { data: bookDetail, isLoading: _isBookLoading } = useBookDetail(
@@ -559,6 +572,7 @@ export default function PostShow() {
       {/* 제목, 내용, 좋아요 버튼, 첨부파일을 표시하는 메인 영역 */}
       <article
         aria-labelledby="title"
+        aria-label={plainContentSummary ? `${post.title}. ${plainContentSummary}` : post.title}
         className="relative bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 shadow-sm"
       >
         {post.isSpoiler && !isSpoilerRevealed && (
@@ -593,7 +607,8 @@ export default function PostShow() {
           }`}
           aria-hidden={post.isSpoiler && !isSpoilerRevealed}
         >
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <header className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           {/* 게시글 제목 및 작성자 */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <h1 id="title" className="flex-1 text-lg sm:text-xl md:text-2xl font-extrabold text-[color:var(--color-fg-primary)] break-words">
@@ -681,42 +696,67 @@ export default function PostShow() {
               <strong className="text-[color:var(--color-fg-primary)]">{post.likeCount ?? 0}</strong>
             </button>
           </div>
-        </header>
+            </div>
 
-        {/* ========== 책 리뷰 정보 (REVIEW 카테고리인 경우) ========== */}
-        {post.category === "REVIEW" && post.bookId && bookDetail && (
-          <div
-            onClick={() => navigate(`/books/${post.bookId}`)}
-            className="mt-3 p-2 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg flex items-start gap-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
-          >
-            {/* 책 표지 - 크기를 절반으로 축소 */}
-            <div className="flex-shrink-0 w-10 h-14 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
-              {bookDetail.bookImageUrl ? (
-                <img
-                  src={bookDetail.bookImageUrl}
-                  alt={bookDetail.bookname}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[color:var(--color-fg-muted)] text-lg">
-                  📚
+            {/* ========== 책 리뷰 정보 (REVIEW 카테고리인 경우) ========== */}
+            {post.category === "REVIEW" && post.bookId && bookDetail && (
+              <div
+                onClick={() => navigate(`/books/${post.bookId}`)}
+                className="mt-1 sm:mt-2 p-2 sm:p-2.5 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg flex items-start gap-2 sm:gap-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
+              >
+                {/* 책 표지 - 크기를 절반으로 축소 */}
+                <div className="flex-shrink-0 w-4 h-6 sm:w-5 sm:h-7 bg-[color:var(--color-bg-elev-1)] rounded overflow-hidden border border-[color:var(--color-border-subtle)]">
+                  {bookDetail.bookImageUrl ? (
+                    <img
+                      src={bookDetail.bookImageUrl}
+                      alt={bookDetail.bookname}
+                      className="block w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[color:var(--color-fg-muted)] text-base sm:text-lg">
+                      📚
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* 책 정보 - 텍스트 크기 축소 */}
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] text-[color:var(--color-fg-muted)] mb-0.5">리뷰 대상 도서</p>
-              <h3 className="text-xs font-bold text-[color:var(--color-fg-primary)] mb-0.5 truncate">{bookDetail.bookname}</h3>
-              {bookDetail.authors && (
-                <p className="text-[10px] text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
-              )}
-              {bookDetail.publisher && (
-                <p className="text-[10px] text-[color:var(--color-fg-muted)]">{bookDetail.publisher}</p>
-              )}
-            </div>
-          </div>
-        )}
+                {/* 책 정보 - 텍스트 크기 소폭 확장 (가독성 향상) */}
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <p className="text-[12px] sm:text-[13px] text-[color:var(--color-fg-muted)] mb-0">리뷰 대상 도서</p>
+                  <h3 className="text-[14px] sm:text-sm font-bold text-[color:var(--color-fg-primary)] truncate">{bookDetail.bookname}</h3>
+                  {bookDetail.authors && (
+                    <p className="text-[12px] sm:text-[13px] text-[color:var(--color-fg-secondary)] truncate">{bookDetail.authors}</p>
+                  )}
+                  {bookDetail.publisher && (
+                    <p className="text-[12px] sm:text-[13px] text-[color:var(--color-fg-muted)] truncate">{bookDetail.publisher}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </header>
+        {/* 본문 내용 */}
+        {/* API의 content 필드를 표시 */}
+        {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
+        {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
+        <div className="relative mt-3 sm:mt-4">
+          <div
+            className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
+              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
+            }`}
+            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+          />
+
+          {post.isSpoiler && !isSpoilerRevealed && (
+            <button
+              type="button"
+              onClick={() => setIsSpoilerRevealed(true)}
+              className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
+              aria-label="스포일러 가림막 해제"
+            >
+              스포일러 방지. 클릭하면 해제합니다.
+            </button>
+          )}
+        </div>
 
         {/* 첨부파일 영역 */}
         {/* attachments 배열이 있고 길이가 0보다 크면 표시 */}
@@ -853,31 +893,6 @@ export default function PostShow() {
             </div>
           </div>
         )}
-
-        {/* 본문 내용 */}
-        {/* API의 content 필드를 표시 */}
-        {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
-        {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
-        <div className="relative mt-3 sm:mt-4">
-          <div
-            className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
-              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
-            }`}
-            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(decodeHtmlEntities(post.content)) }}
-          />
-
-          {post.isSpoiler && !isSpoilerRevealed && (
-            <button
-              type="button"
-              onClick={() => setIsSpoilerRevealed(true)}
-              className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
-              aria-label="스포일러 가림막 해제"
-            >
-              스포일러 방지. 클릭하면 해제합니다.
-            </button>
-          )}
-        </div>
         </div>
       </article>
 
