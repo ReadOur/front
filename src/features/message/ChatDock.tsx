@@ -463,8 +463,12 @@ function ChatWindow({
     aiPermissions.sessionStart.allowed ||
     aiPermissions.sessionEnd.allowed;
   const canControlSession = aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed;
-  const canShowAISection = (isPublicThread && aiPermissions.publicSummary.allowed) || canManageGroupAI;
-  const canOpenAIDock = (isPublicThread && aiPermissions.publicSummary.allowed) || canManageGroupAI;
+  const canShowAISection =
+    (isPublicThread && aiPermissions.publicSummary.allowed) ||
+    (isGroupThread && canManageGroupAI);
+  const canOpenAIDock =
+    (isPublicThread && aiPermissions.publicSummary.allowed) ||
+    (isGroupThread && canManageGroupAI);
   const canCreateEvent =
     isPrivateThread || (isPublicThread && isManagerOrAbove) || (isGroupThread && isManagerOrAbove);
   const canAddNotice = isPrivateThread || isManagerOrAbove;
