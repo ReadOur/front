@@ -317,9 +317,9 @@ function ChatWindow({
 
   // 현재 사용자의 role 조회
   useEffect(() => {
-    if (!roomId || !currentUserIdNumber) return;
+    if (!roomId || !actualCurrentUserId) return;
 
-    chatService.getRoomMemberProfile(roomId, currentUserIdNumber)
+    chatService.getRoomMemberProfile(roomId, actualCurrentUserId)
       .then((profile) => {
         console.log('🔍 Current user role loaded:', profile);
         setCurrentUserRole(profile.role);
@@ -327,7 +327,7 @@ function ChatWindow({
       .catch((error) => {
         console.error('❌ Failed to load current user role:', error);
       });
-  }, [roomId, currentUserIdNumber]);
+  }, [roomId, actualCurrentUserId]);
 
   // 프로필 대상 사용자의 role 조회
   useEffect(() => {
@@ -359,6 +359,15 @@ function ChatWindow({
     offsetY: 0,
   });
   const dockContainerRef = useRef<HTMLDivElement>(null);
+
+  // 현재 사용자 ID 추출 (props로 전달되지 않았을 경우 토큰에서 추출)
+  const actualCurrentUserId = React.useMemo(() => {
+    if (currentUserIdNumber !== undefined && currentUserIdNumber !== null) {
+      return currentUserIdNumber;
+    }
+    const userIdStr = extractUserIdFromToken(localStorage.getItem("accessToken") || "");
+    return userIdStr ? Number(userIdStr) : null;
+  }, [currentUserIdNumber]);
 
   const resolveProfileFromMessage = useCallback((messageId: string | null) => {
     if (!messageId) return null;
@@ -474,7 +483,7 @@ function ChatWindow({
   };
 
   const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
-    if (!currentUserIdNumber) {
+    if (!actualCurrentUserId) {
       toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
       return;
     }
@@ -484,12 +493,17 @@ function ChatWindow({
       return;
     }
 
+    // 자기 자신과의 채팅 방지
+    if (actualCurrentUserId === targetUserId) {
+      toast.show({ title: "자기 자신과는 채팅할 수 없습니다.", variant: "warning" });
+      return;
+    }
+
     createRoomMutation.mutate({
       scope: "PRIVATE",
-      category: "DIRECT",
       name: `${me.name} & ${nickname ?? "사용자"}`,
       description: "1:1 채팅방",
-      memberIds: [currentUserIdNumber, targetUserId],
+      memberIds: [actualCurrentUserId, targetUserId],
     });
   };
 
