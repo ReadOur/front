@@ -286,19 +286,42 @@ export default function CHT_17() {
   const currentUserId = myPage?.userId ? myPage.userId.toString() : tokenUserId;
 
   // 채팅방 데이터 가져오기
-  const { data, isLoading, error } = useRoomsOverview(undefined, { enabled: !!currentUserId });
+  const { data, isLoading, error, refetch } = useRoomsOverview(undefined, { enabled: !!currentUserId });
 
   // 채팅방 생성 mutation
   const createRoomMutation = useCreateRoom({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      console.log('✅ 채팅방 생성 성공:', data);
       alert(`"${data.name}" 채팅방이 생성되었습니다!`);
       setIsCreateRoomModalOpen(false);
       setRoomName("");
       setRoomDescription("");
-      // 생성된 채팅방 열기
-      openThread(data.roomId.toString());
+
+      // roomId 확인
+      if (!data.roomId) {
+        console.error('❌ roomId가 없습니다:', data);
+        alert('채팅방이 생성되었지만 ID를 받지 못했습니다. 채팅방 목록을 새로고침하세요.');
+        return;
+      }
+
+      // 채팅방 목록을 다시 가져온 후 채팅방 열기
+      try {
+        console.log('🔄 채팅방 목록 새로고침 중...');
+        await refetch();
+        console.log('✅ 채팅방 목록 새로고침 완료');
+
+        // 약간의 지연 후 채팅방 열기 (WebSocket 연결 준비 시간)
+        setTimeout(() => {
+          openThread(data.roomId.toString());
+        }, 300);
+      } catch (error) {
+        console.error('❌ 채팅방 목록 새로고침 실패:', error);
+        // 실패해도 채팅방은 열어보기
+        openThread(data.roomId.toString());
+      }
     },
     onError: (error) => {
+      console.error('❌ 채팅방 생성 실패:', error);
       alert(`채팅방 생성 실패: ${error.message}`);
     },
   });
@@ -395,8 +418,8 @@ export default function CHT_17() {
   };
 
   const filteredMyRooms = myRoomsData.filter(filterThread);
-  // 참여하지 않은 공개 채팅방만 표시
-  const filteredPublicRooms = publicRoomsData.filter(room => filterThread(room) && !room.joined);
+  // 공개 채팅방 전체 표시 (참여/미참여 모두)
+  const filteredPublicRooms = publicRoomsData.filter(room => filterThread(room));
   const filteredThreads = threads.filter(filterThread);
 
   return (
