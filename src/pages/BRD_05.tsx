@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   usePost,
@@ -138,16 +138,13 @@ export default function PostShow() {
   const queryClient = useQueryClient();
 
   // 본문 HTML 가공 (요약 텍스트 추출용)
-  const sanitizedContent = useMemo(
-    () => DOMPurify.sanitize(decodeHtmlEntities(post?.content ?? "")),
-    [post?.content]
-  );
+  const sanitizedContent = DOMPurify.sanitize(decodeHtmlEntities(post?.content ?? ""));
 
-  const plainContentSummary = useMemo(() => {
+  const plainContentSummary = (() => {
     const temp = document.createElement("div");
     temp.innerHTML = sanitizedContent;
     return temp.textContent?.replace(/\s+/g, " ").trim() ?? "";
-  }, [sanitizedContent]);
+  })();
 
   // 6. 책 정보 조회 (REVIEW 카테고리인 경우)
   const { data: bookDetail, isLoading: _isBookLoading } = useBookDetail(
