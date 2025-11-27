@@ -61,6 +61,10 @@ export default function CAL_11() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-11
 
+  useEffect(() => {
+    console.debug('[CAL_11] isAddModalOpen 상태 변경:', isAddModalOpen);
+  }, [isAddModalOpen]);
+
   // 일정 데이터 가져오기
   useEffect(() => {
     const fetchEvents = async () => {
@@ -156,6 +160,7 @@ export default function CAL_11() {
       endsAt: todayStr,
       allDay: false,
     });
+    console.debug('[CAL_11] 일정 추가 모달 열림 트리거', { todayStr });
     setIsAddModalOpen(true);
   };
 
@@ -503,6 +508,7 @@ export default function CAL_11() {
         <div className="flex items-center justify-between mb-6">
           {/* 일정 추가 버튼 */}
           <button
+            type="button"
             onClick={handleOpenAddModal}
             className="px-6 py-2 rounded hover:opacity-80 transition font-semibold"
             style={{ background: "#90BE6D", color: "white" }}
@@ -638,7 +644,7 @@ export default function CAL_11() {
         {/* 일정 추가 모달 */}
         {isAddModalOpen && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70]"
             onClick={() => setIsAddModalOpen(false)}
           >
             <div
