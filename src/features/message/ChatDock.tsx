@@ -451,12 +451,17 @@ function ChatWindow({
     [currentUserRole, thread.category]
   );
 
-  const canAccessAI = Object.values(aiPermissions).some((permission) => permission.allowed);
+  const isPublicThread = thread.category === "PUBLIC";
+
+  const canAccessAI = isPublicThread
+    ? aiPermissions.publicSummary.allowed
+    : Object.values(aiPermissions).some((permission) => permission.allowed);
   const canManageGroupAI =
     aiPermissions.groupKeypoints.allowed ||
     aiPermissions.groupQuestions.allowed ||
     aiPermissions.sessionStart.allowed ||
     aiPermissions.sessionEnd.allowed;
+  const canControlSession = aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed;
 
   const requestAICommand = useCallback(
     (command: AiCommandType, note?: string) => {
@@ -925,19 +930,21 @@ function ChatWindow({
                         추가 질문 제안
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        onOpenAIDock?.();
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
-                    >
-                      <MessageCircle className="w-4 h-4 flex-shrink-0" />
-                      AI 요약창 열기
-                    </button>
+                    {thread.category !== "PUBLIC" && (
+                      <button
+                        onClick={() => {
+                          onOpenAIDock?.();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        AI 요약창 열기
+                      </button>
+                    )}
 
-                    {/* AI 세션 시작/끝 토글 버튼 - 공개 채팅방에서는 사용 불가 */}
-                    {canManageGroupAI && (
+                    {/* AI 세션 시작/끝 토글 버튼 - AI 세션 명령이 허용된 방에서만 노출 */}
+                    {canControlSession && (
                       <button
                         onClick={() => {
                           if (!isSessionActive) {
