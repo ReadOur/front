@@ -235,7 +235,7 @@ export default function BOD_15() {
           queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
           queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
           // 리뷰 작성 후 게시글 작성 페이지로 이동
-          navigate(`/boards/new?category=REVIEW&bookId=${actualBookId}`);
+          navigate(`/boards/write?category=REVIEW&bookId=${actualBookId}`);
         },
         onError: (error: any) => {
           const errorMessage = error.response?.data?.message || error.message || "리뷰 작성에 실패했습니다.";

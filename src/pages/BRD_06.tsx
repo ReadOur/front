@@ -18,14 +18,17 @@ export const BRD_06 = (): React.JSX.Element => {
   const isEditMode = !!postId;
   const toast = useToast();
 
-  // URL 쿼리 파라미터에서 카테고리 읽기
+  // URL 쿼리 파라미터에서 카테고리와 bookId 읽기
   const initialCategory = searchParams.get("category") || "FREE";
+  const initialBookId = searchParams.get("bookId");
 
   const [title, setTitle] = useState<string>("");
   const [contentHtml, setContentHtml] = useState<string>("");
   const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>(initialCategory);
-  const [bookId, setBookId] = useState<number | undefined>(undefined);
+  const [bookId, setBookId] = useState<number | undefined>(
+    initialBookId ? parseInt(initialBookId) : undefined
+  );
   const [bookSearchQuery, setBookSearchQuery] = useState<string>("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
   const [selectedBookInfo, setSelectedBookInfo] = useState<{ title: string; author: string } | null>(null);
@@ -83,6 +86,9 @@ export const BRD_06 = (): React.JSX.Element => {
   const existingBookId = existingPost?.bookId ? String(existingPost.bookId) : "";
   const { data: existingBookDetail } = useBookDetail(existingBookId);
 
+  // 새 글 작성 모드에서 URL 쿼리 파라미터로 전달된 책 정보 로드
+  const { data: initialBookDetail } = useBookDetail(initialBookId || "");
+
   // 수정 모드: 기존 데이터를 폼에 채우기
   useEffect(() => {
     if (isEditMode && existingPost) {
@@ -110,6 +116,16 @@ export const BRD_06 = (): React.JSX.Element => {
       });
     }
   }, [isEditMode, existingBookDetail]);
+
+  // 새 글 작성 모드에서 URL 쿼리 파라미터로 전달된 책 정보 설정
+  useEffect(() => {
+    if (!isEditMode && initialBookDetail) {
+      setSelectedBookInfo({
+        title: initialBookDetail.bookname,
+        author: initialBookDetail.authors,
+      });
+    }
+  }, [isEditMode, initialBookDetail]);
 
   const queryClient = useQueryClient();
 
