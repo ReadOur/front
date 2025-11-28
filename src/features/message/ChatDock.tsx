@@ -409,7 +409,6 @@ function ChatWindow({
 
     chatService.getRoomMemberProfile(roomId, actualCurrentUserId)
       .then((profile) => {
-        console.log('🔍 Current user role loaded:', profile);
         setCurrentUserRole(profile.role);
       })
       .catch((error) => {
@@ -426,7 +425,6 @@ function ChatWindow({
 
     chatService.getRoomMemberProfile(roomId, profileTarget.userId)
       .then((profile) => {
-        console.log('🔍 Target user role loaded:', profile);
         setTargetUserRole(profile.role);
       })
       .catch((error) => {
@@ -449,11 +447,6 @@ function ChatWindow({
         sessionStart: canUseAI(thread.category, currentUserRole, "SESSION_START"),
         sessionEnd: canUseAI(thread.category, currentUserRole, "SESSION_END"),
       };
-      console.log('🔐 AI Permissions calculated:', {
-        category: thread.category,
-        currentUserRole,
-        permissions,
-      });
       return permissions;
     },
     [currentUserRole, thread.category]
@@ -479,15 +472,6 @@ function ChatWindow({
     (isGroupThread && canManageGroupAI);
 
   // 디버깅: AI 섹션 표시 여부
-  console.log('🎨 AI Section Render Check:', {
-    'thread.category': thread.category,
-    isPublicThread,
-    isGroupThread,
-    isPrivateThread,
-    canManageGroupAI,
-    canShowAISection,
-    'Should render AI section?': canShowAISection ? '✅ YES' : '❌ NO',
-  });
   const canCreateEvent =
     isPrivateThread || (isPublicThread && isManagerOrAbove) || (isGroupThread && isManagerOrAbove);
   const canAddNotice = isPrivateThread || isManagerOrAbove;
@@ -1822,29 +1806,7 @@ export default function ChatDock() {
         } else {
           category = "GROUP"; // 기본값
         }
-        console.warn('⚠️ Room scope not provided by backend, using fallback logic', {
-          roomId: room.roomId,
-          name: room.name,
-          guessedCategory: category,
-        });
       }
-
-      console.log('🏠 Room mapping:', {
-        roomId: room.roomId,
-        name: room.name,
-        scope: room.scope,
-        scopeType: typeof room.scope,
-        category,
-        rawRoom: room,
-      });
-
-      console.log('🔍 Detailed scope check:', {
-        'room.scope': room.scope,
-        'room.scope === "PRIVATE"': room.scope === "PRIVATE",
-        'room.scope === "GROUP"': room.scope === "GROUP",
-        'room.scope === "PUBLIC"': room.scope === "PUBLIC",
-        'final category': category,
-      });
 
       return {
         id: threadId,
@@ -1869,7 +1831,6 @@ export default function ChatDock() {
   // 핀 토글 함수
   // TODO: 백엔드 API에 핀 토글 엔드포인트 추가 후 구현 필요
   const togglePin = (threadId: string) => {
-    console.log("Pin toggle requested for room:", threadId);
     // 백엔드 API 연동 필요: PUT /chat/rooms/{roomId}/pin
   };
 

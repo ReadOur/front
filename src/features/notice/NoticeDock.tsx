@@ -107,14 +107,7 @@ export default function NoticeDock({
   };
 
   const handleCreateNotice = async () => {
-    console.log('🚀 handleCreateNotice 호출됨!', {
-      title: newNotice.title,
-      content: newNotice.content,
-      roomId,
-    });
-
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
-      console.warn('⚠️ 제목 또는 내용이 비어있음');
       toast.show({
         title: "제목과 내용을 모두 입력해주세요.",
         variant: "error",
@@ -122,12 +115,10 @@ export default function NoticeDock({
       return;
     }
 
-    console.log('✅ 유효성 검사 통과, mutation 호출 시작');
     createMutation.mutate(
       { roomId, data: { title: newNotice.title, content: newNotice.content } },
       {
         onSuccess: () => {
-          console.log('✅ 공지 생성 성공!');
           toast.show({
             title: "공지가 등록되었습니다.",
             variant: "success",
@@ -144,7 +135,6 @@ export default function NoticeDock({
         },
       }
     );
-    console.log('📡 mutation.mutate() 호출 완료 (비동기 시작)');
   };
 
   const handleUpdateNotice = async () => {
@@ -233,17 +223,6 @@ export default function NoticeDock({
         ? "권한 재확인 필요"
         : "공지 작성";
 
-  // 디버깅: 권한 상태 추적
-  console.log('📢 NoticeDock Permission State:', {
-    permissionStatus,
-    permissionState,
-    hasPermission,
-    isCreateDisabled,
-    shouldShowCreateButton,
-    isCreating,
-    roomId,
-  });
-
   if (!isOpen) return null;
 
   return (
@@ -293,18 +272,8 @@ export default function NoticeDock({
         {shouldShowCreateButton && !isCreating && !selectedNotice && !isEditing && (
           <button
             onClick={() => {
-              console.log('🖱️ 공지 작성 버튼 클릭!', {
-                isCreateDisabled,
-                hasPermission,
-                permissionState,
-                isCreating_before: isCreating,
-              });
               if (!isCreateDisabled) {
-                console.log('✅ setIsCreating(true) 호출!');
                 setIsCreating(true);
-                console.log('✅ setIsCreating(true) 완료! 다음 렌더에서 isCreating이 true가 될 것입니다.');
-              } else {
-                console.warn('⚠️ 버튼이 비활성화 상태입니다.');
               }
             }}
             disabled={isCreateDisabled}
@@ -375,8 +344,7 @@ export default function NoticeDock({
 
       {/* 공지 작성/수정 폼 */}
       {(isCreating || isEditing) && (
-        <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)' }}>
-          {console.log('🎨 NoticeDock: 공지 작성/수정 폼 렌더링!', { isCreating, isEditing })}
+        <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[color:var(--chatdock-fg-primary)] mb-1">
@@ -409,12 +377,6 @@ export default function NoticeDock({
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  console.log('🖱️ 등록/수정 버튼 클릭!', {
-                    isCreating,
-                    isPending: createMutation.isPending || updateMutation.isPending,
-                    title: newNotice.title,
-                    content: newNotice.content,
-                  });
                   if (isCreating) {
                     handleCreateNotice();
                   } else {
@@ -452,7 +414,6 @@ export default function NoticeDock({
       {/* 공지 상세 보기 */}
       {selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto p-4">
-          {console.log('🎨 NoticeDock: 공지 상세 보기 렌더링!', { selectedNotice, isEditing })}
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
@@ -508,7 +469,6 @@ export default function NoticeDock({
       {/* 공지 목록 */}
       {!isCreating && !selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto">
-          {console.log('🎨 NoticeDock: 공지 목록 렌더링!', { isCreating, selectedNotice, isEditing })}
           {isLoading ? (
             <div className="h-full flex items-center justify-center text-[color:var(--chatdock-fg-muted)]">
               <p className="text-sm">로딩 중...</p>
