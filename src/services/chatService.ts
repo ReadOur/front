@@ -536,6 +536,27 @@ export const chatService = {
   // 공지사항
   getAnnouncements,
   getAnnouncementDetail,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+
+  // 일정
+  getSchedules,
+  getScheduleDetail,
+  createSchedule,
+  updateSchedule,
+  deleteSchedule,
+  getScheduleParticipants,
+  addScheduleParticipant,
+  removeScheduleParticipant,
+
+  // 투표
+  getPolls,
+  getPollDetail,
+  createPoll,
+  deletePoll,
+  vote,
+  getPollResults,
 
   // 메시지 관리
   hideMessage,
