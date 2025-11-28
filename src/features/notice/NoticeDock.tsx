@@ -56,7 +56,7 @@ export default function NoticeDock({
   });
   const [selectedNotice, setSelectedNotice] = useState<Announcement | null>(null);
 
-  const { showToast } = useToast();
+  const toast = useToast();
   const createMutation = useCreateAnnouncement();
   const updateMutation = useUpdateAnnouncement();
   const deleteMutation = useDeleteAnnouncement();
@@ -108,9 +108,9 @@ export default function NoticeDock({
 
   const handleCreateNotice = async () => {
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
-      showToast({
-        message: "제목과 내용을 모두 입력해주세요.",
-        type: "error",
+      toast.show({
+        title: "제목과 내용을 모두 입력해주세요.",
+        variant: "error",
       });
       return;
     }
@@ -119,17 +119,17 @@ export default function NoticeDock({
       { roomId, data: { title: newNotice.title, content: newNotice.content } },
       {
         onSuccess: () => {
-          showToast({
-            message: "공지가 등록되었습니다.",
-            type: "success",
+          toast.show({
+            title: "공지가 등록되었습니다.",
+            variant: "success",
           });
           setNewNotice({ title: "", content: "" });
           setIsCreating(false);
         },
         onError: (error) => {
-          showToast({
-            message: `공지 등록 실패: ${error.message}`,
-            type: "error",
+          toast.show({
+            title: `공지 등록 실패: ${error.message}`,
+            variant: "error",
           });
         },
       }
@@ -140,9 +140,9 @@ export default function NoticeDock({
     if (!selectedNotice) return;
 
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
-      showToast({
-        message: "제목과 내용을 모두 입력해주세요.",
-        type: "error",
+      toast.show({
+        title: "제목과 내용을 모두 입력해주세요.",
+        variant: "error",
       });
       return;
     }
@@ -155,18 +155,18 @@ export default function NoticeDock({
       },
       {
         onSuccess: (updatedAnnouncement) => {
-          showToast({
-            message: "공지가 수정되었습니다.",
-            type: "success",
+          toast.show({
+            title: "공지가 수정되었습니다.",
+            variant: "success",
           });
           setSelectedNotice(updatedAnnouncement);
           setNewNotice({ title: "", content: "" });
           setIsEditing(false);
         },
         onError: (error) => {
-          showToast({
-            message: `공지 수정 실패: ${error.message}`,
-            type: "error",
+          toast.show({
+            title: `공지 수정 실패: ${error.message}`,
+            variant: "error",
           });
         },
       }
@@ -182,16 +182,16 @@ export default function NoticeDock({
       { roomId, announcementId: noticeId },
       {
         onSuccess: () => {
-          showToast({
-            message: "공지가 삭제되었습니다.",
-            type: "success",
+          toast.show({
+            title: "공지가 삭제되었습니다.",
+            variant: "success",
           });
           setSelectedNotice(null);
         },
         onError: (error) => {
-          showToast({
-            message: `공지 삭제 실패: ${error.message}`,
-            type: "error",
+          toast.show({
+            title: `공지 삭제 실패: ${error.message}`,
+            variant: "error",
           });
         },
       }
