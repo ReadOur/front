@@ -477,6 +477,17 @@ function ChatWindow({
   const canOpenAIDock =
     (isPublicThread && aiPermissions.publicSummary.allowed) ||
     (isGroupThread && canManageGroupAI);
+
+  // 디버깅: AI 섹션 표시 여부
+  console.log('🎨 AI Section Render Check:', {
+    'thread.category': thread.category,
+    isPublicThread,
+    isGroupThread,
+    isPrivateThread,
+    canManageGroupAI,
+    canShowAISection,
+    'Should render AI section?': canShowAISection ? '✅ YES' : '❌ NO',
+  });
   const canCreateEvent =
     isPrivateThread || (isPublicThread && isManagerOrAbove) || (isGroupThread && isManagerOrAbove);
   const canAddNotice = isPrivateThread || isManagerOrAbove;
