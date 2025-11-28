@@ -56,7 +56,7 @@ export default function NoticeDock({
   });
   const [selectedNotice, setSelectedNotice] = useState<Announcement | null>(null);
 
-  const { showToast } = useToast();
+  const toast = useToast();
   const createMutation = useCreateAnnouncement();
   const updateMutation = useUpdateAnnouncement();
   const deleteMutation = useDeleteAnnouncement();
@@ -108,9 +108,9 @@ export default function NoticeDock({
 
   const handleCreateNotice = async () => {
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
-      showToast({
-        message: "제목과 내용을 모두 입력해주세요.",
-        type: "error",
+      toast.show({
+        title: "제목과 내용을 모두 입력해주세요.",
+        variant: "error",
       });
       return;
     }
@@ -119,17 +119,17 @@ export default function NoticeDock({
       { roomId, data: { title: newNotice.title, content: newNotice.content } },
       {
         onSuccess: () => {
-          showToast({
-            message: "공지가 등록되었습니다.",
-            type: "success",
+          toast.show({
+            title: "공지가 등록되었습니다.",
+            variant: "success",
           });
           setNewNotice({ title: "", content: "" });
           setIsCreating(false);
         },
         onError: (error) => {
-          showToast({
-            message: `공지 등록 실패: ${error.message}`,
-            type: "error",
+          toast.show({
+            title: `공지 등록 실패: ${error.message}`,
+            variant: "error",
           });
         },
       }
@@ -140,9 +140,9 @@ export default function NoticeDock({
     if (!selectedNotice) return;
 
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
-      showToast({
-        message: "제목과 내용을 모두 입력해주세요.",
-        type: "error",
+      toast.show({
+        title: "제목과 내용을 모두 입력해주세요.",
+        variant: "error",
       });
       return;
     }
@@ -155,18 +155,18 @@ export default function NoticeDock({
       },
       {
         onSuccess: (updatedAnnouncement) => {
-          showToast({
-            message: "공지가 수정되었습니다.",
-            type: "success",
+          toast.show({
+            title: "공지가 수정되었습니다.",
+            variant: "success",
           });
           setSelectedNotice(updatedAnnouncement);
           setNewNotice({ title: "", content: "" });
           setIsEditing(false);
         },
         onError: (error) => {
-          showToast({
-            message: `공지 수정 실패: ${error.message}`,
-            type: "error",
+          toast.show({
+            title: `공지 수정 실패: ${error.message}`,
+            variant: "error",
           });
         },
       }
@@ -182,16 +182,16 @@ export default function NoticeDock({
       { roomId, announcementId: noticeId },
       {
         onSuccess: () => {
-          showToast({
-            message: "공지가 삭제되었습니다.",
-            type: "success",
+          toast.show({
+            title: "공지가 삭제되었습니다.",
+            variant: "success",
           });
           setSelectedNotice(null);
         },
         onError: (error) => {
-          showToast({
-            message: `공지 삭제 실패: ${error.message}`,
-            type: "error",
+          toast.show({
+            title: `공지 삭제 실패: ${error.message}`,
+            variant: "error",
           });
         },
       }
@@ -286,9 +286,12 @@ export default function NoticeDock({
                 isCreateDisabled,
                 hasPermission,
                 permissionState,
+                isCreating_before: isCreating,
               });
               if (!isCreateDisabled) {
+                console.log('✅ setIsCreating(true) 호출!');
                 setIsCreating(true);
+                console.log('✅ setIsCreating(true) 완료! 다음 렌더에서 isCreating이 true가 될 것입니다.');
               } else {
                 console.warn('⚠️ 버튼이 비활성화 상태입니다.');
               }
@@ -361,7 +364,8 @@ export default function NoticeDock({
 
       {/* 공지 작성/수정 폼 */}
       {(isCreating || isEditing) && (
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)' }}>
+          {console.log('🎨 NoticeDock: 공지 작성/수정 폼 렌더링!', { isCreating, isEditing })}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[color:var(--chatdock-fg-primary)] mb-1">
@@ -425,6 +429,7 @@ export default function NoticeDock({
       {/* 공지 상세 보기 */}
       {selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto p-4">
+          {console.log('🎨 NoticeDock: 공지 상세 보기 렌더링!', { selectedNotice, isEditing })}
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
@@ -480,6 +485,7 @@ export default function NoticeDock({
       {/* 공지 목록 */}
       {!isCreating && !selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto">
+          {console.log('🎨 NoticeDock: 공지 목록 렌더링!', { isCreating, selectedNotice, isEditing })}
           {isLoading ? (
             <div className="h-full flex items-center justify-center text-[color:var(--chatdock-fg-muted)]">
               <p className="text-sm">로딩 중...</p>
