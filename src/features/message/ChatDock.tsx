@@ -923,8 +923,9 @@ function ChatWindow({
                     {aiPermissions.publicSummary.allowed && (
                       <button
                         onClick={() => {
-                          const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)") || undefined;
-                          requestAICommand("PUBLIC_SUMMARY", note);
+                          const note = prompt("요약과 함께 궁금한 점을 입력하세요 (선택 사항)");
+                          if (note === null) return; // 취소 누르면 실행 안함
+                          requestAICommand("PUBLIC_SUMMARY", note || undefined);
                           setIsMenuOpen(false);
                         }}
                         className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
