@@ -12,6 +12,7 @@ import { useWebSocketManager } from "@/hooks/useWebSocketManager";
 import type { WebSocketMessage } from "@/hooks/useWebSocket";
 import AIDock, { AIMessage } from "@/features/ai/AIDock";
 import NoticeDock from "@/features/notice/NoticeDock";
+import PollDock from "@/features/poll/PollDock";
 import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
@@ -356,6 +357,12 @@ function ChatWindow({
     hasPermission?: boolean;
     errorMessage?: string;
   }>({ status: "idle" });
+  const [isPollDockOpen, setIsPollDockOpen] = useState(false);
+  const [pollPermission, setPollPermission] = useState<{
+    status: "idle" | "checking" | "success" | "error";
+    hasPermission?: boolean;
+    errorMessage?: string;
+  }>({ status: "idle" });
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 메시지별 메뉴 관련 상태
@@ -634,6 +641,34 @@ function ChatWindow({
 
     loadNoticePermission();
   }, [isNoticeDockOpen, loadNoticePermission]);
+
+  const loadPollPermission = useCallback(async () => {
+    if (!roomId || !actualCurrentUserId) return;
+
+    setPollPermission({ status: "checking" });
+
+    try {
+      const profile = await chatService.getRoomMemberProfile(roomId, actualCurrentUserId);
+      const hasPermission = ["OWNER", "MANAGER"].includes(profile.role);
+
+      setPollPermission({ status: "success", hasPermission });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error.message || "투표 권한을 확인하지 못했습니다.";
+
+      setPollPermission({ status: "error", errorMessage: message });
+      toast.show({
+        title: "투표 권한 확인 실패",
+        description: message,
+        variant: "error",
+      });
+    }
+  }, [actualCurrentUserId, roomId, toast]);
+
+  useEffect(() => {
+    if (!isPollDockOpen) return;
+
+    loadPollPermission();
+  }, [isPollDockOpen, loadPollPermission]);
 
   const handleCreateDirectRoom = (targetUserId: number | undefined, nickname?: string) => {
     if (!actualCurrentUserId) {
@@ -1012,6 +1047,18 @@ function ChatWindow({
                   >
                     <Bell className="w-4 h-4 flex-shrink-0" />
                     공지
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsPollDockOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                  >
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    투표
                   </button>
                 </div>
               </div>
@@ -1590,6 +1637,18 @@ function ChatWindow({
         permissionStatus={noticePermission.status}
         permissionErrorMessage={noticePermission.errorMessage}
         onRetryPermission={loadNoticePermission}
+        roomId={Number(thread.id)}
+      />
+
+      {/* Poll Dock */}
+      <PollDock
+        isOpen={isPollDockOpen}
+        onClose={() => setIsPollDockOpen(false)}
+        onMinimize={() => setIsPollDockOpen(false)}
+        hasPermission={pollPermission.status === "success" ? pollPermission.hasPermission : undefined}
+        permissionStatus={pollPermission.status}
+        permissionErrorMessage={pollPermission.errorMessage}
+        onRetryPermission={loadPollPermission}
         roomId={Number(thread.id)}
       />
     </div>
