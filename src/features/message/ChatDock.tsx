@@ -1821,8 +1821,17 @@ export default function ChatDock() {
         roomId: room.roomId,
         name: room.name,
         scope: room.scope,
+        scopeType: typeof room.scope,
         category,
         rawRoom: room,
+      });
+
+      console.log('🔍 Detailed scope check:', {
+        'room.scope': room.scope,
+        'room.scope === "PRIVATE"': room.scope === "PRIVATE",
+        'room.scope === "GROUP"': room.scope === "GROUP",
+        'room.scope === "PUBLIC"': room.scope === "PUBLIC",
+        'final category': category,
       });
 
       return {
