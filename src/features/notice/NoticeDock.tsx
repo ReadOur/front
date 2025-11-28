@@ -107,7 +107,14 @@ export default function NoticeDock({
   };
 
   const handleCreateNotice = async () => {
+    console.log('🚀 handleCreateNotice 호출됨!', {
+      title: newNotice.title,
+      content: newNotice.content,
+      roomId,
+    });
+
     if (!newNotice.title.trim() || !newNotice.content.trim()) {
+      console.warn('⚠️ 제목 또는 내용이 비어있음');
       toast.show({
         title: "제목과 내용을 모두 입력해주세요.",
         variant: "error",
@@ -115,10 +122,12 @@ export default function NoticeDock({
       return;
     }
 
+    console.log('✅ 유효성 검사 통과, mutation 호출 시작');
     createMutation.mutate(
       { roomId, data: { title: newNotice.title, content: newNotice.content } },
       {
         onSuccess: () => {
+          console.log('✅ 공지 생성 성공!');
           toast.show({
             title: "공지가 등록되었습니다.",
             variant: "success",
@@ -127,6 +136,7 @@ export default function NoticeDock({
           setIsCreating(false);
         },
         onError: (error) => {
+          console.error('❌ 공지 생성 실패:', error);
           toast.show({
             title: `공지 등록 실패: ${error.message}`,
             variant: "error",
@@ -134,6 +144,7 @@ export default function NoticeDock({
         },
       }
     );
+    console.log('📡 mutation.mutate() 호출 완료 (비동기 시작)');
   };
 
   const handleUpdateNotice = async () => {
@@ -397,7 +408,19 @@ export default function NoticeDock({
             </div>
             <div className="flex gap-2">
               <button
-                onClick={isCreating ? handleCreateNotice : handleUpdateNotice}
+                onClick={() => {
+                  console.log('🖱️ 등록/수정 버튼 클릭!', {
+                    isCreating,
+                    isPending: createMutation.isPending || updateMutation.isPending,
+                    title: newNotice.title,
+                    content: newNotice.content,
+                  });
+                  if (isCreating) {
+                    handleCreateNotice();
+                  } else {
+                    handleUpdateNotice();
+                  }
+                }}
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="flex-1 px-4 py-2 rounded-[var(--radius-md)] bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
