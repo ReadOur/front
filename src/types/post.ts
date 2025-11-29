@@ -74,15 +74,21 @@ export interface Post {
 }
 
 /**
- * 첨부파일 정보
+ * 첨부파일 정보 (백엔드 응답 형식)
  */
 export interface Attachment {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  mimeType: string;
-  createdAt: string;
+  id: number;
+  url: string;
+  originalFilename: string;
+  contentType: string;
+  size: number;
+  ownerUserId: number;
+  downloadUrl: string;
+  // 프론트엔드 호환성을 위한 계산된 필드
+  fileName?: string; // originalFilename과 동일
+  fileUrl?: string; // url과 동일
+  fileSize?: number; // size와 동일
+  mimeType?: string; // contentType과 동일
 }
 
 /**

@@ -17,6 +17,10 @@ export interface FileUploadProps {
   attachments: Attachment[];
   /** 파일 목록 변경 콜백 */
   onChange: (attachments: Attachment[]) => void;
+  /** 파일 업로드 대상 타입 (예: 213 = 게시글) */
+  targetType: number;
+  /** 파일 업로드 대상 ID */
+  targetId: number;
   /** 최대 파일 개수 */
   maxFiles?: number;
   /** 최대 파일 크기 (바이트) */
@@ -32,6 +36,8 @@ export interface FileUploadProps {
 export const FileUpload: React.FC<FileUploadProps> = ({
   attachments,
   onChange,
+  targetType,
+  targetId,
   maxFiles = 10,
   maxFileSize = 10 * 1024 * 1024, // 10MB
   accept,
@@ -79,12 +85,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       try {
         const uploadPromises = files.map((file) =>
-          uploadFile(file, (progress) => {
-            setUploadingFiles((prev) => {
-              const next = new Map(prev);
-              next.set(file.name, progress);
-              return next;
-            });
+          uploadFile({
+            file,
+            targetType,
+            targetId,
+            onProgress: (progress) => {
+              setUploadingFiles((prev) => {
+                const next = new Map(prev);
+                next.set(file.name, progress);
+                return next;
+              });
+            },
           })
         );
 
@@ -109,7 +120,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         setUploadingFiles(new Map());
       }
     },
-    [attachments, disabled, maxFiles, maxFileSize, onChange, toast, uploadingFiles]
+    [attachments, disabled, maxFiles, maxFileSize, onChange, toast, uploadingFiles, targetType, targetId]
   );
 
   /**
@@ -268,10 +279,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             >
               {/* 파일 아이콘 또는 이미지 미리보기 */}
               <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden bg-[color:var(--color-bg-elev-1)] flex items-center justify-center">
-                {isImageFile(attachment.mimeType) ? (
+                {isImageFile(attachment.mimeType || attachment.contentType) ? (
                   <img
-                    src={attachment.fileUrl}
-                    alt={attachment.fileName}
+                    src={attachment.fileUrl || attachment.url}
+                    alt={attachment.fileName || attachment.originalFilename}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -282,10 +293,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               {/* 파일 정보 */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[color:var(--color-fg-primary)] truncate">
-                  {attachment.fileName}
+                  {attachment.fileName || attachment.originalFilename}
                 </p>
                 <p className="text-xs text-[color:var(--color-fg-muted)]">
-                  {formatFileSize(attachment.fileSize)}
+                  {formatFileSize(attachment.fileSize || attachment.size)}
                 </p>
               </div>
 
