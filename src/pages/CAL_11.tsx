@@ -11,9 +11,6 @@ export default function CAL_11() {
   const [isYearMonthSelectorOpen, setIsYearMonthSelectorOpen] = useState(false);
   const [modalJustOpened, setModalJustOpened] = useState(false);
 
-  // 일정 카테고리 필터 (null: 전체, 'USER': 개인 일정, 'ROOM': 방 일정)
-  const [selectedScope, setSelectedScope] = useState<'USER' | 'ROOM' | null>(null);
-
   // 날짜 클릭 시 일정 목록 표시
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isDateEventsModalOpen, setIsDateEventsModalOpen] = useState(false);
@@ -74,15 +71,10 @@ export default function CAL_11() {
         // viewDate 형식: YYYY-MM-DD (해당 월의 1일)
         const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
-        // selectedScope가 null(전체)이면 scope를 넘기지 않음, 아니면 해당 scope 전달
-        const params: any = {
+        const params = {
           viewDate,
-          viewType: 'MONTH',
+          viewType: 'MONTH' as const,
         };
-
-        if (selectedScope !== null) {
-          params.scope = selectedScope;
-        }
 
         const data = await getEvents(params);
         setEvents(data);
@@ -101,7 +93,7 @@ export default function CAL_11() {
     };
 
     fetchEvents();
-  }, [year, month, user, isAuthenticated, selectedScope]);
+  }, [year, month, user, isAuthenticated]);
 
   // 해당 월의 첫날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1);
@@ -426,15 +418,10 @@ export default function CAL_11() {
     try {
       const viewDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
-      // selectedScope가 null(전체)이면 scope를 넘기지 않음, 아니면 해당 scope 전달
-      const params: any = {
+      const params = {
         viewDate,
-        viewType: 'MONTH',
+        viewType: 'MONTH' as const,
       };
-
-      if (selectedScope !== null) {
-        params.scope = selectedScope;
-      }
 
       const data = await getEvents(params);
       setEvents(data);
@@ -475,43 +462,6 @@ export default function CAL_11() {
       style={{ background: "#FFF9F2" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        {/* 카테고리 필터 */}
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-sm font-semibold" style={{ color: "#6B4F3F" }}>일정 카테고리:</span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedScope(null)}
-              className="px-4 py-1.5 rounded text-sm font-semibold hover:opacity-80 transition"
-              style={{
-                background: selectedScope === null ? "#90BE6D" : "#E9E5DC",
-                color: selectedScope === null ? "white" : "#6B4F3F",
-              }}
-            >
-              전체
-            </button>
-            <button
-              onClick={() => setSelectedScope('USER')}
-              className="px-4 py-1.5 rounded text-sm font-semibold hover:opacity-80 transition"
-              style={{
-                background: selectedScope === 'USER' ? "#90BE6D" : "#E9E5DC",
-                color: selectedScope === 'USER' ? "white" : "#6B4F3F",
-              }}
-            >
-              개인 일정
-            </button>
-            <button
-              onClick={() => setSelectedScope('ROOM')}
-              className="px-4 py-1.5 rounded text-sm font-semibold hover:opacity-80 transition"
-              style={{
-                background: selectedScope === 'ROOM' ? "#90BE6D" : "#E9E5DC",
-                color: selectedScope === 'ROOM' ? "white" : "#6B4F3F",
-              }}
-            >
-              방 일정
-            </button>
-          </div>
-        </div>
-
         {/* 상단 헤더: 일정 추가 버튼 + 월 네비게이션 */}
         <div className="flex items-center justify-between mb-6">
           {/* 일정 추가 버튼 */}
