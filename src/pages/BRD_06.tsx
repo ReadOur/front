@@ -195,7 +195,7 @@ export const BRD_06 = (): React.JSX.Element => {
         chatRoomId: category === "GROUP" ? chatRoomId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
-        attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
+        attachmentIds: attachments.length > 0 ? attachments.map(a => String(a.id)) : undefined,
       };
       updatePostMutation.mutate({ postId, data: updateData });
     } else {
@@ -207,7 +207,7 @@ export const BRD_06 = (): React.JSX.Element => {
         bookId: category === "REVIEW" ? bookId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
-        attachmentIds: attachments.length > 0 ? attachments.map(a => a.id) : undefined,
+        attachmentIds: attachments.length > 0 ? attachments.map(a => String(a.id)) : undefined,
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === "GROUP" && {
           recruitmentLimit: recruitmentLimit,
@@ -546,6 +546,8 @@ export const BRD_06 = (): React.JSX.Element => {
             <FileUpload
               attachments={attachments}
               onChange={setAttachments}
+              targetType={213} // 213 = 게시글
+              targetId={isEditMode && postId ? parseInt(postId) : 0} // 작성 모드일 경우 0, 수정 모드일 경우 postId
               maxFiles={10}
               maxFileSize={10 * 1024 * 1024}
               disabled={isPending}

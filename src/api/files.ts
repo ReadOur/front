@@ -1,39 +1,44 @@
 /**
  * 파일 관련 API
- * - 첨부파일 업로드, 삭제, 다운로드 등
+ * - 파일 업로드, 메타데이터 조회, 다운로드 등
  */
 
 import { apiClient } from './client';
-import { ATTACHMENT_ENDPOINTS } from './endpoints';
+import { FILE_ENDPOINTS } from './endpoints';
 import { Attachment } from '@/types/post';
 
 /**
- * 파일 업로드 응답
+ * 파일 업로드 파라미터
  */
-export interface UploadFileResponse {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  mimeType: string;
-  createdAt: string;
+export interface UploadFileParams {
+  file: File;
+  targetType: number;
+  targetId: number;
+  onProgress?: (progress: number) => void;
 }
 
 /**
- * 파일 업로드
- * @param file 업로드할 파일
- * @param onProgress 업로드 진행률 콜백 (0-100)
- * @returns 업로드된 파일 정보
+ * 여러 파일 업로드 파라미터
  */
-export async function uploadFile(
-  file: File,
-  onProgress?: (progress: number) => void
-): Promise<Attachment> {
+export interface UploadFilesParams {
+  files: File[];
+  targetType: number;
+  targetId: number;
+  onProgress?: (progress: number) => void;
+}
+
+/**
+ * 파일 업로드 (단일)
+ * @param params 업로드 파라미터
+ * @returns 업로드된 파일 정보 배열 (API는 항상 배열로 반환)
+ */
+export async function uploadFile(params: UploadFileParams): Promise<Attachment> {
+  const { file, targetType, targetId, onProgress } = params;
   const formData = new FormData();
   formData.append('file', file);
 
-  return apiClient.upload<Attachment>(
-    ATTACHMENT_ENDPOINTS.UPLOAD,
+  const result = await apiClient.upload<Attachment[]>(
+    FILE_ENDPOINTS.UPLOAD(targetType, targetId),
     formData,
     (progressEvent) => {
       if (onProgress && progressEvent.total) {
@@ -42,50 +47,84 @@ export async function uploadFile(
       }
     }
   );
+
+  // API는 배열로 반환하므로 첫 번째 항목 반환
+  const attachment = result[0];
+
+  // 호환성을 위한 필드 매핑
+  return {
+    ...attachment,
+    fileName: attachment.originalFilename,
+    fileUrl: attachment.url,
+    fileSize: attachment.size,
+    mimeType: attachment.contentType,
+  };
 }
 
 /**
  * 여러 파일 업로드
- * @param files 업로드할 파일 배열
- * @param onProgress 전체 진행률 콜백 (0-100)
+ * @param params 업로드 파라미터
  * @returns 업로드된 파일 정보 배열
  */
-export async function uploadFiles(
-  files: File[],
-  onProgress?: (progress: number) => void
-): Promise<Attachment[]> {
-  const results: Attachment[] = [];
+export async function uploadFiles(params: UploadFilesParams): Promise<Attachment[]> {
+  const { files, targetType, targetId, onProgress } = params;
+  const formData = new FormData();
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const attachment = await uploadFile(file, (fileProgress) => {
-      // 전체 진행률 계산: (완료된 파일 개수 + 현재 파일 진행률) / 전체 파일 개수
-      const totalProgress = Math.round(((i + fileProgress / 100) / files.length) * 100);
-      onProgress?.(totalProgress);
-    });
-    results.push(attachment);
-  }
+  // 여러 파일을 'files' 필드에 추가
+  files.forEach(file => {
+    formData.append('files', file);
+  });
 
-  return results;
+  const result = await apiClient.upload<Attachment[]>(
+    FILE_ENDPOINTS.UPLOAD(targetType, targetId),
+    formData,
+    (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(progress);
+      }
+    }
+  );
+
+  // 호환성을 위한 필드 매핑
+  return result.map(attachment => ({
+    ...attachment,
+    fileName: attachment.originalFilename,
+    fileUrl: attachment.url,
+    fileSize: attachment.size,
+    mimeType: attachment.contentType,
+  }));
 }
 
 /**
- * 파일 삭제
- * @param attachmentId 삭제할 첨부파일 ID
+ * 파일 메타데이터 조회
+ * @param fileId 파일 ID
+ * @returns 파일 메타데이터
  */
-export async function deleteFile(attachmentId: string): Promise<void> {
-  return apiClient.delete(ATTACHMENT_ENDPOINTS.DELETE(attachmentId));
+export async function getFileMetadata(fileId: number): Promise<Attachment> {
+  const attachment = await apiClient.get<Attachment>(FILE_ENDPOINTS.METADATA(fileId));
+
+  // 호환성을 위한 필드 매핑
+  return {
+    ...attachment,
+    fileName: attachment.originalFilename,
+    fileUrl: attachment.url,
+    fileSize: attachment.size,
+    mimeType: attachment.contentType,
+  };
 }
 
 /**
  * 파일 다운로드 URL 가져오기
- * @param attachmentId 첨부파일 ID
+ * @param fileId 파일 ID
  * @returns 다운로드 URL
  */
-export function getDownloadUrl(attachmentId: string): string {
+export function getDownloadUrl(fileId: number | string): string {
+  const id = typeof fileId === 'string' ? parseInt(fileId) : fileId;
+
   // API 베이스 URL이 상대 경로면 절대 경로로 변환
   const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-  const downloadPath = ATTACHMENT_ENDPOINTS.DOWNLOAD(attachmentId);
+  const downloadPath = FILE_ENDPOINTS.DOWNLOAD(id);
 
   // 절대 URL인 경우 그대로 사용
   if (baseUrl.startsWith('http')) {
@@ -94,6 +133,15 @@ export function getDownloadUrl(attachmentId: string): string {
 
   // 상대 경로인 경우 현재 origin과 결합
   return `${window.location.origin}${baseUrl}${downloadPath}`;
+}
+
+/**
+ * 파일 다운로드 (응답 내용 가져오기)
+ * @param fileId 파일 ID
+ * @returns 파일 내용 (string)
+ */
+export async function downloadFile(fileId: number): Promise<string> {
+  return apiClient.get<string>(FILE_ENDPOINTS.DOWNLOAD(fileId));
 }
 
 /**
@@ -113,11 +161,11 @@ export function formatFileSize(bytes: number): string {
 
 /**
  * 파일이 이미지인지 확인
- * @param mimeType MIME 타입
+ * @param mimeType MIME 타입 (또는 contentType)
  * @returns 이미지 여부
  */
 export function isImageFile(mimeType: string): boolean {
-  return mimeType.startsWith('image/');
+  return mimeType?.startsWith('image/') || false;
 }
 
 /**
@@ -126,7 +174,8 @@ export function isImageFile(mimeType: string): boolean {
 export const fileService = {
   uploadFile,
   uploadFiles,
-  deleteFile,
+  getFileMetadata,
+  downloadFile,
   getDownloadUrl,
   formatFileSize,
   isImageFile,

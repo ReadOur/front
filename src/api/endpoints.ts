@@ -82,7 +82,17 @@ export const COMMENT_ENDPOINTS = {
 } as const;
 
 /**
- * 첨부파일 관련 엔드포인트
+ * 파일 관련 엔드포인트
+ */
+export const FILE_ENDPOINTS = {
+  UPLOAD: (targetType: number, targetId: number) => `/files?targetType=${targetType}&targetId=${targetId}`,
+  METADATA: (fileId: number) => `/files/${fileId}`,
+  DOWNLOAD: (fileId: number) => `/files/${fileId}/download`,
+} as const;
+
+/**
+ * 첨부파일 관련 엔드포인트 (하위 호환성)
+ * @deprecated FILE_ENDPOINTS 사용을 권장합니다
  */
 export const ATTACHMENT_ENDPOINTS = {
   UPLOAD: "/attachments/upload",
@@ -225,6 +235,7 @@ export const ENDPOINTS = {
   POST: POST_ENDPOINTS,
   MAIN_PAGE: MAIN_PAGE_ENDPOINTS,
   COMMENT: COMMENT_ENDPOINTS,
+  FILE: FILE_ENDPOINTS,
   ATTACHMENT: ATTACHMENT_ENDPOINTS,
   CHAT: CHAT_ENDPOINTS,
   CALENDAR: CALENDAR_ENDPOINTS,
