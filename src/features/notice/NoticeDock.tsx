@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { X, Minimize2, Bell, Plus, Edit2, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import {
   useAnnouncements,
+  useAnnouncementDetail,
   useCreateAnnouncement,
   useUpdateAnnouncement,
   useDeleteAnnouncement,
@@ -48,22 +49,20 @@ export default function NoticeDock({
   const announcements = data?.items || [];
   const hasNextPage = data?.page?.hasNext || false;
 
-  // 디버깅: 공지 목록 확인
-  React.useEffect(() => {
-    if (announcements.length > 0) {
-      console.log('📋 공지 목록 받음:', announcements);
-      console.log('📋 첫 번째 공지 content:', announcements[0].content);
-      console.log('📋 첫 번째 공지 content 길이:', announcements[0].content?.length);
-    }
-  }, [announcements]);
-
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newNotice, setNewNotice] = useState({
     title: "",
     content: "",
   });
-  const [selectedNotice, setSelectedNotice] = useState<Announcement | null>(null);
+  const [selectedNoticeId, setSelectedNoticeId] = useState<number | null>(null);
+
+  // 선택된 공지의 상세 정보 조회 (목록 API는 content를 포함하지 않을 수 있음)
+  const { data: selectedNotice } = useAnnouncementDetail(
+    roomId,
+    selectedNoticeId || 0,
+    { enabled: !!selectedNoticeId }
+  );
 
   const toast = useToast();
   const createMutation = useCreateAnnouncement();
@@ -169,7 +168,7 @@ export default function NoticeDock({
             title: "공지가 수정되었습니다.",
             variant: "success",
           });
-          setSelectedNotice(updatedAnnouncement);
+          // 상세 정보가 자동으로 갱신됨 (React Query 캐시 무효화)
           setNewNotice({ title: "", content: "" });
           setIsEditing(false);
         },
@@ -196,7 +195,7 @@ export default function NoticeDock({
             title: "공지가 삭제되었습니다.",
             variant: "success",
           });
-          setSelectedNotice(null);
+          setSelectedNoticeId(null);
         },
         onError: (error) => {
           toast.show({
@@ -423,10 +422,6 @@ export default function NoticeDock({
       {/* 공지 상세 보기 */}
       {selectedNotice && !isEditing && (
         <div className="flex-1 overflow-y-auto p-4">
-          {console.log('🔍 상세보기 렌더링 - selectedNotice:', selectedNotice)}
-          {console.log('🔍 상세보기 - content:', selectedNotice.content)}
-          {console.log('🔍 상세보기 - content type:', typeof selectedNotice.content)}
-          {console.log('🔍 상세보기 - content length:', selectedNotice.content?.length)}
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
@@ -444,7 +439,7 @@ export default function NoticeDock({
                 </div>
               </div>
               <button
-                onClick={() => setSelectedNotice(null)}
+                onClick={() => setSelectedNoticeId(null)}
                 className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
               >
                 <X className="w-4 h-4" />
@@ -496,12 +491,7 @@ export default function NoticeDock({
                 {announcements.map((notice) => (
                   <button
                     key={notice.id}
-                    onClick={() => {
-                      console.log('📢 공지 선택:', notice);
-                      console.log('📢 content 값:', notice.content);
-                      console.log('📢 content 길이:', notice.content?.length);
-                      setSelectedNotice(notice);
-                    }}
+                    onClick={() => setSelectedNoticeId(notice.id)}
                     className="w-full p-4 text-left hover:bg-[color:var(--chatdock-bg-hover)] transition-colors"
                   >
                     <div className="flex items-start gap-2">
