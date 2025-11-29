@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { X, Minimize2, Bell, Plus, Edit2, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import {
   useAnnouncements,
+  useAnnouncementDetail,
   useCreateAnnouncement,
   useUpdateAnnouncement,
   useDeleteAnnouncement,
@@ -54,7 +55,16 @@ export default function NoticeDock({
     title: "",
     content: "",
   });
-  const [selectedNotice, setSelectedNotice] = useState<Announcement | null>(null);
+  const [selectedNoticeId, setSelectedNoticeId] = useState<number | null>(null);
+
+  // 선택된 공지사항의 상세 정보 조회
+  const { data: announcementDetail } = useAnnouncementDetail(
+    roomId,
+    selectedNoticeId || 0,
+    { enabled: !!selectedNoticeId }
+  );
+
+  const selectedNotice = announcementDetail || null;
 
   const toast = useToast();
   const createMutation = useCreateAnnouncement();
@@ -160,7 +170,7 @@ export default function NoticeDock({
             title: "공지가 수정되었습니다.",
             variant: "success",
           });
-          setSelectedNotice(updatedAnnouncement);
+          // 수정 후 상세 정보가 자동으로 갱신되도록 ID 유지
           setNewNotice({ title: "", content: "" });
           setIsEditing(false);
         },
@@ -187,7 +197,7 @@ export default function NoticeDock({
             title: "공지가 삭제되었습니다.",
             variant: "success",
           });
-          setSelectedNotice(null);
+          setSelectedNoticeId(null);
         },
         onError: (error) => {
           toast.show({
@@ -431,15 +441,15 @@ export default function NoticeDock({
                 </div>
               </div>
               <button
-                onClick={() => setSelectedNotice(null)}
+                onClick={() => setSelectedNoticeId(null)}
                 className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)]">
-              <p className="text-sm text-[color:var(--chatdock-fg-primary)] whitespace-pre-wrap">
-                {selectedNotice.content}
+            <div className="p-4 rounded-[var(--radius-md)] bg-[color:var(--chatdock-bg-elev-1)] border border-[color:var(--chatdock-border-subtle)] min-h-[100px]">
+              <p className="text-sm text-[color:var(--chatdock-fg-primary)] whitespace-pre-wrap break-words">
+                {selectedNotice.content || "(내용 없음)"}
               </p>
             </div>
             {hasPermission === true && (
@@ -483,7 +493,7 @@ export default function NoticeDock({
                 {announcements.map((notice) => (
                   <button
                     key={notice.id}
-                    onClick={() => setSelectedNotice(notice)}
+                    onClick={() => setSelectedNoticeId(notice.id)}
                     className="w-full p-4 text-left hover:bg-[color:var(--chatdock-bg-hover)] transition-colors"
                   >
                     <div className="flex items-start gap-2">
