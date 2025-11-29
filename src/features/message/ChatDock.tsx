@@ -472,8 +472,7 @@ function ChatWindow({
     (isGroupThread && canManageGroupAI);
 
   // 디버깅: AI 섹션 표시 여부
-  const canCreateEvent =
-    isPrivateThread || (isPublicThread && isManagerOrAbove) || (isGroupThread && isManagerOrAbove);
+  const canCreateEvent = true; // 모든 사용자가 일정 추가 가능
   const canAddNotice = isPrivateThread || isManagerOrAbove;
 
   const requestAICommand = useCallback(
