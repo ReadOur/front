@@ -104,11 +104,14 @@ export async function createRoom(data: CreateRoomRequest): Promise<CreateRoomRes
  * 채팅방 메시지 조회
  */
 export async function getRoomMessages(params: GetRoomMessagesParams): Promise<RoomMessagesResponse> {
-  const { roomId, before } = params;
+  const { roomId, before, limit } = params;
   return apiClient.get<RoomMessagesResponse>(
     CHAT_ENDPOINTS.ROOM_MESSAGES(roomId),
     {
-      params: before ? { before } : undefined,
+      params: {
+        ...(before ? { before } : {}),
+        ...(typeof limit === "number" ? { limit } : {}),
+      },
     }
   );
 }
