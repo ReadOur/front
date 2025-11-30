@@ -16,7 +16,7 @@ import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
 import { extractUserIdFromToken } from "@/utils/auth";
-import { AiCommandType, AiJobResponse } from "@/types";
+import { AiCommandType, AiJobResponse, SessionClosingPayload } from "@/types";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -1715,11 +1715,25 @@ export default function ChatDock() {
       setAiDockLoading(roomKey, true);
       addAiDockMessage(roomKey, { type: "user", text: formatAiRequestMessage(command, note) });
 
-          requestAIMutation.mutate(
+      requestAIMutation.mutate(
         { roomId, command, note },
         {
           onSuccess: (data) => {
-            addAiDockMessage(roomKey, { type: "ai", text: formatAiJobMessage(command, data) });
+            const payload = data.payload as SessionClosingPayload | null;
+
+            if (command === "SESSION_CLOSING" && payload && !payload.fallback) {
+              addAiDockMessage(roomKey, {
+                type: "ai",
+                text: formatAiJobMessage(command, data),
+                sessionClosing: {
+                  payload,
+                  meta: { jobId: data.jobId, latencyMs: data.latencyMs },
+                },
+              });
+            } else {
+              addAiDockMessage(roomKey, { type: "ai", text: formatAiJobMessage(command, data) });
+            }
+
             toast.show({ title: "AI 작업이 완료되었습니다.", variant: "success" });
           },
           onError: (error: any) => {

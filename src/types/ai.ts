@@ -10,6 +10,28 @@ export type AiCommandType =
 
 export type AiJobStatus = "RUNNING" | "COMPLETED" | "FAILED";
 
+export interface SessionClosingDisagreement {
+  title?: string;
+  viewA?: string;
+  viewB?: string;
+  summary?: string;
+}
+
+export interface SessionClosingPlan {
+  storyFlow?: string[];
+  commonThemes?: string[];
+  disagreements?: SessionClosingDisagreement[];
+  extras?: string[];
+  nextSteps?: string[];
+}
+
+export interface SessionClosingPayload {
+  closingMarkdown?: string;
+  plan?: SessionClosingPlan;
+  fallback?: boolean;
+  reason?: string;
+}
+
 export interface AiJobRequest {
   command: AiCommandType;
   messageLimit?: number;
