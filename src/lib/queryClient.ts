@@ -14,6 +14,7 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5분 (데이터가 fresh 상태를 유지하는 시간)
       gcTime: 1000 * 60 * 10, // 10분 (캐시가 메모리에 유지되는 시간, 구 cacheTime)
       retry: 1, // 실패 시 1번만 재시도
+      refetchOnMount: "always", // 라우트 재진입 시마다 최신 데이터로 강제 리패치
       refetchOnWindowFocus: false, // 윈도우 포커스 시 자동 리패치 비활성화
 
       // 에러 핸들링
