@@ -7,7 +7,6 @@ import {
   useUpdateAnnouncement,
   useDeleteAnnouncement,
 } from "@/hooks/api/useChat";
-import { Announcement } from "@/types";
 import { useToast } from "@/components/Toast/ToastProvider";
 
 /**
@@ -165,7 +164,7 @@ export default function NoticeDock({
         data: { title: newNotice.title, content: newNotice.content },
       },
       {
-        onSuccess: (updatedAnnouncement) => {
+        onSuccess: (_updatedAnnouncement) => {
           toast.show({
             title: "공지가 수정되었습니다.",
             variant: "success",
