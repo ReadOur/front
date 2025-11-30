@@ -89,7 +89,38 @@ function formatAiPayload(payload: AiJobResponse["payload"]): string {
   return JSON.stringify(payload, null, 2);
 }
 
+function formatAiQuestions(payload: AiJobResponse["payload"]): string | null {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+
+  if ("fallback" in payload && payload.fallback) {
+    return null;
+  }
+
+  const questions = (payload as { questions?: unknown }).questions;
+
+  if (!Array.isArray(questions)) {
+    return null;
+  }
+
+  const formatted = questions
+    .filter((q): q is string => typeof q === "string" && q.trim().length > 0)
+    .map((q, idx) => `${idx + 1}. ${q.trim()}`);
+
+  if (formatted.length === 0) {
+    return "질문을 생성하지 못했습니다.";
+  }
+
+  return formatted.join("\n");
+}
+
 function formatAiJobMessage(command: AiCommandType, response: AiJobResponse): string {
+  const questionsText = formatAiQuestions(response.payload);
+  if (questionsText) {
+    return questionsText;
+  }
+
   const parts = [`[${command}] 상태: ${response.status}`];
 
   const payloadText = formatAiPayload(response.payload);
