@@ -7,7 +7,6 @@ import SessionClosingSummary from "./SessionClosingSummary";
  * AIDock - AI 기능창 (우측 도크)
  * - 페이지 우측에 떠 있는 AI 채팅 윈도우
  * - ChatDock과 유사한 UI 패턴
- * - 추후 AI API 연동 예정
  */
 
 export interface AIMessage {

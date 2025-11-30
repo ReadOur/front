@@ -606,10 +606,9 @@ function ChatWindow({
   }, [profileTarget, profileCardPosition]);
 
   const createRoomMutation = useCreateRoom({
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.show({
         title: "1:1 채팅방을 생성했습니다.",
-        description: data.name,
         variant: "success",
       });
     },
@@ -737,7 +736,6 @@ function ChatWindow({
       setNoticePermission({ status: "error", errorMessage: message });
       toast.show({
         title: "공지 권한 확인 실패",
-        description: message,
         variant: "error",
       });
     }
