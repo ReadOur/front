@@ -367,8 +367,8 @@ function ChatWindow({
                       onSend,
                       onRequestAI,
                       onDeleteRoom,
-                      onMuteRoom,
-                      onUnmuteRoom,
+                      onMuteRoom: _onMuteRoom,
+                      onUnmuteRoom: _onUnmuteRoom,
                       aiMessages,
                       aiIsLoading,
                       onAIDockSend,
@@ -380,7 +380,7 @@ function ChatWindow({
                       width = 320,
                       height = 420,
                       roomId,
-                      isMuted = false,
+                      isMuted: _isMuted = false,
                       currentUserIdNumber,
                       onLoadMoreMessages,
                       hasMoreMessages,
@@ -499,7 +499,6 @@ function ChatWindow({
   }, [roomId, profileTarget?.userId]);
 
   // role에 따른 권한 확인
-  const isAdmin = currentUserRole === "ADMIN" || currentUserRole === "OWNER" || currentUserRole === "MANAGER";
   const isOwner = currentUserRole === "OWNER";
 
   const toast = useToast();
@@ -521,9 +520,6 @@ function ChatWindow({
 
   const isPublicThread = thread.category === "PUBLIC";
   const isGroupThread = thread.category === "GROUP";
-  const isPrivateThread = thread.category === "PRIVATE";
-  const isManagerOrAbove =
-    currentUserRole === "MANAGER" || currentUserRole === "OWNER" || currentUserRole === "ADMIN";
 
   const canManageGroupAI =
     aiPermissions.groupKeypoints.allowed ||
@@ -531,17 +527,9 @@ function ChatWindow({
     aiPermissions.sessionStart.allowed ||
     aiPermissions.sessionEnd.allowed ||
     aiPermissions.sessionClosing.allowed;
-  const canControlSession = isGroupThread && (aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed);
   const canShowAISection =
     (isPublicThread && aiPermissions.publicSummary.allowed) ||
     (isGroupThread && canManageGroupAI);
-  const canOpenAIDock =
-    (isPublicThread && aiPermissions.publicSummary.allowed) ||
-    (isGroupThread && canManageGroupAI);
-
-  // 디버깅: AI 섹션 표시 여부
-  const canCreateEvent = true; // 모든 사용자가 일정 추가 가능
-  const canAddNotice = isPrivateThread || isManagerOrAbove;
 
   const requestAICommand = useCallback(
     (command: AiCommandType, note?: string) => {
@@ -1925,7 +1913,7 @@ export default function ChatDock() {
 
   // 핀 토글 함수
   // TODO: 백엔드 API에 핀 토글 엔드포인트 추가 후 구현 필요
-  const togglePin = (threadId: string) => {
+  const togglePin = (_threadId: string) => {
     // 백엔드 API 연동 필요: PUT /chat/rooms/{roomId}/pin
   };
 
