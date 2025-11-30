@@ -1120,7 +1120,7 @@ function ChatWindow({
               {/* 일반 기능 섹션 */}
               <div className="border-b-2 border-[color:var(--chatdock-border-subtle)] py-2">
                 <div className="grid grid-cols-2 gap-2 px-2">
-                  {canCreateEvent && (
+                  {createEvent && (
                     <button
                       onClick={handleOpenEventModal}
                       className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
