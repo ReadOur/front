@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { X, Minimize2, Send, Sparkles } from "lucide-react";
+import { SessionClosingPayload } from "@/types";
+import SessionClosingSummary from "./SessionClosingSummary";
 
 /**
  * AIDock - AI 기능창 (우측 도크)
@@ -11,8 +13,12 @@ import { X, Minimize2, Send, Sparkles } from "lucide-react";
 export interface AIMessage {
   id: string;
   type: "user" | "ai";
-  text: string;
+  text?: string;
   timestamp: number;
+  sessionClosing?: {
+    payload?: SessionClosingPayload | null;
+    meta?: { jobId?: string; latencyMs?: number };
+  };
 }
 
 interface AIDockProps {
@@ -178,6 +184,7 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
             key={msg.id}
             className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
           >
+            {/** SESSION_CLOSING 결과는 리치 카드로 표현 */}
             <div
               className={`max-w-[80%] px-4 py-2 rounded-lg ${
                 msg.type === "user"
@@ -185,7 +192,15 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
                   : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] border border-[color:var(--chatdock-border-subtle)]"
               }`}
             >
-              <div className="text-sm whitespace-pre-wrap break-words">{msg.text}</div>
+              {msg.sessionClosing && !msg.sessionClosing.payload?.fallback ? (
+                <SessionClosingSummary
+                  payload={msg.sessionClosing.payload}
+                  meta={msg.sessionClosing.meta}
+                  fallbackText={msg.text}
+                />
+              ) : (
+                <div className="text-sm whitespace-pre-wrap break-words">{msg.text}</div>
+              )}
               <div
                 className={`mt-1 text-xs ${
                   msg.type === "user" ? "text-white/70" : "text-[color:var(--chatdock-fg-muted)]"
