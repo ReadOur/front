@@ -185,8 +185,14 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
             className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
           >
             {/** SESSION_CLOSING 결과는 리치 카드로 표현 */}
+            {/** 마감문 카드는 폭을 넓혀 가독성을 확보 */}
+            {/** 기본 챗 버블은 80% 폭을 유지 */}
             <div
-              className={`max-w-[80%] px-4 py-2 rounded-lg ${
+              className={`${
+                msg.sessionClosing && !msg.sessionClosing.payload?.fallback
+                  ? "w-full"
+                  : "max-w-[80%]"
+              } px-4 py-2 rounded-lg ${
                 msg.type === "user"
                   ? "bg-blue-500 text-white"
                   : "bg-[color:var(--chatdock-bg-elev-1)] text-[color:var(--chatdock-fg-primary)] border border-[color:var(--chatdock-border-subtle)]"

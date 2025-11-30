@@ -510,6 +510,7 @@ function ChatWindow({
         groupQuestions: canUseAI(thread.category, currentUserRole, "GROUP_QUESTION_GENERATOR"),
         sessionStart: canUseAI(thread.category, currentUserRole, "SESSION_START"),
         sessionEnd: canUseAI(thread.category, currentUserRole, "SESSION_END"),
+        sessionClosing: canUseAI(thread.category, currentUserRole, "SESSION_CLOSING"),
       };
       return permissions;
     },
@@ -526,7 +527,8 @@ function ChatWindow({
     aiPermissions.groupKeypoints.allowed ||
     aiPermissions.groupQuestions.allowed ||
     aiPermissions.sessionStart.allowed ||
-    aiPermissions.sessionEnd.allowed;
+    aiPermissions.sessionEnd.allowed ||
+    aiPermissions.sessionClosing.allowed;
   const canControlSession = isGroupThread && (aiPermissions.sessionStart.allowed || aiPermissions.sessionEnd.allowed);
   const canShowAISection =
     (isPublicThread && aiPermissions.publicSummary.allowed) ||
@@ -1048,6 +1050,18 @@ function ChatWindow({
                       >
                         <div className={cls("w-2 h-2 rounded-full flex-shrink-0", isSessionActive ? "bg-white animate-pulse" : "bg-red-500")} />
                         {isSessionActive ? "세션 종료" : "세션 시작"}
+                      </button>
+                    )}
+                    {isGroupThread && aiPermissions.sessionClosing.allowed && (
+                      <button
+                        onClick={() => {
+                          requestAICommand("SESSION_CLOSING", undefined);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                      >
+                        <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                        마감문 생성
                       </button>
                     )}
                   </div>

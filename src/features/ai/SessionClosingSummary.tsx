@@ -58,11 +58,77 @@ function DisagreementCard({
   );
 }
 
+function buildMarkdownFromPlan(plan: SessionClosingPayload["plan"]): string | null {
+  if (!plan) return null;
+
+  const sections: string[] = [];
+
+  if (plan.storyFlow && plan.storyFlow.length > 0) {
+    const flows = plan.storyFlow.map((paragraph) => paragraph.trim()).filter(Boolean).join("\n\n");
+
+    if (flows) {
+      sections.push(["## 📝 오늘의 이야기 흐름", flows].join("\n\n"));
+    }
+  }
+
+  if (plan.commonThemes && plan.commonThemes.length > 0) {
+    const themes = plan.commonThemes.map((item) => `- ${item}`).join("\n");
+
+    if (themes) {
+      sections.push(["## 🔍 나눔 내용 요약 (핵심 포인트)", themes].join("\n\n"));
+    }
+  }
+
+  if (plan.disagreements && plan.disagreements.length > 0) {
+    const disagreements = plan.disagreements
+      .map((item, idx) => {
+        const lines: string[] = [];
+        const title = item.title || "의견 차이";
+        lines.push(`### 🟦 **의견 차이 ${idx + 1} — ${title}**`);
+        if (item.viewA) lines.push(`- **관점 A:** ${item.viewA}`);
+        if (item.viewB) lines.push(`- **관점 B:** ${item.viewB}`);
+        if (item.summary) lines.push(`- **정리:** ${item.summary}`);
+        return lines.join("\n");
+      })
+      .filter(Boolean)
+      .join("\n\n\n");
+
+    if (disagreements) {
+      sections.push(["## 🔀 서로 다른 의견", "프론트에서는 아래처럼 **카드 UI**로 보일 가능성이 높아.", disagreements].join("\n\n"));
+    }
+  }
+
+  if (plan.extras && plan.extras.length > 0) {
+    const extras = plan.extras.map((item) => `- ${item}`).join("\n");
+
+    if (extras) {
+      sections.push(["## 💬 추가로 나왔던 이야기", extras].join("\n\n"));
+    }
+  }
+
+  if (plan.nextSteps && plan.nextSteps.length > 0) {
+    const nextSteps = plan.nextSteps.map((step) => `- ${step}`).join("\n");
+
+    if (nextSteps) {
+      sections.push(["## 📌 다음 모임 준비", nextSteps].join("\n\n"));
+    }
+  }
+
+  if (sections.length === 0) return null;
+
+  return sections.join("\n\n---\n\n");
+}
+
 export default function SessionClosingSummary({ payload, meta, fallbackText }: SessionClosingSummaryProps) {
   const disagreements = payload?.plan?.disagreements ?? [];
   const nextSteps = payload?.plan?.nextSteps ?? [];
 
-  const hasMarkdown = useMemo(() => Boolean(payload?.closingMarkdown), [payload?.closingMarkdown]);
+  const markdown = useMemo(() => {
+    if (payload?.closingMarkdown) return payload.closingMarkdown;
+    return buildMarkdownFromPlan(payload?.plan);
+  }, [payload?.closingMarkdown, payload?.plan]);
+
+  const hasMarkdown = Boolean(markdown);
 
   return (
     <div className="space-y-3">
@@ -76,8 +142,8 @@ export default function SessionClosingSummary({ payload, meta, fallbackText }: S
 
       <div className="h-px bg-[color:var(--chatdock-border-subtle)]" />
 
-      {hasMarkdown && payload?.closingMarkdown ? (
-        <MarkdownRenderer markdown={payload.closingMarkdown} />
+      {hasMarkdown && markdown ? (
+        <MarkdownRenderer markdown={markdown} />
       ) : (
         <div className="rounded-md bg-[color:var(--chatdock-bg-elev-2)] p-3 text-sm text-[color:var(--chatdock-fg-muted)]">
           {fallbackText || "생성된 마감문이 없습니다."}
