@@ -157,22 +157,12 @@ function formatAiJobMessage(command: AiCommandType, response: AiJobResponse): st
     return questionsText;
   }
 
-  const parts = [`[${command}] 상태: ${response.status}`];
-
   const payloadText = formatAiPayload(response.payload);
   if (payloadText) {
-    parts.push(payloadText);
+    return payloadText;
   }
 
-  if (response.jobId) {
-    parts.push(`jobId: ${response.jobId}`);
-  }
-
-  if (typeof response.latencyMs === "number") {
-    parts.push(`지연 시간: ${response.latencyMs}ms`);
-  }
-
-  return parts.join("\n\n");
+  return `${command} 결과를 불러오지 못했습니다.`;
 }
 
 function buildAiErrorMessage(error: any): string {
