@@ -74,6 +74,39 @@ function formatAiPayload(payload: AiJobResponse["payload"]): string {
     return `컨텍스트가 충분하지 않습니다${reason}`;
   }
 
+  if (
+    typeof payload === "object" &&
+    ("topicSummary" in payload || "alignment" in payload || "disagreement" in payload)
+  ) {
+    const sections: string[] = [];
+
+    const appendSection = (label: string, value: unknown) => {
+      if (!value) return;
+
+      if (Array.isArray(value)) {
+        sections.push(`${label}`);
+        value.forEach((item) => {
+          if (typeof item === "string") {
+            sections.push(`- ${item}`);
+          }
+        });
+        return;
+      }
+
+      if (typeof value === "string") {
+        sections.push(`${label}${value}`);
+      }
+    };
+
+    appendSection("요점 정리 : ", (payload as Record<string, unknown>).topicSummary);
+    appendSection("조정 과정 : ", (payload as Record<string, unknown>).alignment);
+    appendSection("쟁점 : ", (payload as Record<string, unknown>).disagreement);
+
+    if (sections.length > 0) {
+      return sections.join("\n");
+    }
+  }
+
   if (typeof payload === "string") {
     return payload;
   }
