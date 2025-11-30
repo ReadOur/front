@@ -44,9 +44,12 @@ const AI_COMMAND_ALIASES: Record<string, AiCommandType> = {
   "요점정리": "GROUP_KEYPOINTS",
   start: "SESSION_START",
   begin: "SESSION_START",
+  "토론시작": "SESSION_START",
   end: "SESSION_END",
   finish: "SESSION_END",
+  "토론종료": "SESSION_END",
   closing: "SESSION_CLOSING",
+  "마감": "SESSION_CLOSING",
 };
 
 function resolveAiCommand(rawCommand: string): AiCommandType | null {
@@ -923,7 +926,7 @@ function ChatWindow({
         endsAt: newEvent.endsAt.length === 16 ? `${newEvent.endsAt}:00` : newEvent.endsAt,
       };
 
-      await createEvent(eventData); //TODO 바꿔야 할 부분.
+      await createEvent(eventData);
       alert("일정이 추가되었습니다.");
       setIsEventModalOpen(false);
     } catch (error: any) {
