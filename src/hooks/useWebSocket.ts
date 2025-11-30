@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { getAccessToken } from "@/utils/auth";
+import type { RoomMessageType } from "@/types";
 
 export type WebSocketStatus = "idle" | "connecting" | "connected" | "disconnected" | "error";
 
@@ -16,12 +17,14 @@ export interface WebSocketMessage {
   senderId: number;
   senderNickname: string;
   senderRole?: string;
-  type: "TEXT" | "IMAGE" | "FILE";
+  type: RoomMessageType;
   body: {
     text?: string;
     imageUrl?: string;
     fileUrl?: string;
     fileName?: string;
+    command?: string;
+    payload?: unknown;
   };
   replyToMsgId: number | null;
   createdAt: string;

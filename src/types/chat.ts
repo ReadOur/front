@@ -242,7 +242,7 @@ export interface GetMyRoomsParams {
 /**
  * 메시지 타입 (백엔드 API)
  */
-export type RoomMessageType = "TEXT" | "IMAGE" | "FILE" | "POLL";
+export type RoomMessageType = "TEXT" | "IMAGE" | "FILE" | "POLL" | "AI_ASSIST";
 
 /**
  * 채팅방 메시지 아이템
@@ -255,8 +255,10 @@ export interface RoomMessage {
   senderRole?: string;
   type: RoomMessageType;
   body: {
-    text: string;
+    text?: string;
     extra?: string;
+    command?: string;
+    payload?: unknown;
   };
   replyToMsgId: number | null;
   createdAt: string;
