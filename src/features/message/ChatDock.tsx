@@ -16,7 +16,7 @@ import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
 import { extractUserIdFromToken } from "@/utils/auth";
-import { AiCommandType, AiJobResponse, SessionClosingPayload } from "@/types";
+import { AiCommandType, AiJobResponse, RoomMessageType, SessionClosingPayload } from "@/types";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -178,7 +178,8 @@ function buildAiErrorMessage(error: any): string {
 }
 
 const DEFAULT_MESSAGE_LIMIT = 60;
-const shouldHideAiMessage = (msg: { senderRole?: string }) => msg.senderRole === "AI";
+const shouldHideAiMessage = (msg: { senderRole?: string; type?: RoomMessageType }) =>
+  msg.senderRole === "AI" || msg.type === "AI_ASSIST";
 
 const AI_COMMAND_LABELS: Record<AiCommandType, string> = {
   PUBLIC_SUMMARY: "공개 대화 요약",
@@ -220,6 +221,7 @@ export interface ChatMessage {
   createdAt: number; // epoch ms
   senderNickname?: string; // 발신자 닉네임
   senderRole?: string; // 발신자 역할
+  type?: RoomMessageType;
 }
 
 export type ChatCategory = "PRIVATE" | "GROUP" | "PUBLIC";
@@ -2134,10 +2136,11 @@ export default function ChatDock() {
             threadId: msg.roomId.toString(),
             fromId: msg.senderId.toString(),
             senderId: msg.senderId.toString(),
-            text: msg.body.text,
+            text: msg.body.text ?? "",
             createdAt: new Date(msg.createdAt).getTime(),
             senderNickname: msg.senderNickname,
             senderRole: msg.senderRole,
+            type: msg.type,
           }))
           .sort((a, b) => a.createdAt - b.createdAt);
 
@@ -2184,10 +2187,11 @@ export default function ChatDock() {
             threadId: msg.roomId.toString(),
             fromId: msg.senderId.toString(),
             senderId: msg.senderId.toString(),
-            text: msg.body.text,
+            text: msg.body.text ?? "",
             createdAt: new Date(msg.createdAt).getTime(),
             senderNickname: msg.senderNickname,
             senderRole: msg.senderRole,
+            type: msg.type,
           }))
           .sort((a, b) => a.createdAt - b.createdAt);
 
@@ -2235,10 +2239,11 @@ export default function ChatDock() {
       threadId: threadId,
       fromId: message.senderId.toString(),
       senderId: message.senderId.toString(),
-      text: message.body.text || "",
+      text: message.body.text ?? "",
       createdAt: new Date(message.createdAt).getTime(),
       senderNickname: message.senderNickname,
       senderRole: message.senderRole,
+      type: message.type,
     };
 
     // 메시지 목록에 추가
