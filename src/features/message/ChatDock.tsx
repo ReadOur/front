@@ -437,8 +437,6 @@ function ChatWindow({
   // 메시지별 메뉴 관련 상태
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
   const [messageMenuOpen, setMessageMenuOpen] = useState<string | null>(null);
-  const [aiSessionStart, setAiSessionStart] = useState<string | null>(null);
-  const [aiSessionEnd, setAiSessionEnd] = useState<string | null>(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const messageMenuRef = useRef<HTMLDivElement>(null);
   const [messageMenuPositions, setMessageMenuPositions] = useState<Record<string, { left: number; top: number }>>({});
@@ -1202,9 +1200,6 @@ function ChatWindow({
           const senderId = (m.fromId ?? m.senderId)?.toString();
           const mine = senderId === me.id?.toString();
           const isHidden = hiddenMessageIds.has(m.id);
-          const isAISessionStart = aiSessionStart === m.id;
-          const isAISessionEnd = aiSessionEnd === m.id;
-
           return (
             <div key={m.id} className="relative group">
               <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}> 
@@ -1285,33 +1280,6 @@ function ChatWindow({
                             {isHidden ? "메시지 보이기" : "메시지 가리기"}
                           </button>
 
-                          {isAdmin && (
-                            <>
-                              <div className="h-px bg-[color:var(--chatdock-border-subtle)] my-1" />
-                              <button
-                                onClick={() => {
-                                  setAiSessionStart(aiSessionStart === m.id ? null : m.id);
-                                  if (aiSessionStart === m.id) {
-                                    setAiSessionEnd(null);
-                                  }
-                                  setMessageMenuOpen(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm text-[color:var(--color-primary)]"
-                              >
-                                {aiSessionStart === m.id ? "✓ AI 세션 시작" : "AI 세션 시작 설정"}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setAiSessionEnd(aiSessionEnd === m.id ? null : m.id);
-                                  setMessageMenuOpen(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm text-[color:var(--color-primary)]"
-                                disabled={!aiSessionStart}
-                              >
-                                {aiSessionEnd === m.id ? "✓ AI 세션 끝" : "AI 세션 끝 설정"}
-                              </button>
-                            </>
-                          )}
                           </div>
                         </div>
                       )}
@@ -1431,33 +1399,6 @@ function ChatWindow({
                             {isHidden ? "메시지 보이기" : "메시지 가리기"}
                           </button>
 
-                          {isAdmin && (
-                            <>
-                              <div className="h-px bg-[color:var(--chatdock-border-subtle)] my-1" />
-                              <button
-                                onClick={() => {
-                                  setAiSessionStart(aiSessionStart === m.id ? null : m.id);
-                                  if (aiSessionStart === m.id) {
-                                    setAiSessionEnd(null);
-                                  }
-                                  setMessageMenuOpen(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm text-[color:var(--color-primary)]"
-                              >
-                                {aiSessionStart === m.id ? "✓ AI 세션 시작" : "AI 세션 시작 설정"}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setAiSessionEnd(aiSessionEnd === m.id ? null : m.id);
-                                  setMessageMenuOpen(null);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm text-[color:var(--color-primary)]"
-                                disabled={!aiSessionStart}
-                              >
-                                {aiSessionEnd === m.id ? "✓ AI 세션 끝" : "AI 세션 끝 설정"}
-                              </button>
-                            </>
-                          )}
                           </div>
                         </div>
                       )}
