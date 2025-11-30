@@ -15,6 +15,7 @@ export interface WebSocketMessage {
   roomId: number;
   senderId: number;
   senderNickname: string;
+  senderRole?: string;
   type: "TEXT" | "IMAGE" | "FILE";
   body: {
     text?: string;

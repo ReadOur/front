@@ -184,6 +184,9 @@ function buildAiErrorMessage(error: any): string {
   return serverMessage || "AI 요청에 실패했습니다.";
 }
 
+const DEFAULT_MESSAGE_LIMIT = 60;
+const shouldHideAiMessage = (msg: { senderRole?: string }) => msg.senderRole === "AI";
+
 const AI_COMMAND_LABELS: Record<AiCommandType, string> = {
   PUBLIC_SUMMARY: "공개 대화 요약",
   GROUP_QUESTION_GENERATOR: "추가 질문 제안",
@@ -2142,7 +2145,8 @@ export default function ChatDock() {
 
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [loadingMessages, setLoadingMessages] = useState<Record<string, boolean>>({});
-  const [messageCursors, setMessageCursors] = useState<Record<string, string | null>>({});
+  const [messageLimits, setMessageLimits] = useState<Record<string, number>>({});
+  const [messageHasMore, setMessageHasMore] = useState<Record<string, boolean>>({});
   const [typing] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
 
@@ -2185,27 +2189,31 @@ export default function ChatDock() {
 
       try {
         const roomId = parseInt(threadId, 10);
-        const response = await chatService.getRoomMessages({ roomId, limit: 20 });
+        const limit = messageLimits[threadId] ?? DEFAULT_MESSAGE_LIMIT;
+        const response = await chatService.getRoomMessages({ roomId, limit });
 
         // 백엔드 메시지를 UI 형식으로 변환
-        const convertedMessages: ChatMessage[] = response.items.map((msg) => ({
-          id: msg.id.toString(),
-          threadId: msg.roomId.toString(),
-          fromId: msg.senderId.toString(),
-          senderId: msg.senderId.toString(),
-          text: msg.body.text,
-          createdAt: new Date(msg.createdAt).getTime(),
-          senderNickname: msg.senderNickname,
-          senderRole: msg.senderRole,
-        }));
+        const convertedMessages: ChatMessage[] = response.items
+          .filter((msg) => !shouldHideAiMessage(msg))
+          .map((msg) => ({
+            id: msg.id.toString(),
+            threadId: msg.roomId.toString(),
+            fromId: msg.senderId.toString(),
+            senderId: msg.senderId.toString(),
+            text: msg.body.text,
+            createdAt: new Date(msg.createdAt).getTime(),
+            senderNickname: msg.senderNickname,
+            senderRole: msg.senderRole,
+          }))
+          .sort((a, b) => a.createdAt - b.createdAt);
 
         setMessages((prev) => ({
           ...prev,
           [threadId]: convertedMessages,
         }));
 
-        const nextCursor = response.paging?.nextBefore ?? response.items[0]?.createdAt ?? null;
-        setMessageCursors((prev) => ({ ...prev, [threadId]: nextCursor }));
+        setMessageLimits((prev) => ({ ...prev, [threadId]: limit }));
+        setMessageHasMore((prev) => ({ ...prev, [threadId]: response.items.length >= limit }));
 
         // 메시지 조회 성공 시 백엔드에서 자동으로 읽음 처리되므로
         // 채팅방 목록을 다시 가져와서 unreadCount 업데이트
@@ -2218,7 +2226,7 @@ export default function ChatDock() {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     });
-  }, [loadingMessages, messages, openThreadIds, queryClient]);
+  }, [loadingMessages, messageLimits, messages, openThreadIds, queryClient]);
 
   const loadOlderMessages = useCallback(
     async (threadId: string) => {
@@ -2226,45 +2234,43 @@ export default function ChatDock() {
         return false;
       }
 
-      const cursor = messageCursors[threadId];
-      if (cursor === null || typeof cursor === "undefined") {
-        return false;
-      }
+      const currentLimit = messageLimits[threadId] ?? DEFAULT_MESSAGE_LIMIT;
+      const nextLimit = currentLimit + 40;
 
       setLoadingMessages((prev) => ({ ...prev, [threadId]: true }));
 
       try {
         const roomId = parseInt(threadId, 10);
-        const response = await chatService.getRoomMessages({ roomId, before: cursor, limit: 20 });
+        const response = await chatService.getRoomMessages({ roomId, limit: nextLimit });
 
-        const convertedMessages: ChatMessage[] = response.items.map((msg) => ({
-          id: msg.id.toString(),
-          threadId: msg.roomId.toString(),
-          fromId: msg.senderId.toString(),
-          senderId: msg.senderId.toString(),
-          text: msg.body.text,
-          createdAt: new Date(msg.createdAt).getTime(),
-          senderNickname: msg.senderNickname,
-          senderRole: msg.senderRole,
-        }));
+        const convertedMessages: ChatMessage[] = response.items
+          .filter((msg) => !shouldHideAiMessage(msg))
+          .map((msg) => ({
+            id: msg.id.toString(),
+            threadId: msg.roomId.toString(),
+            fromId: msg.senderId.toString(),
+            senderId: msg.senderId.toString(),
+            text: msg.body.text,
+            createdAt: new Date(msg.createdAt).getTime(),
+            senderNickname: msg.senderNickname,
+            senderRole: msg.senderRole,
+          }))
+          .sort((a, b) => a.createdAt - b.createdAt);
 
-        let filteredNewCount = 0;
+        let added = false;
         setMessages((prev) => {
           const existing = prev[threadId] || [];
-          const existingIds = new Set(existing.map((msg) => msg.id));
-          const filteredNew = convertedMessages.filter((msg) => !existingIds.has(msg.id));
-          filteredNewCount = filteredNew.length;
-
+          added = convertedMessages.length > existing.length;
           return {
             ...prev,
-            [threadId]: [...filteredNew, ...existing],
+            [threadId]: convertedMessages,
           };
         });
 
-        const nextCursor = response.paging?.nextBefore ?? response.items[0]?.createdAt ?? null;
-        setMessageCursors((prev) => ({ ...prev, [threadId]: nextCursor }));
+        setMessageLimits((prev) => ({ ...prev, [threadId]: nextLimit }));
+        setMessageHasMore((prev) => ({ ...prev, [threadId]: response.items.length >= nextLimit }));
 
-        return filteredNewCount > 0;
+        return added;
       } catch (error) {
         console.error("Failed to load older messages for thread:", threadId, error);
         return false;
@@ -2272,7 +2278,7 @@ export default function ChatDock() {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     },
-    [loadingMessages, messageCursors]
+    [loadingMessages, messageLimits]
   );
 
   // ===== 웹소켓 연결 관리 =====
@@ -2284,6 +2290,10 @@ export default function ChatDock() {
   // 웹소켓 메시지 수신 핸들러
   const handleWebSocketMessage = useCallback((roomId: number, message: WebSocketMessage) => {
     const threadId = roomId.toString();
+
+    if (shouldHideAiMessage(message as any)) {
+      return;
+    }
 
     // 백엔드 메시지를 UI 형식으로 변환
     const convertedMessage: ChatMessage = {
@@ -2601,7 +2611,7 @@ export default function ChatDock() {
                 onCloseAIDock={() => closeAiDock(id)}
                 onAIDockSend={(text) => handleAiDockSend(id, text)}
                 onLoadMoreMessages={() => loadOlderMessages(id)}
-                hasMoreMessages={messageCursors[id] !== null && typeof messageCursors[id] !== "undefined"}
+                hasMoreMessages={messageHasMore[id] ?? true}
                 isLoadingMessages={!!loadingMessages[id]}
                 onDeleteRoom={() => {
                   const roomId = parseInt(id, 10);
