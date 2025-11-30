@@ -156,8 +156,8 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
       <div className="h-14 flex items-center gap-2 px-4 border-b border-[color:var(--chatdock-border-subtle)] bg-gradient-to-r from-purple-500 to-blue-500">
         <Sparkles className="w-5 h-5 text-white" />
         <div className="flex-1">
-          <div className="text-sm font-bold text-white">AI 어시스턴트</div>
-          <div className="text-xs text-white/80">무엇을 도와드릴까요?</div>
+          <div className="text-sm font-bold text-white">AI</div>
+          <div className="text-xs text-white/80">@ai [질문생성/요점정리]</div>
         </div>
         {onMinimize && (
           <button

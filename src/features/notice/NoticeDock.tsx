@@ -49,17 +49,6 @@ export default function NoticeDock({
   const announcements = data?.items || [];
   const hasNextPage = data?.page?.hasNext || false;
 
-  // 디버깅: 목록 조회 확인
-  React.useEffect(() => {
-    if (data) {
-      console.log('📋 공지 목록 조회 완료:', data);
-      console.log('📋 items:', data.items);
-      if (data.items && data.items.length > 0) {
-        console.log('📋 첫 번째 공지:', data.items[0]);
-        console.log('📋 첫 번째 공지 content:', (data.items[0] as any).content);
-      }
-    }
-  }, [data]);
 
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,17 +65,6 @@ export default function NoticeDock({
     { enabled: !!selectedNoticeId }
   );
 
-  // 디버깅: 상세 정보 조회 확인
-  React.useEffect(() => {
-    if (selectedNoticeId) {
-      console.log('🔍 공지 상세 조회 시작:', { roomId, announcementId: selectedNoticeId });
-    }
-    if (selectedNotice) {
-      console.log('✅ 공지 상세 조회 완료:', selectedNotice);
-      console.log('📝 content:', selectedNotice.content);
-      console.log('📏 content 길이:', selectedNotice.content?.length);
-    }
-  }, [selectedNoticeId, selectedNotice, roomId]);
 
   const toast = useToast();
   const createMutation = useCreateAnnouncement();
