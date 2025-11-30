@@ -13,6 +13,9 @@ interface UseWebSocketManagerOptions {
   roomIds: number[];
   onMessage?: (roomId: number, message: WebSocketMessage) => void;
   enabled?: boolean;
+  maxReconnectAttempts?: number;
+  reconnectBackoff?: "linear" | "exponential";
+  reconnectBaseDelay?: number;
 }
 
 /**
@@ -22,10 +25,40 @@ export function useWebSocketManager({
   roomIds,
   onMessage,
   enabled = true,
+  maxReconnectAttempts = 5,
+  reconnectBackoff = "exponential",
+  reconnectBaseDelay = 3000,
 }: UseWebSocketManagerOptions) {
   // roomId -> WebSocket 맵핑
   const websocketsRef = useRef<Map<number, WebSocket>>(new Map());
   const reconnectTimeoutsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const reconnectAttemptsRef = useRef<Map<number, number>>(new Map());
+
+  const getReconnectDelay = useCallback(
+    (attempt: number) => {
+      if (reconnectBackoff === "linear") {
+        return reconnectBaseDelay * attempt;
+      }
+      return reconnectBaseDelay * 2 ** (attempt - 1);
+    },
+    [reconnectBackoff, reconnectBaseDelay]
+  );
+
+  const clearReconnectTimer = useCallback((roomId: number) => {
+    const timeoutId = reconnectTimeoutsRef.current.get(roomId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      reconnectTimeoutsRef.current.delete(roomId);
+    }
+  }, []);
+
+  const resetReconnectState = useCallback(
+    (roomId: number) => {
+      clearReconnectTimer(roomId);
+      reconnectAttemptsRef.current.delete(roomId);
+    },
+    [clearReconnectTimer]
+  );
 
   // 웹소켓 URL 생성
   const getWebSocketUrl = useCallback((roomId: number) => {
@@ -40,6 +73,8 @@ export function useWebSocketManager({
   // 특정 채팅방 웹소켓 연결
   const connectRoom = useCallback(
     (roomId: number) => {
+      clearReconnectTimer(roomId);
+
       // 이미 연결되어 있으면 스킵
       if (websocketsRef.current.has(roomId)) {
         const ws = websocketsRef.current.get(roomId);
@@ -55,6 +90,7 @@ export function useWebSocketManager({
 
         ws.onopen = () => {
           console.log(`✅ WebSocket connected for room ${roomId}`);
+          resetReconnectState(roomId);
         };
 
         ws.onmessage = (event) => {
@@ -75,12 +111,31 @@ export function useWebSocketManager({
           console.log(`🔌 WebSocket closed for room ${roomId}:`, event.code, event.reason);
           websocketsRef.current.delete(roomId);
 
-          // 비정상 종료 시 3초 후 재연결 시도
+          // 비정상 종료 시 재연결 시도
           if (!event.wasClean && enabled && roomIds.includes(roomId)) {
-            console.log(`🔄 Will reconnect to room ${roomId} in 3 seconds...`);
+            const currentAttempt = reconnectAttemptsRef.current.get(roomId) ?? 0;
+
+            if (currentAttempt >= maxReconnectAttempts) {
+              console.log(
+                `⛔️ Reconnect limit reached for room ${roomId} (attempts: ${currentAttempt}/${maxReconnectAttempts})`
+              );
+              resetReconnectState(roomId);
+              return;
+            }
+
+            const nextAttempt = currentAttempt + 1;
+            reconnectAttemptsRef.current.set(roomId, nextAttempt);
+
+            const delay = getReconnectDelay(nextAttempt);
+            console.log(
+              `🔄 Will reconnect to room ${roomId} in ${delay}ms (attempt ${nextAttempt}/${maxReconnectAttempts})...`
+            );
+
             const timeoutId = setTimeout(() => {
               connectRoom(roomId);
-            }, 3000);
+            }, delay);
+
+            clearReconnectTimer(roomId);
             reconnectTimeoutsRef.current.set(roomId, timeoutId);
           }
         };
@@ -90,30 +145,43 @@ export function useWebSocketManager({
         console.error(`❌ Failed to create WebSocket for room ${roomId}:`, error);
       }
     },
-    [getWebSocketUrl, onMessage, enabled, roomIds]
+    [
+      clearReconnectTimer,
+      enabled,
+      getReconnectDelay,
+      getWebSocketUrl,
+      maxReconnectAttempts,
+      onMessage,
+      roomIds,
+      resetReconnectState,
+    ]
   );
 
   // 특정 채팅방 웹소켓 해제
-  const disconnectRoom = useCallback((roomId: number) => {
-    // 재연결 타이머 취소
-    const timeoutId = reconnectTimeoutsRef.current.get(roomId);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      reconnectTimeoutsRef.current.delete(roomId);
-    }
+  const disconnectRoom = useCallback(
+    (roomId: number) => {
+      resetReconnectState(roomId);
 
-    // 웹소켓 연결 종료
-    const ws = websocketsRef.current.get(roomId);
-    if (ws) {
-      console.log(`🔌 Disconnecting WebSocket for room ${roomId}...`);
-      ws.close(1000, "Client closed connection");
-      websocketsRef.current.delete(roomId);
-    }
-  }, []);
+      // 웹소켓 연결 종료
+      const ws = websocketsRef.current.get(roomId);
+      if (ws) {
+        console.log(`🔌 Disconnecting WebSocket for room ${roomId}...`);
+        ws.close(1000, "Client closed connection");
+        websocketsRef.current.delete(roomId);
+      }
+    },
+    [resetReconnectState]
+  );
 
   // roomIds 변경 시 웹소켓 연결/해제
   useEffect(() => {
     if (!enabled) {
+      reconnectTimeoutsRef.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      reconnectTimeoutsRef.current.clear();
+      reconnectAttemptsRef.current.clear();
+
       // enabled=false면 모든 연결 해제
       websocketsRef.current.forEach((_, roomId) => {
         disconnectRoom(roomId);
@@ -137,12 +205,19 @@ export function useWebSocketManager({
         disconnectRoom(roomId);
       }
     });
-  }, [roomIds, enabled, connectRoom, disconnectRoom]);
+
+    reconnectTimeoutsRef.current.forEach((_, roomId) => {
+      if (!roomIds.includes(roomId)) {
+        resetReconnectState(roomId);
+      }
+    });
+  }, [roomIds, enabled, connectRoom, disconnectRoom, resetReconnectState]);
 
   // 컴포넌트 언마운트 시 모든 연결 해제
   useEffect(() => {
     const reconnectTimeouts = reconnectTimeoutsRef.current;
     const websockets = websocketsRef.current;
+    const reconnectAttempts = reconnectAttemptsRef.current;
 
     return () => {
       console.log("🔌 Cleaning up all WebSocket connections...");
@@ -151,6 +226,7 @@ export function useWebSocketManager({
         clearTimeout(timeoutId);
       });
       reconnectTimeouts.clear();
+      reconnectAttempts.clear();
 
       // 모든 웹소켓 연결 종료
       websockets.forEach((ws, roomId) => {
