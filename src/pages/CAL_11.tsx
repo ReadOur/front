@@ -478,7 +478,9 @@ export default function CAL_11() {
               color: "white",
               position: "relative",
               zIndex: 10,
-              cursor: "pointer"
+              cursor: "pointer",
+              marginTop: "15px",
+              marginBottom: "15px",
             }}
           >
             + 일정 추가
@@ -487,7 +489,11 @@ export default function CAL_11() {
           {/* 월 네비게이션 */}
           <div
             className="flex items-center py-3 px-4 rounded"
-            style={{ background: "#E9E5DC" }}
+            style={{
+              background: "#E9E5DC",
+              marginTop: "15px",
+              marginBottom: "15px",
+            }}
           >
             <button
               onClick={handlePrevMonth}
@@ -519,7 +525,10 @@ export default function CAL_11() {
         {/* 캘린더 */}
         <div
           className="p-6 rounded-lg"
-          style={{ background: "#E9E5DC" }}
+          style={{
+            background: "#E9E5DC",
+            marginTop: "15px",
+          }}
         >
           {/* 요일 헤더 */}
           <div className="grid grid-cols-7 gap-2 mb-4">
