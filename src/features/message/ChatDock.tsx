@@ -187,6 +187,9 @@ function buildAiErrorMessage(error: any): string {
   return serverMessage || "AI 요청에 실패했습니다.";
 }
 
+const DEFAULT_MESSAGE_LIMIT = 60;
+const shouldHideAiMessage = (msg: { senderRole?: string }) => msg.senderRole === "AI";
+
 const AI_COMMAND_LABELS: Record<AiCommandType, string> = {
   PUBLIC_SUMMARY: "공개 대화 요약",
   GROUP_QUESTION_GENERATOR: "추가 질문 제안",
@@ -387,6 +390,9 @@ function ChatWindow({
                       roomId,
                       isMuted = false,
                       currentUserIdNumber,
+                      onLoadMoreMessages,
+                      hasMoreMessages,
+                      isLoadingMessages,
                     }: {
   me: ChatUser;
   thread: ChatThread;
@@ -412,6 +418,9 @@ function ChatWindow({
   roomId?: number;
   isMuted?: boolean;
   currentUserIdNumber?: number | null;
+  onLoadMoreMessages?: () => Promise<boolean>;
+  hasMoreMessages?: boolean;
+  isLoadingMessages?: boolean;
 }) {
   // 상태 선언 (먼저)
   const [text, setText] = useState("");
@@ -642,9 +651,68 @@ function ChatWindow({
   });
 
   const boxRef = useRef<HTMLDivElement>(null);
+  const prependStateRef = useRef<{ active: boolean; prevScrollHeight: number; prevScrollTop: number }>({
+    active: false,
+    prevScrollHeight: 0,
+    prevScrollTop: 0,
+  });
+
   useEffect(() => {
-    boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight });
+    const container = boxRef.current;
+    if (!container) return;
+
+    if (prependStateRef.current.active) {
+      const { prevScrollHeight, prevScrollTop } = prependStateRef.current;
+      const newScrollHeight = container.scrollHeight;
+      container.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+      prependStateRef.current.active = false;
+      return;
+    }
+
+    container.scrollTop = container.scrollHeight;
   }, [messages]);
+
+  const loadingMoreRef = useRef(false);
+
+  useEffect(() => {
+    const container = boxRef.current;
+    if (!container || !onLoadMoreMessages) return;
+
+    const loading = isLoadingMessages ?? false;
+    const hasMore = hasMoreMessages ?? false;
+
+    const handleScroll = async () => {
+      if (!hasMore || loading || loadingMoreRef.current) return;
+
+      if (container.scrollTop <= 40) {
+        const prevScrollHeight = container.scrollHeight;
+        const prevScrollTop = container.scrollTop;
+        loadingMoreRef.current = true;
+        prependStateRef.current = {
+          active: true,
+          prevScrollHeight,
+          prevScrollTop,
+        };
+
+        try {
+          const loaded = await onLoadMoreMessages();
+          if (!loaded) {
+            prependStateRef.current.active = false;
+          }
+        } catch (error) {
+          console.error("Failed to load older messages", error);
+          prependStateRef.current.active = false;
+        } finally {
+          loadingMoreRef.current = false;
+        }
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [hasMoreMessages, isLoadingMessages, onLoadMoreMessages]);
 
   // 메뉴 외부 클릭 감지
   useEffect(() => {
@@ -2080,6 +2148,8 @@ export default function ChatDock() {
 
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [loadingMessages, setLoadingMessages] = useState<Record<string, boolean>>({});
+  const [messageLimits, setMessageLimits] = useState<Record<string, number>>({});
+  const [messageHasMore, setMessageHasMore] = useState<Record<string, boolean>>({});
   const [typing] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
 
@@ -2122,24 +2192,31 @@ export default function ChatDock() {
 
       try {
         const roomId = parseInt(threadId, 10);
-        const response = await chatService.getRoomMessages({ roomId });
+        const limit = messageLimits[threadId] ?? DEFAULT_MESSAGE_LIMIT;
+        const response = await chatService.getRoomMessages({ roomId, limit });
 
         // 백엔드 메시지를 UI 형식으로 변환
-        const convertedMessages: ChatMessage[] = response.items.map((msg) => ({
-          id: msg.id.toString(),
-          threadId: msg.roomId.toString(),
-          fromId: msg.senderId.toString(),
-          senderId: msg.senderId.toString(),
-          text: msg.body.text,
-          createdAt: new Date(msg.createdAt).getTime(),
-          senderNickname: msg.senderNickname,
-          senderRole: msg.senderRole,
-        }));
+        const convertedMessages: ChatMessage[] = response.items
+          .filter((msg) => !shouldHideAiMessage(msg))
+          .map((msg) => ({
+            id: msg.id.toString(),
+            threadId: msg.roomId.toString(),
+            fromId: msg.senderId.toString(),
+            senderId: msg.senderId.toString(),
+            text: msg.body.text,
+            createdAt: new Date(msg.createdAt).getTime(),
+            senderNickname: msg.senderNickname,
+            senderRole: msg.senderRole,
+          }))
+          .sort((a, b) => a.createdAt - b.createdAt);
 
         setMessages((prev) => ({
           ...prev,
           [threadId]: convertedMessages,
         }));
+
+        setMessageLimits((prev) => ({ ...prev, [threadId]: limit }));
+        setMessageHasMore((prev) => ({ ...prev, [threadId]: response.items.length >= limit }));
 
         // 메시지 조회 성공 시 백엔드에서 자동으로 읽음 처리되므로
         // 채팅방 목록을 다시 가져와서 unreadCount 업데이트
@@ -2152,7 +2229,60 @@ export default function ChatDock() {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     });
-  }, [loadingMessages, messages, openThreadIds, queryClient]);
+  }, [loadingMessages, messageLimits, messages, openThreadIds, queryClient]);
+
+  const loadOlderMessages = useCallback(
+    async (threadId: string) => {
+      if (loadingMessages[threadId]) {
+        return false;
+      }
+
+      const currentLimit = messageLimits[threadId] ?? DEFAULT_MESSAGE_LIMIT;
+      const nextLimit = currentLimit + 40;
+
+      setLoadingMessages((prev) => ({ ...prev, [threadId]: true }));
+
+      try {
+        const roomId = parseInt(threadId, 10);
+        const response = await chatService.getRoomMessages({ roomId, limit: nextLimit });
+
+        const convertedMessages: ChatMessage[] = response.items
+          .filter((msg) => !shouldHideAiMessage(msg))
+          .map((msg) => ({
+            id: msg.id.toString(),
+            threadId: msg.roomId.toString(),
+            fromId: msg.senderId.toString(),
+            senderId: msg.senderId.toString(),
+            text: msg.body.text,
+            createdAt: new Date(msg.createdAt).getTime(),
+            senderNickname: msg.senderNickname,
+            senderRole: msg.senderRole,
+          }))
+          .sort((a, b) => a.createdAt - b.createdAt);
+
+        let added = false;
+        setMessages((prev) => {
+          const existing = prev[threadId] || [];
+          added = convertedMessages.length > existing.length;
+          return {
+            ...prev,
+            [threadId]: convertedMessages,
+          };
+        });
+
+        setMessageLimits((prev) => ({ ...prev, [threadId]: nextLimit }));
+        setMessageHasMore((prev) => ({ ...prev, [threadId]: response.items.length >= nextLimit }));
+
+        return added;
+      } catch (error) {
+        console.error("Failed to load older messages for thread:", threadId, error);
+        return false;
+      } finally {
+        setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
+      }
+    },
+    [loadingMessages, messageLimits]
+  );
 
   // ===== 웹소켓 연결 관리 =====
   // openThreadIds를 roomId(number)로 변환
@@ -2163,6 +2293,10 @@ export default function ChatDock() {
   // 웹소켓 메시지 수신 핸들러
   const handleWebSocketMessage = useCallback((roomId: number, message: WebSocketMessage) => {
     const threadId = roomId.toString();
+
+    if (shouldHideAiMessage(message as any)) {
+      return;
+    }
 
     // 백엔드 메시지를 UI 형식으로 변환
     const convertedMessage: ChatMessage = {
@@ -2479,6 +2613,9 @@ export default function ChatDock() {
                 onOpenAIDock={() => openAiDock(id)}
                 onCloseAIDock={() => closeAiDock(id)}
                 onAIDockSend={(text) => handleAiDockSend(id, text)}
+                onLoadMoreMessages={() => loadOlderMessages(id)}
+                hasMoreMessages={messageHasMore[id] ?? true}
+                isLoadingMessages={!!loadingMessages[id]}
                 onDeleteRoom={() => {
                   const roomId = parseInt(id, 10);
                   deleteRoomMutation.mutate(roomId);

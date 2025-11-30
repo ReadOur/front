@@ -298,6 +298,7 @@ export interface SendRoomMessageRequest {
 export interface GetRoomMessagesParams {
   roomId: number;
   before?: string; // 커서 기반 페이징
+  limit?: number;
 }
 
 // ===== 채팅방 생성 =====
