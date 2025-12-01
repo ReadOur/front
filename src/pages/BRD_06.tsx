@@ -633,8 +633,8 @@ export const BRD_06 = (): React.JSX.Element => {
             <FileUpload
               attachments={attachments}
               onChange={setAttachments}
-              targetType="POST"
-              targetId={postTargetId}
+              tempId={tempUploadId}
+              onTempIdChange={setTempUploadId}
               maxFiles={10}
               maxFileSize={10 * 1024 * 1024}
               disabled={isPending}
