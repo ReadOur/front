@@ -93,9 +93,6 @@ export default function PostShow() {
   // 스포일러 가림막 상태 (true가 되면 가림막 해제)
   const [isSpoilerRevealed, setIsSpoilerRevealed] = useState(false);
 
-  // 첨부파일 영역 확장/축소 상태
-  const [isAttachmentsExpanded, setIsAttachmentsExpanded] = useState(false);
-
   // 삭제 확인 모달 상태
   const [deletePostModalOpen, setDeletePostModalOpen] = useState(false);
   const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
@@ -803,85 +800,22 @@ export default function PostShow() {
           )}
         </div>
 
-        {/* 첨부파일 영역 */}
-        {/* attachments 배열이 있고 길이가 0보다 크면 표시 */}
+        {/* 첨부파일 영역 (본문 아래) */}
         {post.attachments && post.attachments.length > 0 && (
-          <div className="mt-3">
-            {/* 첨부파일 헤더 (클릭하여 확장/축소) */}
-            <button
-              type="button"
-              onClick={() => setIsAttachmentsExpanded(!isAttachmentsExpanded)}
-              className="w-full bg-[color:var(--color-bg-elev-2)] border border-dashed border-[color:var(--color-border-subtle)] rounded-lg px-3 py-2 flex items-center justify-between hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
-              aria-expanded={isAttachmentsExpanded}
-              aria-label={`첨부파일 ${post.attachments.length}개 ${isAttachmentsExpanded ? '숨기기' : '보기'}`}
-            >
-              <span className="text-[color:var(--color-fg-primary)] font-medium">
-                📎 첨부파일 ({post.attachments.length})
-              </span>
-              <span className="text-[color:var(--color-fg-secondary)] transition-transform duration-200" style={{ transform: isAttachmentsExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                ▼
-              </span>
-            </button>
-
-            {/* 첨부파일 목록 (확장 시 표시) */}
-            {isAttachmentsExpanded && (
-              <div className="mt-2 space-y-2">
-                {post.attachments.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="bg-[color:var(--color-bg-elev-2)] rounded-lg p-3 hover:bg-[color:var(--color-bg-elev-1)] transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* 파일 아이콘 또는 이미지 미리보기 */}
-                      <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-[color:var(--color-bg-elev-1)] flex items-center justify-center">
-                        {isImageFile(attachment.mimeType) ? (
-                          <img
-                            src={attachment.fileUrl}
-                            alt={attachment.fileName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-2xl">📄</span>
-                        )}
-                      </div>
-
-                      {/* 파일 정보 */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[color:var(--color-fg-primary)] truncate">
-                          {attachment.fileName}
-                        </p>
-                        <p className="text-xs text-[color:var(--color-fg-muted)]">
-                          {formatFileSize(attachment.fileSize)}
-                        </p>
-                      </div>
-
-                      {/* 다운로드 버튼 */}
-                      <a
-                        href={getDownloadUrl(attachment.id)}
-                        download={attachment.fileName}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 px-3 py-2 bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                        aria-label={`${attachment.fileName} 다운로드`}
-                      >
-                        다운로드
-                      </a>
-                    </div>
-
-                    {/* 이미지 미리보기 (확대 이미지) */}
-                    {isImageFile(attachment.mimeType) && (
-                      <div className="mt-3">
-                        <img
-                          src={attachment.fileUrl}
-                          alt={attachment.fileName}
-                          className="max-w-full rounded-lg border border-[color:var(--color-border-subtle)]"
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="mt-4 pt-4 border-t border-[color:var(--color-border-subtle)]">
+            <div className="flex flex-wrap gap-3">
+              {post.attachments.map((attachment) => (
+                <a
+                  key={attachment.id}
+                  href={getDownloadUrl(attachment.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-[color:var(--color-accent)] hover:underline underline-offset-2"
+                >
+                  {attachment.fileName || attachment.originalFilename}
+                </a>
+              ))}
+            </div>
           </div>
         )}
 

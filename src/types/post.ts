@@ -129,8 +129,10 @@ export interface CreatePostRequest {
   recruitmentLimit?: number; // 모집 인원 (모임 게시글용)
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
-  attachmentIds?: string[];
-  tempId?: string;
+  attachmentIds?: number[];
+  tempId?: string | number;
+  chatRoomName?: string;
+  chatRoomDescription?: string;
 }
 
 /**
@@ -145,8 +147,10 @@ export interface UpdatePostRequest {
   recruitmentLimit?: number; // 모집 인원 (모임 게시글용)
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
-  attachmentIds?: string[];
-  tempId?: string;
+  attachmentIds?: number[];
+  tempId?: string | number;
+  chatRoomName?: string;
+  chatRoomDescription?: string;
 }
 
 /**

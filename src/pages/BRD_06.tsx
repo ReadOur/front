@@ -10,7 +10,7 @@ import { CreatePostRequest, UpdatePostRequest, Attachment } from '@/types';
 import { Loading } from '@/components/Loading';
 import { useToast } from '@/components/Toast/ToastProvider';
 import { useQueryClient } from '@tanstack/react-query';
-import { composeFileTargetId, isImageFile, uploadTempFiles } from '@/api/files';
+import { composeFileTargetId, isImageFile, uploadTempFiles, getDownloadUrl } from '@/api/files';
 import { useAuth } from '@/contexts/AuthContext';
 import { extractUserIdFromToken } from '@/utils/auth';
 
@@ -47,7 +47,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [inlineUploads, setInlineUploads] = useState<Attachment[]>([]);
-  const [tempUploadId, setTempUploadId] = useState<string | undefined>(undefined);
+  const [tempUploadId, setTempUploadId] = useState<string | number | undefined>(undefined);
 
   const currentUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
   const postIdNumber = useMemo(() => (postId ? Number(postId) : 0), [postId]);
@@ -154,7 +154,7 @@ export const BRD_06 = (): React.JSX.Element => {
     try {
       const { tempId: nextTempId, attachments: uploaded } = await uploadTempFiles({
         files: [file],
-        tempId: tempUploadId,
+        tempId: tempUploadId ? String(tempUploadId) : undefined,
       });
 
       setTempUploadId(nextTempId);
@@ -237,9 +237,9 @@ export const BRD_06 = (): React.JSX.Element => {
       .replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>)+$/gi, '') // 뒤쪽 빈 태그
       .trim();
 
-    const inlineAttachmentIds = inlineUploads.map((a) => String(a.id));
+    const inlineAttachmentIds = inlineUploads.map((a) => a.id);
     const attachmentIds = Array.from(
-      new Set([...(attachments.map((a) => String(a.id)) || []), ...inlineAttachmentIds]),
+      new Set([...(attachments.map((a) => a.id) || []), ...inlineAttachmentIds]),
     );
 
     if (isEditMode && postId) {
@@ -547,6 +547,25 @@ export const BRD_06 = (): React.JSX.Element => {
                 />
               </div>
             </div>
+
+            {/* 첨부파일 목록 (본문 아래) */}
+            {attachments.length > 0 && (
+              <div className="px-6 pb-4 border-t border-[color:var(--color-border-subtle)] pt-4">
+                <div className="flex flex-wrap gap-3">
+                  {attachments.map((attachment) => (
+                    <a
+                      key={attachment.id}
+                      href={getDownloadUrl(attachment.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[color:var(--color-accent)] hover:underline underline-offset-2"
+                    >
+                      {attachment.fileName || attachment.originalFilename}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 주의사항/태그 입력 (TagInput 컴포넌트 사용) */}

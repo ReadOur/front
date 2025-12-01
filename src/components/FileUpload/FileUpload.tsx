@@ -18,9 +18,9 @@ export interface FileUploadProps {
   /** 파일 목록 변경 콜백 */
   onChange: (attachments: Attachment[]) => void;
   /** 임시 업로드 ID (같은 tempId로 묶인 파일들은 같은 그룹으로 관리) */
-  tempId?: string;
+  tempId?: string | number;
   /** 임시 업로드 ID 변경 콜백 */
-  onTempIdChange?: (tempId: string) => void;
+  onTempIdChange?: (tempId: string | number) => void;
   /** 최대 파일 개수 */
   maxFiles?: number;
   /** 최대 파일 크기 (바이트) */
@@ -87,7 +87,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         // 임시 업로드 API 사용 (여러 파일을 한 번에 업로드)
         const { tempId: nextTempId, attachments: uploadedAttachments } = await uploadTempFiles({
           files,
-          tempId,
+          tempId: tempId ? String(tempId) : undefined,
           onProgress: (progress) => {
             // 전체 진행률을 각 파일에 동일하게 적용 (간단한 구현)
             setUploadingFiles((prev) => {
