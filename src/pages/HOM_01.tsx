@@ -108,13 +108,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, showStats = true }) 
           {/* 제목 */}
           <h3 className="text-base font-semibold text-[color:var(--color-fg)] group-hover:text-[color:var(--color-accent-fg)] transition-colors line-clamp-2 mb-2">
             {post.title}
-            {isHot && <span className="ml-2 text-red-500 text-sm">🔥</span>}
-            {isNew && <span className="ml-1 text-xs text-blue-500 font-bold">NEW</span>}
-            {post.commentCount && post.commentCount > 0 && (
-              <span className="ml-2 text-sm text-[color:var(--color-accent-fg)]">
-                [{post.commentCount}]
-              </span>
-            )}
+            <span className="ml-2 text-sm text-[color:var(--color-accent-fg)]">
+              [{post.commentCount ?? 0}]
+            </span>
+            {isHot && <span className="ml-2 text-red-500 text-sm"> HOT</span>}
+            {isNew && <span className="ml-1 text-xs text-blue-500 font-bold"> NEW</span>}
           </h3>
 
           {/* 메타 정보 */}
@@ -182,12 +180,10 @@ const RecruitmentPostCard: React.FC<RecruitmentPostCardProps> = ({ post, onClick
           {/* 제목 */}
           <h3 className="text-base font-semibold text-[color:var(--color-fg)] group-hover:text-[color:var(--color-accent-fg)] transition-colors line-clamp-2 mb-2">
             {post.title}
-            {isNew && <span className="ml-1 text-xs text-blue-500 font-bold">NEW</span>}
-            {post.commentCount && post.commentCount > 0 && (
-              <span className="ml-2 text-sm text-[color:var(--color-accent-fg)]">
-                [{post.commentCount}]
-              </span>
-            )}
+            <span className="ml-2 text-sm text-[color:var(--color-accent-fg)]">
+              [{post.commentCount ?? 0}]
+            </span>
+            {isNew && <span className="ml-1 text-xs text-blue-500 font-bold"> NEW</span>}
           </h3>
 
           {/* 메타 정보 + 인원 정보 */}

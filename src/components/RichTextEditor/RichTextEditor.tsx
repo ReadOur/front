@@ -5,6 +5,8 @@ import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { InlineImage } from "./extensions/InlineImage";
+import { getImageBlobUrl } from "@/api/files";
+import { useAuth } from "@/contexts/AuthContext";
 
 type RichTextEditorProps = {
   valueHtml: string;
@@ -56,11 +58,83 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
   });
 
+  const { accessToken } = useAuth();
+  const editorRef = useRef<HTMLDivElement>(null);
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (editor && valueHtml !== editor.getHTML()) {
       editor.commands.setContent(valueHtml || "<p></p>", { emitUpdate: false });
     }
   }, [valueHtml, editor]);
+
+  // 에디터 내 이미지 처리 (S3 URL 등 CORS 문제 해결)
+  useEffect(() => {
+    if (!editor || !editorRef.current) return;
+
+    const handleImageLoad = async () => {
+      const editorElement = editorRef.current?.querySelector('.ProseMirror');
+      if (!editorElement) return;
+
+      const images = editorElement.querySelectorAll('img');
+      
+      images.forEach(async (img) => {
+        const originalSrc = img.getAttribute('src');
+        if (!originalSrc) return;
+
+        // 이미 blob URL이거나 data URL이면 스킵
+        if (originalSrc.startsWith('blob:') || originalSrc.startsWith('data:')) {
+          return;
+        }
+
+        try {
+          console.log('[RichTextEditor] 에디터 이미지 로드 시작:', originalSrc);
+          const blobUrl = await getImageBlobUrl(originalSrc);
+          console.log('[RichTextEditor] 에디터 이미지 로드 완료:', blobUrl);
+          
+          // blob URL인 경우 정리 목록에 추가
+          if (blobUrl.startsWith('blob:')) {
+            blobUrlsRef.current.add(blobUrl);
+          }
+          
+          // 이미지 src 업데이트
+          if (img.getAttribute('src') === originalSrc) {
+            img.src = blobUrl;
+          }
+        } catch (error) {
+          console.error('[RichTextEditor] 에디터 이미지 로드 실패:', error);
+          // 에러 시 원본 URL 유지
+        }
+      });
+    };
+
+    // 에디터 업데이트 시 이미지 처리 (MutationObserver 사용)
+    const observer = new MutationObserver(() => {
+      handleImageLoad();
+    });
+
+    const editorElement = editorRef.current?.querySelector('.ProseMirror');
+    if (editorElement) {
+      observer.observe(editorElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['src'],
+      });
+      
+      // 초기 로드
+      handleImageLoad();
+    }
+    
+    // cleanup: blob URL 정리
+    return () => {
+      observer.disconnect();
+      blobUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      blobUrlsRef.current.clear();
+    };
+  }, [editor, accessToken]);
 
   if (!editor) return null;
 
@@ -101,6 +175,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div
+      ref={editorRef}
       className={
         // 루트: 세로 플렉스 + 스크롤 가능한 구조
         "w-full flex flex-col min-h-0 overflow-hidden rounded-[var(--radius-md)] " +

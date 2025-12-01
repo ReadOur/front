@@ -357,21 +357,27 @@ export default function CHT_17() {
   const { myRoomsData, publicRoomsData } = useMemo(() => {
     if (!data) return { myRoomsData: [], publicRoomsData: [] };
 
-    const myRooms: ChatThread[] = data.myRooms.items.map((room) => ({
-      id: room.roomId.toString(),
-      users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
-      category: "GROUP" as ChatCategory, // 임시: 모임으로 표시 (백엔드에서 실제 카테고리 받아야 함)
-      unreadCount: room.unreadCount,
-      lastMessage: room.lastMsg
-        ? {
-            id: room.lastMsg.id.toString(),
-            threadId: room.roomId.toString(),
-            fromId: "unknown",
-            text: room.lastMsg.preview,
-            createdAt: new Date(room.lastMsg.createdAt).getTime(),
-          }
-        : undefined,
-    }));
+    const myRooms: ChatThread[] = data.myRooms.items.map((room) => {
+      // scope를 ChatCategory로 매핑
+      // PRIVATE -> PRIVATE, GROUP -> GROUP, PUBLIC -> PUBLIC
+      const category: ChatCategory = room.scope as ChatCategory;
+
+      return {
+        id: room.roomId.toString(),
+        users: [{ id: "unknown", name: room.name }], // 임시: 실제로는 참여자 정보 필요
+        category,
+        unreadCount: room.unreadCount,
+        lastMessage: room.lastMsg
+          ? {
+              id: room.lastMsg.id.toString(),
+              threadId: room.roomId.toString(),
+              fromId: "unknown",
+              text: room.lastMsg.preview,
+              createdAt: new Date(room.lastMsg.createdAt).getTime(),
+            }
+          : undefined,
+      };
+    });
 
     const publicRooms: (ChatThread & { joined: boolean })[] = data.publicRooms.items.map((room) => ({
       id: room.roomId.toString(),

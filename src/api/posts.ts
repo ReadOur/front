@@ -26,6 +26,10 @@ export interface Post {
   commentCount?: number;
   isLiked?: boolean;
   attachments?: Array<{ id: string; name: string; url: string }>;
+  // 모임 게시글용 필드
+  currentMemberCount?: number | null;
+  recruitmentLimit?: number | null;
+  isApplied?: boolean | null;
 }
 
 /**

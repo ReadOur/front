@@ -1,69 +1,70 @@
 // src/pages/BRD_04.tsx
-import React, { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getPosts, Post } from "@/api/posts";
-import { searchPosts, SearchType } from "@/services/postService";
-import { PostListSkeleton } from "@/components/Skeleton/Skeleton";
+import React, { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getPosts, Post } from '@/api/posts';
+import { searchPosts, SearchType } from '@/services/postService';
+import { PostListSkeleton } from '@/components/Skeleton/Skeleton';
 
 // 날짜 포맷 함수 (ISO -> yyyy.MM.dd)
 function formatDate(dateString: string): string {
   const d = new Date(dateString);
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   return `${y}.${m}.${day}`;
 }
 
 // 카테고리 정의
 const CATEGORIES = [
-  { key: "", label: "전체" },
-  { key: "REVIEW", label: "리뷰" },
-  { key: "DISCUSSION", label: "토의" },
-  { key: "QUESTION", label: "질문" },
-  { key: "FREE", label: "자유" },
-  { key: "GROUP", label: "모임 모집" },
+  { key: '', label: '전체' },
+  { key: 'REVIEW', label: '리뷰' },
+  { key: 'DISCUSSION', label: '토의' },
+  { key: 'QUESTION', label: '질문' },
+  { key: 'FREE', label: '자유' },
+  { key: 'GROUP', label: '모임 모집' },
 ] as const;
 
 // 검색 타입 정의
 const SEARCH_TYPES: Array<{ key: SearchType; label: string }> = [
-  { key: "TITLE", label: "제목" },
-  { key: "TITLE-CONTENT", label: "제목+내용" },
-  { key: "USERNAME", label: "작성자" },
-  { key: "BOOK_TITLE", label: "책제목" },
+  { key: 'TITLE', label: '제목' },
+  { key: 'TITLE-CONTENT', label: '제목+내용' },
+  { key: 'USERNAME', label: '작성자' },
+  { key: 'BOOK_TITLE', label: '책제목' },
 ] as const;
 
 // 카테고리 한글 변환 함수
 function getCategoryLabel(category: string): string {
   const categoryMap: Record<string, string> = {
-    FREE: "자유",
-    NOTICE: "공지",
-    QNA: "Q&A",
-    REVIEW: "리뷰",
-    GENERAL: "일반",
-    DISCUSSION: "토의",
-    QUESTION: "질문",
-    GROUP: "모임 모집",
+    FREE: '자유',
+    NOTICE: '공지',
+    QNA: 'Q&A',
+    REVIEW: '리뷰',
+    GENERAL: '일반',
+    DISCUSSION: '토의',
+    QUESTION: '질문',
+    GROUP: '모임 모집',
   };
   return categoryMap[category] || category;
 }
 
-function calculateBadges(post: Post): { type: "hot" | "new" | "count"; value?: string | number }[] {
-  const badges: { type: "hot" | "new" | "count"; value?: string | number }[] = [];
-  if (post.commentCount && post.commentCount > 0) badges.push({ type: "count", value: post.commentCount });
-  if ((post.likeCount ?? 0) >= 10) badges.push({ type: "hot" });
+function calculateBadges(post: Post): { type: 'hot' | 'new' | 'count'; value?: string | number }[] {
+  const badges: { type: 'hot' | 'new' | 'count'; value?: string | number }[] = [];
+  // 댓글 수는 항상 표시 (0이어도 [0]으로)
+  badges.push({ type: 'count', value: post.commentCount ?? 0 });
+  if ((post.likeCount ?? 0) >= 10) badges.push({ type: 'hot' });
   const diffH = (Date.now() - new Date(post.createdAt).getTime()) / 36e5;
-  if (diffH < 24) badges.push({ type: "new" });
+  if (diffH < 24) badges.push({ type: 'new' });
   return badges;
 }
 
 export const BRD_List: React.FC = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const page = Number(params.get("page") || 1);
-  const category = params.get("category") || "";
-  const searchQuery = params.get("search") || "";
-  const searchTypeParam = (params.get("searchType") as SearchType) || "TITLE";
+  const page = Number(params.get('page') || 1);
+  const category = params.get('category') || '';
+  const searchQuery = params.get('search') || '';
+  const searchTypeParam = (params.get('searchType') as SearchType) || 'TITLE';
   const pageSize = 20;
 
   // 검색어 입력 상태 (실시간 입력용)
@@ -74,7 +75,7 @@ export const BRD_List: React.FC = () => {
 
   // 메인 게시글 목록
   const { data, isLoading, error } = useQuery({
-    queryKey: ["posts", page, pageSize, category, searchQuery, searchType],
+    queryKey: ['posts', page, pageSize, category, searchQuery, searchType],
     queryFn: async () => {
       // 검색어가 있으면 검색 API 사용
       if (searchQuery) {
@@ -83,8 +84,8 @@ export const BRD_List: React.FC = () => {
           keyword: searchQuery,
           page: page - 1, // searchPosts는 0부터 시작
           size: pageSize,
-          sort: "createdAt,desc",
-          ...(category ? {category} : {}),
+          sort: 'createdAt,desc',
+          ...(category ? { category } : {}),
         });
       }
       // 검색어가 없으면 일반 목록 조회
@@ -97,47 +98,46 @@ export const BRD_List: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-
   const totalPages = useMemo(() => Math.max(1, data?.totalPages ?? 1), [data]);
 
   const goPage = (p: number) => {
     const np = Math.min(Math.max(1, p), totalPages);
-    params.set("page", String(np));
+    params.set('page', String(np));
     setParams(params, { replace: true });
   };
 
   // 카테고리 변경
   const handleCategoryChange = (newCategory: string) => {
     if (newCategory) {
-      params.set("category", newCategory);
+      params.set('category', newCategory);
     } else {
-      params.delete("category");
+      params.delete('category');
     }
-    params.set("page", "1");
+    params.set('page', '1');
     setParams(params, { replace: true });
   };
 
   // 검색 실행
   const handleSearch = () => {
     if (searchInput.trim()) {
-      params.set("search", searchInput.trim());
-      params.set("searchType", searchType);
+      params.set('search', searchInput.trim());
+      params.set('searchType', searchType);
     } else {
-      params.delete("search");
-      params.delete("searchType");
+      params.delete('search');
+      params.delete('searchType');
     }
-    params.set("page", "1");
+    params.set('page', '1');
     setParams(params, { replace: true });
   };
 
   // 필터 초기화
   const handleResetFilters = () => {
-    setSearchInput("");
-    setSearchType("TITLE");
-    params.delete("category");
-    params.delete("search");
-    params.delete("searchType");
-    params.set("page", "1");
+    setSearchInput('');
+    setSearchType('TITLE');
+    params.delete('category');
+    params.delete('search');
+    params.delete('searchType');
+    params.set('page', '1');
     setParams(params, { replace: true });
   };
 
@@ -152,15 +152,19 @@ export const BRD_List: React.FC = () => {
   // 공용 폭 컨테이너 (헤더 선과 리스트가 정확히 맞물리도록)
   // grid 정의: 헤더와 행 모두 동일하게 사용
   // 데스크톱: 7열, 태블릿: 4열, 모바일: 2열
-  const gridCols = "grid-cols-2 sm:grid-cols-[1fr_auto_auto_auto] lg:grid-cols-[115px_115px_minmax(0,1fr)_80px_140px_145px_80px]";
+  const gridCols =
+    'grid-cols-2 sm:grid-cols-[1fr_auto_auto_auto] lg:grid-cols-[115px_115px_minmax(0,1fr)_80px_140px_145px_80px]';
 
   return (
     <div
       className="w-full min-h-screen pb-[40px]
       bg-[color:var(--color-bg-canvas)] text-[color:var(--color-fg-primary)]"
-      style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
+      style={{ fontFamily: 'var(--font-sans, ui-sans-serif, system-ui)' }}
     >
-      <div className="mx-auto px-3 sm:px-4 md:px-6 mt-[70px] sm:mt-[80px] md:mt-[90px] lg:mt-[100px]" style={{ maxWidth: "var(--layout-max, 1200px)" }}>
+      <div
+        className="mx-auto px-3 sm:px-4 md:px-6 mt-[70px] sm:mt-[80px] md:mt-[90px] lg:mt-[100px]"
+        style={{ maxWidth: 'var(--layout-max, 1200px)' }}
+      >
         {/* 카테고리 탭 네비게이션 */}
         <nav className="flex justify-center border-b border-[color:var(--color-border-subtle)] mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
           <ul className="flex items-stretch h-12 sm:h-14 md:h-16 font-medium text-[color:var(--color-fg-muted)] text-sm sm:text-base md:text-lg whitespace-nowrap">
@@ -169,11 +173,11 @@ export const BRD_List: React.FC = () => {
                 <button
                   onClick={() => handleCategoryChange(cat.key)}
                   className={[
-                    "relative h-full flex items-center pb-1 cursor-pointer transition-colors duration-200",
+                    'relative h-full flex items-center pb-1 cursor-pointer transition-colors duration-200',
                     category === cat.key
-                      ? "text-[color:var(--color-fg-primary)] font-semibold"
-                      : "hover:text-[color:var(--color-fg-primary)]",
-                  ].join(" ")}
+                      ? 'text-[color:var(--color-fg-primary)] font-semibold'
+                      : 'hover:text-[color:var(--color-fg-primary)]',
+                  ].join(' ')}
                 >
                   {cat.label}
                   {category === cat.key && (
@@ -214,7 +218,7 @@ export const BRD_List: React.FC = () => {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === 'Enter') {
                     handleSearch();
                   }
                 }}
@@ -249,10 +253,10 @@ export const BRD_List: React.FC = () => {
               )}
 
               {/* 모임모집 버튼 (전체 또는 모임 카테고리일 때 표시) */}
-              {(category === "" || category === "GROUP") && (
+              {(category === '' || category === 'GROUP') && (
                 <button
                   className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-white text-sm font-medium hover:opacity-90 whitespace-nowrap"
-                  onClick={() => navigate("/boards/write?category=GROUP")}
+                  onClick={() => navigate('/boards/write?category=GROUP')}
                   aria-label="모임모집"
                 >
                   <span className="hidden sm:inline">📢 모임모집</span>
@@ -263,7 +267,7 @@ export const BRD_List: React.FC = () => {
               {/* 글 쓰기 버튼 */}
               <button
                 className="flex-1 sm:flex-none h-[36px] sm:h-[40px] px-4 sm:px-5 rounded-[var(--radius-md)] bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] text-sm font-medium hover:opacity-90 whitespace-nowrap"
-                onClick={() => navigate("/boards/write")}
+                onClick={() => navigate('/boards/write')}
                 aria-label="글 쓰기"
               >
                 <span className="hidden sm:inline">✏️ 글 쓰기</span>
@@ -307,15 +311,17 @@ export const BRD_List: React.FC = () => {
         >
           {/* 에러 */}
           {error && (
-            <div className="w-full rounded-[var(--radius-md)]
+            <div
+              className="w-full rounded-[var(--radius-md)]
                             bg-[color:var(--color-bg-elev-2)]
                             border border-[color:var(--color-border-default)]
-                            flex flex-col items-center justify-center p-4 mb-3">
+                            flex flex-col items-center justify-center p-4 mb-3"
+            >
               <span className="text-[color:var(--color-fg-danger)] font-bold mb-2">
                 ❌ 데이터를 불러올 수 없습니다
               </span>
               <span className="text-[color:var(--color-fg-muted)] text-sm mb-2">
-                에러 메시지: {error instanceof Error ? error.message : "알 수 없는 에러"}
+                에러 메시지: {error instanceof Error ? error.message : '알 수 없는 에러'}
               </span>
               <button
                 onClick={() => window.location.reload()}
@@ -357,25 +363,31 @@ export const BRD_List: React.FC = () => {
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="truncate">{post.title}</span>
                       {/* 댓글 수 */}
-                      {badges.find((b) => b.type === "count") && (
-                        <span className="text-[color:var(--color-fg-danger)] text-sm shrink-0">
-                          [{badges.find((b) => b.type === "count")?.value}]
-                        </span>
-                      )}
+                      <span className="text-[color:var(--color-fg-danger)] text-sm shrink-0">
+                        [{badges.find((b) => b.type === 'count')?.value ?? 0}]
+                      </span>
                       {/* HOT */}
-                      {badges.find((b) => b.type === "hot") && (
-                        <span className="text-[color:var(--color-fg-muted)] text-sm shrink-0">[H]</span>
+                      {badges.find((b) => b.type === 'hot') && (
+                        <span className="text-[color:var(--color-fg-muted)] text-sm shrink-0">
+                          {' '}
+                          HOT
+                        </span>
                       )}
                       {/* NEW */}
-                      {badges.find((b) => b.type === "new") && (
-                        <span className="text-[color:var(--color-accent)] text-sm shrink-0">[NEW]</span>
-                      )}
-                      {/* GROUP 카테고리일 때 참여 인원수 표시 */}
-                      {post.category === "GROUP" && post.currentMemberCount !== undefined && post.recruitmentLimit !== undefined && (
+                      {badges.find((b) => b.type === 'new') && (
                         <span className="text-[color:var(--color-accent)] text-sm shrink-0">
-                          [👥 {post.currentMemberCount}/{post.recruitmentLimit}]
+                          {' '}
+                          NEW
                         </span>
                       )}
+                      {/* GROUP 카테고리일 때 참여 인원수 표시 */}
+                      {post.category === 'GROUP' &&
+                        (post as any).currentMemberCount !== undefined &&
+                        (post as any).recruitmentLimit !== undefined && (
+                          <span className="text-[color:var(--color-accent)] text-sm shrink-0">
+                            [👥 {(post as any).currentMemberCount}/{(post as any).recruitmentLimit}]
+                          </span>
+                        )}
                     </div>
 
                     {/* 좋아요 */}
@@ -395,18 +407,18 @@ export const BRD_List: React.FC = () => {
                   <div className="lg:hidden flex flex-col gap-2">
                     {/* 제목 + 뱃지 */}
                     <div className="flex items-start gap-2">
-                      <h3 className="flex-1 font-medium text-sm sm:text-base line-clamp-2">{post.title}</h3>
+                      <h3 className="flex-1 font-medium text-sm sm:text-base line-clamp-2">
+                        {post.title}
+                      </h3>
                       <div className="flex gap-1 shrink-0">
-                        {badges.find((b) => b.type === "count") && (
-                          <span className="text-[color:var(--color-fg-danger)] text-xs">
-                            [{badges.find((b) => b.type === "count")?.value}]
-                          </span>
+                        <span className="text-[color:var(--color-fg-danger)] text-xs">
+                          [{badges.find((b) => b.type === 'count')?.value ?? 0}]
+                        </span>
+                        {badges.find((b) => b.type === 'hot') && (
+                          <span className="text-[color:var(--color-fg-muted)] text-xs"> HOT</span>
                         )}
-                        {badges.find((b) => b.type === "hot") && (
-                          <span className="text-[color:var(--color-fg-muted)] text-xs">[H]</span>
-                        )}
-                        {badges.find((b) => b.type === "new") && (
-                          <span className="text-[color:var(--color-accent)] text-xs">[NEW]</span>
+                        {badges.find((b) => b.type === 'new') && (
+                          <span className="text-[color:var(--color-accent)] text-xs"> NEW</span>
                         )}
                       </div>
                     </div>
@@ -420,14 +432,16 @@ export const BRD_List: React.FC = () => {
                       <span>·</span>
                       <span>{formatDate(post.createdAt)}</span>
                       {/* GROUP 카테고리일 때 참여 인원수 표시 */}
-                      {post.category === "GROUP" && post.currentMemberCount !== undefined && post.recruitmentLimit !== undefined && (
-                        <>
-                          <span>·</span>
-                          <span className="text-[color:var(--color-accent)]">
-                            👥 {post.currentMemberCount}/{post.recruitmentLimit}
-                          </span>
-                        </>
-                      )}
+                      {post.category === 'GROUP' &&
+                        (post as any).currentMemberCount !== undefined &&
+                        (post as any).recruitmentLimit !== undefined && (
+                          <>
+                            <span>·</span>
+                            <span className="text-[color:var(--color-accent)]">
+                              👥 {(post as any).currentMemberCount}/{(post as any).recruitmentLimit}
+                            </span>
+                          </>
+                        )}
                       <span className="ml-auto flex items-center gap-2">
                         <span>❤️ {post.likeCount ?? 0}</span>
                         <span>👁 {post.hit}</span>
@@ -462,19 +476,19 @@ export const BRD_List: React.FC = () => {
 
             {Array.from(
               { length: Math.min(10, totalPages) },
-              (_, i) => i + Math.max(1, Math.min(page - 4, totalPages - 9))
+              (_, i) => i + Math.max(1, Math.min(page - 4, totalPages - 9)),
             ).map((n) => (
               <button
                 key={n}
                 onClick={() => goPage(n)}
                 className={
-                  "w-[32px] h-[32px] sm:w-[40px] sm:h-[40px] rounded-[var(--radius-md)] border text-sm sm:text-base " +
+                  'w-[32px] h-[32px] sm:w-[40px] sm:h-[40px] rounded-[var(--radius-md)] border text-sm sm:text-base ' +
                   (n === page
-                    ? "bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] border-transparent font-medium"
-                    : "bg-[color:var(--color-bg-elev-1)] border-[color:var(--color-border-default)]")
+                    ? 'bg-[color:var(--color-accent)] text-[color:var(--color-on-accent)] border-transparent font-medium'
+                    : 'bg-[color:var(--color-bg-elev-1)] border-[color:var(--color-border-default)]')
                 }
                 aria-label={`${n}페이지`}
-                aria-current={n === page ? "page" : undefined}
+                aria-current={n === page ? 'page' : undefined}
               >
                 {n}
               </button>

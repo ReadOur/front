@@ -23,10 +23,47 @@ export async function getPosts(params?: GetPostsParams): Promise<PaginatedRespon
 }
 
 /**
+ * downloadUrl에서 파일 ID 추출하는 헬퍼 함수
+ */
+function extractFileIdFromDownloadUrl(downloadUrl: string): number | null {
+  // downloadUrl 형식: "/api/files/146/download" 또는 "/files/146/download"
+  const match = downloadUrl.match(/\/(\d+)\/download$/);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+/**
  * 게시글 상세 조회
  */
 export async function getPost(postId: string): Promise<Post> {
-  return apiClient.get<Post>(POST_ENDPOINTS.DETAIL(postId));
+  const response = await apiClient.get<Post>(POST_ENDPOINTS.DETAIL(postId));
+  
+  // attachments에 id 필드가 없으면 downloadUrl에서 추출
+  if (response.attachments && Array.isArray(response.attachments)) {
+    response.attachments = response.attachments.map((att) => {
+      // 이미 id가 있으면 그대로 사용
+      if (att.id) {
+        return att;
+      }
+      // downloadUrl에서 ID 추출
+      const fileId = att.downloadUrl ? extractFileIdFromDownloadUrl(att.downloadUrl) : null;
+      return {
+        ...att,
+        id: fileId || 0, // 추출 실패 시 0
+      };
+    });
+  }
+
+  console.log('[postService.getPost] API 응답 (매핑 후):', {
+    postId,
+    attachments: response.attachments,
+    attachmentsCount: response.attachments?.length || 0,
+    attachmentsIds: response.attachments?.map((a) => a.id) || [],
+  });
+  
+  return response;
 }
 
 /**

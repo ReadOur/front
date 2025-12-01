@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell } from "lucide-react";
+import { X, Minus, Send, Circle, Loader2, MessageCircle, Maximize2, Plus, Pin, Calendar, MoreVertical, Bell, Paperclip } from "lucide-react";
 import { useChatContext } from "@/contexts/ChatContext";
+import { useHideMessage, useUnhideMessage } from "@/hooks/api/useChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useMyRooms, useSendRoomMessage, useRequestAI, useDeleteRoom, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
+import { useMyRooms, useSendRoomMessage, useSendRoomFileMessage, useRequestAI, useDeleteRoom, useKickUser, useMuteRoom, useUnmuteRoom, CHAT_QUERY_KEYS, useCreateRoom } from "@/hooks/api/useChat";
 import { chatService } from "@/services/chatService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEvent, CreateEventData } from "@/api/calendar";
@@ -17,7 +18,7 @@ import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
 import { extractUserIdFromToken } from "@/utils/auth";
 import { AiCommandType, AiJobResponse, RoomMessage, RoomMessageType, SessionClosingPayload } from "@/types";
-import { composeFileTargetId, formatFileSize, isImageFile, uploadFiles } from "@/api/files";
+import { formatFileSize, isImageFile, downloadFile, getImageBlobUrl } from "@/api/files";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -71,7 +72,7 @@ function parseAiShortcut(aiContent: string): { command: AiCommandType; note?: st
   return { command: "PUBLIC_SUMMARY", note: note || undefined };
 }
 
-function formatAiPayload(payload: AiJobResponse["payload"]): string {
+function formatAiPayload(payload: AiJobResponse["payload"], command?: AiCommandType): string {
   if (!payload) {
     return "AI가 반환한 데이터가 없습니다.";
   }
@@ -79,6 +80,35 @@ function formatAiPayload(payload: AiJobResponse["payload"]): string {
   if (payload.fallback) {
     const reason = payload.reason ? ` (사유: ${payload.reason})` : "";
     return `컨텍스트가 충분하지 않습니다${reason}`;
+  }
+
+  // 공개 대화 요약 처리
+  if (command === "PUBLIC_SUMMARY" && typeof payload === "object" && !Array.isArray(payload)) {
+    const sections: string[] = [];
+    const p = payload as Record<string, unknown>;
+
+    // highlights 출력
+    if (Array.isArray(p.highlights)) {
+      p.highlights.forEach((item) => {
+        if (typeof item === "string") {
+          sections.push(item);
+        }
+      });
+    }
+
+    // keywords 출력
+    if (Array.isArray(p.keywords) && p.keywords.length > 0) {
+      const keywordsStr = p.keywords
+        .filter((k): k is string => typeof k === "string")
+        .join(", ");
+      if (keywordsStr) {
+        sections.push(`\n키워드 : ${keywordsStr}`);
+      }
+    }
+
+    if (sections.length > 0) {
+      return sections.join("\n");
+    }
   }
 
   if (
@@ -156,12 +186,33 @@ function formatAiQuestions(payload: AiJobResponse["payload"]): string | null {
 }
 
 function formatAiJobMessage(command: AiCommandType, response: AiJobResponse): string {
+  // 세션 시작/종료 처리
+  if (command === "SESSION_START" || command === "SESSION_END") {
+    if (response.payload && typeof response.payload === "object" && !Array.isArray(response.payload)) {
+      const result = (response.payload as Record<string, unknown>).result;
+      if (result && typeof result === "object" && !Array.isArray(result)) {
+        const status = (result as Record<string, unknown>).status;
+        if (status === "ACTIVE") {
+          return "세션을 시작합니다.";
+        } else if (status === "COMPLETE") {
+          return "세션을 종료합니다.";
+        }
+      }
+    }
+    // result가 없거나 예상과 다른 경우 기본 메시지
+    if (command === "SESSION_START") {
+      return "세션을 시작합니다.";
+    } else {
+      return "세션을 종료합니다.";
+    }
+  }
+
   const questionsText = formatAiQuestions(response.payload);
   if (questionsText) {
     return questionsText;
   }
 
-  const payloadText = formatAiPayload(response.payload);
+  const payloadText = formatAiPayload(response.payload, command);
   if (payloadText) {
     return payloadText;
   }
@@ -182,8 +233,22 @@ function buildAiErrorMessage(error: any): string {
 }
 
 const DEFAULT_MESSAGE_LIMIT = 60;
-const shouldHideAiMessage = (msg: { senderRole?: string; type?: RoomMessageType }) =>
-  msg.senderRole === "AI" || msg.type === "AI_ASSIST";
+const shouldHideAiMessage = (msg: { senderRole?: string; type?: RoomMessageType; body?: { command?: string } }) => {
+  // AI_ASSIST 타입인 경우
+  if (msg.type === "AI_ASSIST") {
+    // GROUP_KEYPOINTS 또는 GROUP_QUESTION_GENERATOR인 경우만 표시
+    if (msg.body?.command) {
+      const command = msg.body.command;
+      if (command === "GROUP_KEYPOINTS" || command === "GROUP_QUESTION_GENERATOR") {
+        return false; // 표시
+      }
+    }
+    // 그 외의 AI_ASSIST는 모두 숨김
+    return true;
+  }
+  // AI senderRole도 숨김
+  return msg.senderRole === "AI";
+};
 
 const AI_COMMAND_LABELS: Record<AiCommandType, string> = {
   PUBLIC_SUMMARY: "공개 대화 요약",
@@ -253,33 +318,98 @@ const parseAttachmentExtra = (extra?: string): ChatAttachment | null => {
   if (!extra) return null;
 
   try {
-    const parsed = typeof extra === "string" ? JSON.parse(extra) : extra;
-    if (parsed && typeof parsed === "object" && "url" in parsed) {
-      const payload = parsed as Record<string, any>;
-      return {
-        url: payload.url,
-        name: payload.name,
-        size: payload.size,
-        mimeType: payload.mimeType || payload.contentType,
-        downloadUrl: payload.downloadUrl || payload.url,
-      };
+    // extra가 이미 객체인 경우
+    if (typeof extra === "object" && extra !== null) {
+      const payload = extra as Record<string, any>;
+      if ("url" in payload) {
+        return {
+          url: payload.url,
+          name: payload.name,
+          size: payload.size,
+          mimeType: payload.mimeType || payload.contentType,
+          downloadUrl: payload.downloadUrl || payload.url,
+        };
+      }
+      return null;
+    }
+
+    // extra가 문자열인 경우
+    if (typeof extra === "string") {
+      // 빈 문자열이거나 JSON으로 보이지 않는 경우
+      if (!extra.trim() || (!extra.trim().startsWith("{") && !extra.trim().startsWith("["))) {
+        return null;
+      }
+
+      const parsed = JSON.parse(extra);
+      if (parsed && typeof parsed === "object" && "url" in parsed) {
+        const payload = parsed as Record<string, any>;
+        return {
+          url: payload.url,
+          name: payload.name,
+          size: payload.size,
+          mimeType: payload.mimeType || payload.contentType,
+          downloadUrl: payload.downloadUrl || payload.url,
+        };
+      }
     }
   } catch (error) {
-    console.warn("첨부 메타데이터 파싱 실패", error);
+    // JSON 파싱 실패 시 조용히 무시 (extra가 JSON이 아닐 수 있음)
+    console.warn("첨부 메타데이터 파싱 실패 (JSON이 아닐 수 있음):", extra, error);
   }
 
   return null;
 };
 
 const mapRoomMessageToChatMessage = (msg: RoomMessage): ChatMessage => {
-  const attachment = parseAttachmentExtra(msg.body.extra);
-  const fallbackText =
+  // FILE 또는 IMAGE 타입인 경우 body에서 직접 attachment 정보 추출
+  let attachment: ChatAttachment | null = null;
+  
+  if (msg.type === "FILE" || msg.type === "IMAGE") {
+    // body 자체가 attachment 정보를 포함하는 경우
+    if (msg.body && typeof msg.body === "object" && ("url" in msg.body || "name" in msg.body)) {
+      const body = msg.body as Record<string, any>;
+      attachment = {
+        url: body.url,
+        name: body.name,
+        size: body.size,
+        mimeType: body.mimeType || body.contentType,
+        downloadUrl: body.downloadUrl || body.url,
+      };
+    } else {
+      // body.extra에서 파싱 시도
+      attachment = parseAttachmentExtra(msg.body.extra);
+    }
+  } else {
+    // 다른 타입은 기존대로 extra에서 파싱
+    attachment = parseAttachmentExtra(msg.body.extra);
+  }
+  
+  let fallbackText =
     msg.body.text ??
     (msg.type === "IMAGE" && attachment?.url
       ? "[이미지]"
       : msg.type === "FILE" && attachment?.name
         ? attachment.name
         : "");
+
+  // AI_ASSIST 타입이고 GROUP_KEYPOINTS 또는 GROUP_QUESTION_GENERATOR인 경우 payload 가공
+  if (msg.type === "AI_ASSIST" && msg.body.command) {
+    const command = msg.body.command;
+    if (command === "GROUP_KEYPOINTS" || command === "GROUP_QUESTION_GENERATOR") {
+      // payload를 가공해서 표시
+      const payload = msg.body.payload;
+      if (command === "GROUP_QUESTION_GENERATOR") {
+        const questionsText = formatAiQuestions(payload as AiJobResponse["payload"]);
+        if (questionsText) {
+          fallbackText = questionsText;
+        } else {
+          fallbackText = formatAiPayload(payload as AiJobResponse["payload"]);
+        }
+      } else if (command === "GROUP_KEYPOINTS") {
+        fallbackText = formatAiPayload(payload as AiJobResponse["payload"]);
+      }
+    }
+  }
 
   return {
     id: msg.id.toString(),
@@ -416,6 +546,62 @@ function ThreadChip({
   );
 }
 
+// FILE 타입 이미지 미리보기 컴포넌트
+function FileImagePreview({ url, name }: { url: string; name: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!url) {
+      setError(true);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadImage = async () => {
+      try {
+        setError(false);
+        const blobUrl = await getImageBlobUrl(url);
+        if (isMounted) {
+          setImageSrc(blobUrl);
+        }
+      } catch (err) {
+        console.error("[FileImagePreview] 이미지 로드 실패:", err);
+        if (isMounted) {
+          setError(true);
+        }
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      isMounted = false;
+      if (imageSrc && imageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(imageSrc);
+      }
+    };
+  }, [url]);
+
+  if (error || !imageSrc) {
+    return (
+      <div className="w-[25px] h-[25px] rounded border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] grid place-items-center text-[10px] text-[color:var(--chatdock-fg-muted)]">
+        🖼️
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={imageSrc}
+      alt={name}
+      className="w-[25px] h-[25px] object-cover rounded border border-[color:var(--chatdock-border-subtle)]"
+      onError={() => setError(true)}
+    />
+  );
+}
+
 function ChatWindow({
                       me,
                       thread,
@@ -444,6 +630,7 @@ function ChatWindow({
                       onLoadMoreMessages,
                       hasMoreMessages,
                       isLoadingMessages,
+                      onFileSelect,
                     }: {
   me: ChatUser;
   thread: ChatThread;
@@ -472,12 +659,15 @@ function ChatWindow({
   onLoadMoreMessages?: () => Promise<boolean>;
   hasMoreMessages?: boolean;
   isLoadingMessages?: boolean;
+  onFileSelect?: (files: File[]) => void;
 }) {
   // 상태 선언 (먼저)
   const [text, setText] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isNoticeDockOpen, setIsNoticeDockOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [noticePermission, setNoticePermission] = useState<{
     status: "idle" | "checking" | "success" | "error";
     hasPermission?: boolean;
@@ -997,15 +1187,96 @@ function ChatWindow({
 
   const title = thread.users.map((u) => u.name).join(", ");
 
+  const handleFileSelect = (files: File[]) => {
+    if (onFileSelect) {
+      onFileSelect(files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 파일이 드래그되고 있는지 확인
+    const hasFiles = e.dataTransfer?.types?.includes('Files') || 
+                     e.dataTransfer?.types?.includes('application/x-moz-file') ||
+                     Array.from(e.dataTransfer?.types || []).some(type => type.includes('File'));
+    
+    if (hasFiles) {
+      e.dataTransfer.dropEffect = 'copy'; // 드롭 가능한 커서 표시
+      setIsDragging(true);
+      console.log('[ChatWindow] handleDragOver: 파일 드래그 감지', {
+        types: Array.from(e.dataTransfer?.types || []),
+        hasFiles,
+      });
+    } else {
+      // 파일이 아니어도 드래그 중이면 표시 (일반 드래그도 허용)
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // relatedTarget이 null이거나 현재 요소의 자식이 아닌 경우에만 드래그 종료
+    const currentTarget = e.currentTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    
+    // relatedTarget이 없거나, 현재 요소 밖으로 나간 경우
+    if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      setIsDragging(false);
+      console.log('[ChatWindow] handleDragLeave: 드래그 벗어남', {
+        relatedTarget: relatedTarget?.tagName,
+        currentTarget: currentTarget.tagName,
+      });
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer?.files || []);
+    console.log('[ChatWindow] handleDrop: 파일 드롭', {
+      filesCount: files.length,
+      files: files.map(f => ({ name: f.name, size: f.size, type: f.type })),
+    });
+
+    if (files.length > 0) {
+      handleFileSelect(files);
+    } else {
+      console.warn('[ChatWindow] handleDrop: 드롭된 파일이 없습니다.');
+    }
+  };
+
   return (
     <div
       ref={dockContainerRef}
-      className="flex flex-col overflow-hidden relative
+      className={`flex flex-col overflow-hidden relative
              rounded-[var(--radius-lg)]
              bg-[color:var(--chatdock-bg-elev-2)]
              border border-[color:var(--chatdock-border-strong)]
-             shadow-xl"
+             shadow-xl transition-all duration-200 ${
+               isDragging 
+                 ? 'ring-2 ring-[color:var(--color-accent)] ring-offset-2 bg-[color:var(--color-accent)]/5 border-[color:var(--color-accent)]' 
+                 : ''
+             }`}
       style={{ width: `${width}px`, height: `${height}px` }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[ChatWindow] onDragEnter:', {
+          types: Array.from(e.dataTransfer?.types || []),
+        });
+        if (e.dataTransfer?.types?.length) {
+          setIsDragging(true);
+        }
+      }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {/* header */}
       <div className="h-11 flex items-center gap-2 px-2 border-b border-[color:var(--chatdock-border-subtle)] cursor-move select-none"
@@ -1196,6 +1467,16 @@ function ChatWindow({
                     <Bell className="w-4 h-4 flex-shrink-0" />
                     공지
                   </button>
+                  <button
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
+                  >
+                    <Paperclip className="w-4 h-4 flex-shrink-0" />
+                    파일 추가
+                  </button>
                 </div>
               </div>
 
@@ -1232,44 +1513,160 @@ function ChatWindow({
       </div>
 
       {/* body */}
-      <div ref={boxRef} className="flex-1 overflow-auto p-3 space-y-2">
+      <div ref={boxRef} className="flex-1 overflow-auto p-3 space-y-2 relative">
+        {/* 드래그 오버 시 안내 메시지 */}
+        {isDragging && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-[color:var(--color-accent)]/10 backdrop-blur-sm rounded-[var(--radius-md)] border-2 border-dashed border-[color:var(--color-accent)] pointer-events-none">
+            <div className="text-center p-6">
+              <div className="text-4xl mb-2">📎</div>
+              <div className="text-lg font-semibold text-[color:var(--color-accent)] mb-1">
+                파일을 여기에 놓으세요
+              </div>
+              <div className="text-sm text-[color:var(--chatdock-fg-muted)] mb-2">
+                파일을 드롭하면 전송됩니다
+              </div>
+              <div className="text-base font-medium text-[color:var(--color-accent)]">
+                드롭하여 파일 전송
+              </div>
+            </div>
+          </div>
+        )}
         {messages.map((m) => {
           const senderId = (m.fromId ?? m.senderId)?.toString();
           const mine = senderId === me.id?.toString();
           const isHidden = hiddenMessageIds.has(m.id);
           const attachment = m.attachment;
           const isImageMessage = m.type === "IMAGE" && attachment?.url;
+          
+          // 디버그 로그
+          if (m.type === "FILE") {
+            console.log('[ChatWindow] FILE 타입 메시지:', {
+              messageId: m.id,
+              type: m.type,
+              attachment,
+              hasAttachment: !!attachment,
+              attachmentName: attachment?.name,
+              attachmentUrl: attachment?.url,
+              attachmentDownloadUrl: attachment?.downloadUrl,
+            });
+          }
+
+          // FILE 타입에서 이미지 확장자 판별
+          const isFileImage = m.type === "FILE" && attachment?.name && (
+            isImageFile(attachment.mimeType || "") ||
+            /\.(png|jpeg|jpg|gif|webp|bmp|svg)$/i.test(attachment.name)
+          );
 
           const renderAttachment = () => {
             if (!attachment) return null;
+
+            const handleDownload = async (e?: React.MouseEvent) => {
+              if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+              
+              if (attachment.downloadUrl) {
+                try {
+                  console.log('[ChatWindow] 파일 다운로드 시작:', {
+                    downloadUrl: attachment.downloadUrl,
+                    fileName: attachment.name,
+                  });
+                  
+                  // downloadUrl에서 파일 ID 추출 (예: /api/files/123/download)
+                  const match = attachment.downloadUrl.match(/\/api\/files\/(\d+)\/download/);
+                  if (match) {
+                    const fileId = parseInt(match[1], 10);
+                    const blob = await downloadFile(fileId);
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = attachment.name || "download";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    console.log('[ChatWindow] 파일 다운로드 완료:', attachment.name);
+                  } else {
+                    // downloadUrl이 직접 URL인 경우
+                    window.open(attachment.downloadUrl, "_blank");
+                  }
+                } catch (error) {
+                  console.error("파일 다운로드 실패:", error);
+                  toast.show({ title: "파일 다운로드에 실패했습니다.", variant: "error" });
+                }
+              } else if (attachment.url) {
+                // downloadUrl이 없고 url만 있는 경우 (S3 직접 링크 등)
+                window.open(attachment.url, "_blank");
+              }
+            };
+
             return (
               <div className="space-y-2">
+                {/* IMAGE 타입 메시지 */}
                 {isImageMessage && (
-                  <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)]">
-                    <img
-                      src={attachment.url}
-                      alt={attachment.name || "이미지"}
-                      className="max-h-64 w-full object-contain bg-black/5"
-                    />
+                  <button
+                    onClick={handleDownload}
+                    className="block w-full"
+                    type="button"
+                  >
+                    <ImageMessagePreview url={attachment.url || attachment.downloadUrl || ""} name={attachment.name || "이미지"} />
+                  </button>
+                )}
+                {/* FILE 타입 메시지 - 이미지인 경우 큰 미리보기 */}
+                {m.type === "FILE" && isFileImage && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleDownload}
+                      className="block w-full"
+                      type="button"
+                    >
+                      <ImageMessagePreview url={attachment.url || attachment.downloadUrl || ""} name={attachment.name || "이미지"} />
+                    </button>
+                    <div className="text-xs text-[color:var(--chatdock-fg-muted)] px-1">
+                      {attachment.name || "파일"}
+                      {attachment.size && ` (${formatFileSize(attachment.size)})`}
+                    </div>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm text-[color:var(--chatdock-fg-primary)] break-all">
-                  <span className="font-semibold">{attachment.name || (isImageMessage ? "이미지" : "파일")}</span>
-                  {attachment.size && (
-                    <span className="text-xs text-[color:var(--chatdock-fg-muted)]">{formatFileSize(attachment.size)}</span>
-                  )}
-                  {attachment.downloadUrl && (
-                    <a
-                      href={attachment.downloadUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[color:var(--color-primary)] underline-offset-2 hover:underline"
+                {/* FILE 타입 메시지 - 이미지가 아닌 경우 */}
+                {m.type === "FILE" && !isFileImage && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📄</span>
+                    <button
+                      onClick={handleDownload}
+                      className="text-sm font-semibold text-[color:var(--color-accent)] hover:underline underline-offset-2 break-all text-left"
+                      type="button"
                     >
-                      다운로드
-                    </a>
-                  )}
-                </div>
-                {m.text && !isImageMessage && (
+                      {attachment.name || "파일"}
+                    </button>
+                    {attachment.size && (
+                      <span className="text-xs text-[color:var(--chatdock-fg-muted)]">
+                        ({formatFileSize(attachment.size)})
+                      </span>
+                    )}
+                  </div>
+                )}
+                {/* IMAGE 타입이 아닌 경우 파일 정보 표시 */}
+                {!isImageMessage && m.type !== "FILE" && (
+                  <div className="flex items-center gap-2 text-sm text-[color:var(--chatdock-fg-primary)] break-all">
+                    <span className="font-semibold">{attachment.name || "파일"}</span>
+                    {attachment.size && (
+                      <span className="text-xs text-[color:var(--chatdock-fg-muted)]">{formatFileSize(attachment.size)}</span>
+                    )}
+                    {attachment.downloadUrl && (
+                      <a
+                        href={attachment.downloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[color:var(--color-primary)] underline-offset-2 hover:underline"
+                      >
+                        다운로드
+                      </a>
+                    )}
+                  </div>
+                )}
+                {m.text && !isImageMessage && m.type !== "FILE" && (
                   <div className="text-sm whitespace-pre-wrap break-words">{m.text}</div>
                 )}
               </div>
@@ -1361,6 +1758,27 @@ function ChatWindow({
                             {isHidden ? "메시지 보이기" : "메시지 가리기"}
                           </button>
 
+                          {/* 강퇴 버튼 (MANAGER, OWNER만, 본인 제외) */}
+                          {roomId && (currentUserRole === "MANAGER" || currentUserRole === "OWNER") && senderId && Number(senderId) !== currentUserIdNumber && (
+                            <button
+                              onClick={() => {
+                                const targetUserId = Number(senderId);
+                                const reason = window.prompt(`${m.senderNickname || "사용자"}를 강퇴하는 사유를 입력하세요:`, "");
+                                if (reason !== null && reason.trim()) {
+                                  kickUserMutation.mutate({
+                                    roomId,
+                                    targetUserId,
+                                    reason: reason.trim(),
+                                  });
+                                }
+                                setMessageMenuOpen(null);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--color-error)]/10 text-left text-sm text-[color:var(--color-error)]"
+                            >
+                              강퇴
+                            </button>
+                          )}
+
                           </div>
                         </div>
                       )}
@@ -1374,7 +1792,7 @@ function ChatWindow({
                     )}>
                       {renderMessageContent()}
                       <div className="mt-1 text-[10px] opacity-80">
-                        {new Date(m.createdAt).toLocaleTimeString()}
+                        {new Date(m.createdAt + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </>
@@ -1397,7 +1815,7 @@ function ChatWindow({
                       )}
                       {renderMessageContent()}
                       <div className="mt-1 text-[10px] text-[color:var(--chatdock-fg-muted)]">
-                        {new Date(m.createdAt).toLocaleTimeString()}
+                        {new Date(m.createdAt + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
 
@@ -1460,15 +1878,16 @@ function ChatWindow({
                           <div>
                           <button
                             onClick={() => {
-                              setHiddenMessageIds(prev => {
-                                const next = new Set(prev);
-                                if (next.has(m.id)) {
-                                  next.delete(m.id);
-                                } else {
-                                  next.add(m.id);
-                                }
-                                return next;
-                              });
+                              const messageId = parseInt(m.id, 10);
+                              if (isNaN(messageId)) {
+                                setMessageMenuOpen(null);
+                                return;
+                              }
+                              if (isHidden) {
+                                unhideMessageMutation.mutate({ messageId });
+                              } else {
+                                hideMessageMutation.mutate({ messageId });
+                              }
                               setMessageMenuOpen(null);
                             }}
                             className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[color:var(--chatdock-bg-hover)] text-left text-sm"
@@ -1745,6 +2164,7 @@ function ChatWindow({
         messages={aiDockMessagesSafe}
         isLoading={aiDockLoadingSafe}
         onSend={onAIDockSend}
+        threadCategory={thread.category}
       />
 
       {/* Notice Dock */}
@@ -1757,6 +2177,24 @@ function ChatWindow({
         permissionErrorMessage={noticePermission.errorMessage}
         onRetryPermission={loadNoticePermission}
         roomId={Number(thread.id)}
+      />
+
+      {/* 파일 선택 input (숨김) */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []);
+          if (files.length > 0 && onFileSelect) {
+            onFileSelect(files);
+          }
+          // input 초기화
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        }}
       />
     </div>
   );
@@ -1771,6 +2209,7 @@ export default function ChatDock() {
 
   const [zMap, setZMap] = useState<Record<string, number>>({});
   const zSeed = useRef(100); // 창 기본 z-index 기준보다 크게
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: myPage } = useQuery({
     queryKey: USER_QUERY_KEYS.myPage(),
@@ -1806,6 +2245,7 @@ export default function ChatDock() {
 
   // 메시지 전송 mutation
   const sendMessageMutation = useSendRoomMessage();
+  const sendFileMessageMutation = useSendRoomFileMessage();
 
   const [aiDockMessagesByRoom, setAiDockMessagesByRoom] = useState<Record<string, AIMessage[]>>({});
   const [aiDockLoadingByRoom, setAiDockLoadingByRoom] = useState<Record<string, boolean>>({});
@@ -1938,6 +2378,39 @@ export default function ChatDock() {
     },
     onError: (error: any) => {
       const errorMessage = error.response?.data?.message || error.message || "채팅방 삭제에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 강퇴 mutation
+  const kickUserMutation = useKickUser({
+    onSuccess: () => {
+      toast.show({ title: "사용자를 강퇴했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "강퇴에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 메시지 가리기 mutation
+  const hideMessageMutation = useHideMessage({
+    onSuccess: () => {
+      toast.show({ title: "메시지를 가렸습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "메시지 가리기에 실패했습니다.";
+      toast.show({ title: errorMessage, variant: "error" });
+    },
+  });
+
+  // 메시지 보이기 mutation
+  const unhideMessageMutation = useUnhideMessage({
+    onSuccess: () => {
+      toast.show({ title: "메시지를 보이게 했습니다.", variant: "success" });
+    },
+    onError: (error: any) => {
+      const errorMessage = error.response?.data?.message || error.message || "메시지 보이기에 실패했습니다.";
       toast.show({ title: errorMessage, variant: "error" });
     },
   });
@@ -2230,72 +2703,94 @@ export default function ChatDock() {
     setActiveDropThreadId((prev) => (prev === threadId ? null : prev));
   };
 
-  const handleThreadDrop = (event: React.DragEvent, threadId: string) => {
+  const handleThreadDrop = async (event: React.DragEvent, threadId: string) => {
     event.preventDefault();
     const files = Array.from(event.dataTransfer?.files || []);
     setActiveDropThreadId(null);
 
-    if (!files.length) return;
-
-    const previews: Record<string, string> = {};
-    files.forEach((file) => {
-      if (isImageFile(file.type)) {
-        previews[file.name] = URL.createObjectURL(file);
-      }
+    console.log('[ChatDock] handleThreadDrop 호출:', {
+      threadId,
+      filesCount: files.length,
+      files: files.map(f => ({ name: f.name, size: f.size, type: f.type })),
     });
 
-    setPendingFiles(files);
-    setPendingThreadId(threadId);
-    setPendingPreviews(previews);
-    setIsUploadModalOpen(true);
-  };
-
-  const handleConfirmFileSend = async () => {
-    if (!pendingThreadId || pendingFiles.length === 0 || !myUserId) {
-      resetPendingUploads();
+    if (!files.length) {
+      console.warn('[ChatDock] handleThreadDrop: 파일이 없습니다.');
       return;
     }
 
-    const roomId = parseInt(pendingThreadId, 10);
-    const targetId = composeFileTargetId("CHAT", myUserId, roomId);
+    // 파일 목록 메시지 생성
+    const fileList = files.map((f, i) => `${i + 1}. ${f.name} (${formatFileSize(f.size)})`).join('\n');
+    const threadName = threads.find((t) => t.id === threadId)?.users.map((u) => u.name).join(", ") || "채팅방";
+    const message = `${threadName}에 다음 파일을 전송하시겠습니까?\n\n${fileList}\n\n총 ${files.length}개 파일`;
+
+    const confirmed = window.confirm(message);
+    if (!confirmed) {
+      console.log('[ChatDock] handleThreadDrop: 사용자가 취소했습니다.');
+      return;
+    }
+
+    // 확인 시 바로 전송
+    const roomId = parseInt(threadId, 10);
+    if (isNaN(roomId)) {
+      console.error('[ChatDock] handleThreadDrop: 유효하지 않은 roomId', { threadId, roomId });
+      toast.show({ title: "유효하지 않은 채팅방 ID입니다.", variant: "error" });
+      return;
+    }
+
     setUploadProgress(0);
-
     try {
-      const uploaded = await uploadFiles({
-        files: pendingFiles,
-        targetType: "CHAT",
-        targetId,
-        onProgress: (progress) => setUploadProgress(progress),
+      console.log('[ChatDock] handleThreadDrop: 파일 전송 시작', {
+        totalFiles: files.length,
+        roomId,
       });
 
-      uploaded.forEach((attachment) => {
-        const payload = {
-          url: attachment.fileUrl || attachment.url,
-          name: attachment.fileName || attachment.originalFilename,
-          size: attachment.fileSize || attachment.size,
-          mimeType: attachment.mimeType || attachment.contentType,
-          downloadUrl: attachment.downloadUrl || attachment.url,
-        };
-        const isImage = isImageFile(payload.mimeType || "");
-        const text = isImage ? "[이미지]" : payload.name || "파일";
-
-        sendMessageMutation.mutate({
-          senderId: myUserId,
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileProgress = (i / files.length) * 100;
+        
+        console.log('[ChatDock] handleThreadDrop: 파일 전송 중', {
+          fileIndex: i + 1,
+          totalFiles: files.length,
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
           roomId,
-          type: isImage ? "IMAGE" : "FILE",
-          body: { text, extra: JSON.stringify(payload) },
-          replyToMsgId: null,
         });
-      });
+        
+        await sendFileMessageMutation.mutateAsync({
+          roomId,
+          file,
+          onProgress: (progress) => {
+            const currentFileProgress = fileProgress + (progress / files.length);
+            setUploadProgress(currentFileProgress);
+          },
+        });
 
-      toast.show({ title: "파일을 전송했습니다.", variant: "success" });
+        console.log('[ChatDock] handleThreadDrop: 파일 전송 완료', {
+          fileIndex: i + 1,
+          fileName: file.name,
+        });
+      }
+
+      console.log('[ChatDock] handleThreadDrop: 모든 파일 전송 완료');
+      toast.show({ title: `${files.length}개의 파일을 전송했습니다.`, variant: "success" });
+      setUploadProgress(0);
     } catch (error: any) {
+      console.error('[ChatDock] handleThreadDrop: 파일 전송 실패', {
+        error,
+        errorMessage: error?.message,
+        errorResponse: error?.response?.data,
+        errorStatus: error?.response?.status,
+        roomId,
+        filesCount: files.length,
+      });
       const message = error?.response?.data?.message || error?.message || "파일 전송에 실패했습니다.";
       toast.show({ title: message, variant: "error" });
-    } finally {
-      resetPendingUploads();
+      setUploadProgress(0);
     }
   };
+
 
   // ===== 메시지 로딩 =====
   // 채팅방이 열릴 때 메시지 가져오기
@@ -2543,9 +3038,73 @@ export default function ChatDock() {
     });
   };
 
+  // 드래그 이벤트 핸들러
+  const handleDockDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const hasFiles = e.dataTransfer?.types?.includes('Files') || 
+                     e.dataTransfer?.types?.includes('application/x-moz-file') ||
+                     Array.from(e.dataTransfer?.types || []).some(type => type.includes('File'));
+    
+    if (hasFiles || e.dataTransfer?.types?.length) {
+      setIsDragging(true);
+      console.log('[ChatDock] handleDockDragEnter: 파일 드래그 감지', {
+        types: Array.from(e.dataTransfer?.types || []),
+      });
+    }
+  };
+
+  const handleDockDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isDragging) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  };
+
+  const handleDockDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const currentTarget = e.currentTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    
+    if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+      setIsDragging(false);
+      console.log('[ChatDock] handleDockDragLeave: 드래그 벗어남');
+    }
+  };
+
+  const handleDockDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length > 0) {
+      console.log('[ChatDock] handleDockDrop: 파일 드롭', {
+        filesCount: files.length,
+        files: files.map(f => ({ name: f.name, size: f.size, type: f.type })),
+      });
+      // 파일이 드롭되면 가장 앞에 있는 채팅창에 전송
+      if (openThreadIds.length > 0) {
+        const firstThreadId = openThreadIds[0];
+        handleThreadDrop(e, firstThreadId);
+      } else {
+        toast.show({ title: "먼저 채팅방을 열어주세요.", variant: "warning" });
+      }
+    }
+  };
+
   // 변경 2: 반환부 전체 교체 (return ...)
   return (
-    <div id="chatdock-root" style={{ position: "fixed", right: 16, bottom: 16, zIndex: 60 }}>
+    <div 
+      id="chatdock-root" 
+      style={{ position: "fixed", right: 16, bottom: 16, zIndex: 60 }}
+      onDragEnter={handleDockDragEnter}
+      onDragOver={handleDockDragOver}
+      onDragLeave={handleDockDragLeave}
+      onDrop={handleDockDrop}
+    >
       {/* 버튼 + 패널 래퍼: 이 영역 안에서 이동할 때는 닫기 예약 취소됨 */}
       <div onMouseEnter={openPanel} onMouseLeave={() => scheduleClose(1000)}>
         {/* Floating Chat Button */}
@@ -2743,93 +3302,102 @@ export default function ChatDock() {
                 roomId={parseInt(id, 10)}
                 isMuted={false} // TODO: 백엔드에서 뮤트 상태 받아오기
                 currentUserIdNumber={myUserIdNumber}
+                onFileSelect={async (files) => {
+                  console.log('[ChatDock] onFileSelect 호출:', {
+                    threadId: id,
+                    filesCount: files.length,
+                    files: files.map(f => ({ name: f.name, size: f.size, type: f.type })),
+                  });
+
+                  // 파일 목록 메시지 생성
+                  const fileList = files.map((f, i) => `${i + 1}. ${f.name} (${formatFileSize(f.size)})`).join('\n');
+                  const threadName = threads.find((t) => t.id === id)?.users.map((u) => u.name).join(", ") || "채팅방";
+                  const message = `${threadName}에 다음 파일을 전송하시겠습니까?\n\n${fileList}\n\n총 ${files.length}개 파일`;
+
+                  const confirmed = window.confirm(message);
+                  if (!confirmed) {
+                    console.log('[ChatDock] onFileSelect: 사용자가 취소했습니다.');
+                    return;
+                  }
+
+                  // 확인 시 바로 전송
+                  const roomId = parseInt(id, 10);
+                  if (isNaN(roomId)) {
+                    console.error('[ChatDock] onFileSelect: 유효하지 않은 roomId', { threadId: id, roomId });
+                    toast.show({ title: "유효하지 않은 채팅방 ID입니다.", variant: "error" });
+                    return;
+                  }
+
+                  setUploadProgress(0);
+                  try {
+                    console.log('[ChatDock] onFileSelect: 파일 전송 시작', {
+                      totalFiles: files.length,
+                      roomId,
+                    });
+
+                    for (let i = 0; i < files.length; i++) {
+                      const file = files[i];
+                      const fileProgress = (i / files.length) * 100;
+                      
+                      console.log('[ChatDock] onFileSelect: 파일 전송 중', {
+                        fileIndex: i + 1,
+                        totalFiles: files.length,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileType: file.type,
+                        roomId,
+                      });
+                      
+                      await sendFileMessageMutation.mutateAsync({
+                        roomId,
+                        file,
+                        onProgress: (progress) => {
+                          const currentFileProgress = fileProgress + (progress / files.length);
+                          setUploadProgress(currentFileProgress);
+                        },
+                      });
+
+                      console.log('[ChatDock] onFileSelect: 파일 전송 완료', {
+                        fileIndex: i + 1,
+                        fileName: file.name,
+                      });
+                    }
+
+                    console.log('[ChatDock] onFileSelect: 모든 파일 전송 완료');
+                    toast.show({ title: `${files.length}개의 파일을 전송했습니다.`, variant: "success" });
+                    setUploadProgress(0);
+                  } catch (error: any) {
+                    console.error('[ChatDock] onFileSelect: 파일 전송 실패', {
+                      error,
+                      errorMessage: error?.message,
+                      errorResponse: error?.response?.data,
+                      errorStatus: error?.response?.status,
+                      roomId,
+                      filesCount: files.length,
+                    });
+                    const message = error?.response?.data?.message || error?.message || "파일 전송에 실패했습니다.";
+                    toast.show({ title: message, variant: "error" });
+                    setUploadProgress(0);
+                  }
+                }}
               />
             </div>
           );
         })}
 
-        {isUploadModalOpen && pendingThreadId && (
-          <div
-            className="fixed inset-0 z-[140] bg-black/50 flex items-center justify-center"
-            onClick={resetPendingUploads}
-          >
-            <div
-              className="w-[480px] max-w-[90vw] rounded-[var(--radius-lg)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-1)] shadow-2xl p-5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-start justify-between gap-2 mb-4">
-                <div>
-                  <div className="text-lg font-semibold text-[color:var(--chatdock-fg-primary)]">파일 전송</div>
-                  <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                    {threads.find((t) => t.id === pendingThreadId)?.users.map((u) => u.name).join(", ") || "채팅방"}
-                    에 보낼 파일을 확인하세요.
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={resetPendingUploads}
-                  className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
-                  aria-label="파일 전송 모달 닫기"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+        {/* ChatDock 전체 드래그 오버 시 안내 메시지 */}
+        {isDragging && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/30 backdrop-blur-sm pointer-events-none">
+            <div className="text-center p-8 bg-[color:var(--chatdock-bg-elev-2)] rounded-[var(--radius-lg)] border-2 border-dashed border-[color:var(--color-accent)] shadow-2xl">
+              <div className="text-6xl mb-4">📎</div>
+              <div className="text-2xl font-semibold text-[color:var(--color-accent)] mb-2">
+                파일을 여기에 놓으세요
               </div>
-
-              <div className="max-h-64 overflow-y-auto space-y-3 mb-2">
-                {pendingFiles.map((file) => {
-                  const preview = pendingPreviews[file.name];
-                  const isImage = isImageFile(file.type);
-                  return (
-                    <div
-                      key={file.name}
-                      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] p-2 bg-[color:var(--chatdock-bg-elev-2)]"
-                    >
-                      <div className="w-14 h-14 rounded-md overflow-hidden bg-[color:var(--chatdock-bg-elev-1)] grid place-items-center text-xl">
-                        {preview ? (
-                          <img src={preview} alt={file.name} className="w-full h-full object-cover" />
-                        ) : isImage ? (
-                          "🖼️"
-                        ) : (
-                          "📎"
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-semibold text-[color:var(--chatdock-fg-primary)] break-all">{file.name}</div>
-                        <div className="text-xs text-[color:var(--chatdock-fg-muted)]">{formatFileSize(file.size)}</div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="text-base text-[color:var(--chatdock-fg-muted)] mb-3">
+                파일을 드롭하면 전송됩니다
               </div>
-
-              {uploadProgress > 0 && (
-                <div className="mb-3">
-                  <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1">업로드 {uploadProgress}%</div>
-                  <div className="w-full h-2 rounded-full bg-[color:var(--chatdock-bg-elev-2)] overflow-hidden">
-                    <div
-                      className="h-full bg-[color:var(--color-accent)]"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={resetPendingUploads}
-                  className="px-4 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] hover:bg-[color:var(--chatdock-bg-hover)] text-sm"
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmFileSend}
-                  disabled={uploadProgress > 0 && uploadProgress < 100}
-                  className="px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] hover:opacity-90 text-sm disabled:opacity-60"
-                >
-                  전송
-                </button>
+              <div className="text-lg font-medium text-[color:var(--color-accent)]">
+                드롭하여 파일 전송
               </div>
             </div>
           </div>

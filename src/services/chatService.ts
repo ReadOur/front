@@ -148,6 +148,68 @@ export async function sendRoomMessage(data: SendRoomMessageRequest): Promise<Roo
   );
 }
 
+/**
+ * 파일 메시지 전송
+ */
+export async function sendRoomFileMessage(
+  roomId: number,
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<RoomMessage> {
+  console.log('[chatService] sendRoomFileMessage 호출:', {
+    roomId,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    hasOnProgress: !!onProgress,
+  });
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  console.log('[chatService] sendRoomFileMessage: FormData 생성 완료', {
+    endpoint: CHAT_ENDPOINTS.ROOM_MESSAGES_FILES(roomId),
+    formDataKeys: Array.from(formData.keys()),
+  });
+
+  try {
+    const response = await apiClient.upload<RoomMessage>(
+      CHAT_ENDPOINTS.ROOM_MESSAGES_FILES(roomId),
+      formData,
+      onProgress
+        ? (progressEvent) => {
+            const { loaded, total } = progressEvent;
+            if (total) {
+              const progress = (loaded / total) * 100;
+              console.log('[chatService] sendRoomFileMessage: 업로드 진행률', {
+                loaded,
+                total,
+                progress: progress.toFixed(2) + '%',
+              });
+              onProgress(progress);
+            }
+          }
+        : undefined
+    );
+
+    console.log('[chatService] sendRoomFileMessage: 전송 성공', {
+      response: response ? { id: response.id, type: response.type } : null,
+    });
+
+    return response;
+  } catch (error: any) {
+    console.error('[chatService] sendRoomFileMessage: 전송 실패', {
+      error,
+      errorMessage: error?.message,
+      errorResponse: error?.response?.data,
+      errorStatus: error?.response?.status,
+      roomId,
+      fileName: file.name,
+    });
+    throw error;
+  }
+}
+
 // ===== 스레드 (대화방) 관련 =====
 
 /**
@@ -457,8 +519,34 @@ export async function unpinRoom(roomId: number): Promise<void> {
 /**
  * 채팅방 삭제 (폭파) - 방장 전용
  */
-export async function deleteRoom(roomId: number): Promise<void> {
-  return apiClient.delete<void>(CHAT_ENDPOINTS.DELETE_ROOM(roomId));
+export async function deleteRoom(roomId: number, params?: { query?: string; page?: number; size?: number }): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.DELETE_ROOM(roomId), {
+    confirmDestroy: true,
+    query: params?.query || "프로젝트",
+    page: params?.page ?? 0,
+    size: params?.size ?? 20,
+  });
+}
+
+/**
+ * 채팅방 강퇴
+ */
+export interface KickUserRequest {
+  targetUserId: number;
+  reason: string;
+  query?: string;
+  page?: number;
+  size?: number;
+}
+
+export async function kickUser(roomId: number, data: KickUserRequest): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.KICK_USER(roomId), {
+    targetUserId: data.targetUserId,
+    reason: data.reason,
+    query: data.query || "프로젝트",
+    page: data.page ?? 0,
+    size: data.size ?? 20,
+  });
 }
 
 /**
@@ -487,15 +575,15 @@ export async function requestAI(roomId: number, data: AiJobRequest): Promise<AiJ
 /**
  * 메시지 숨기기
  */
-export async function hideMessage(roomId: number, messageId: number): Promise<void> {
-  return apiClient.post<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(roomId, messageId), {});
+export async function hideMessage(messageId: number): Promise<void> {
+  return apiClient.post<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(messageId), {});
 }
 
 /**
  * 메시지 숨김 해제
  */
-export async function unhideMessage(roomId: number, messageId: number): Promise<void> {
-  return apiClient.delete<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(roomId, messageId));
+export async function unhideMessage(messageId: number): Promise<void> {
+  return apiClient.delete<void>(CHAT_ENDPOINTS.HIDE_MESSAGE(messageId));
 }
 
 /**
@@ -507,6 +595,7 @@ export const chatService = {
   getMyRooms,
   getRoomMessages,
   sendRoomMessage,
+  sendRoomFileMessage,
   createRoom,
   getRoomMemberProfile,
 
@@ -514,6 +603,7 @@ export const chatService = {
   joinRoom,
   leaveRoom,
   deleteRoom,
+  kickUser,
   pinRoom,
   unpinRoom,
   muteRoom,

@@ -6,7 +6,7 @@ interface ConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: string | React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: "default" | "danger";
@@ -54,9 +54,15 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         </h3>
 
         {/* 메시지 */}
-        <p className="text-sm text-[color:var(--color-fg-secondary)] whitespace-pre-wrap">
-          {message}
-        </p>
+        {typeof message === 'string' ? (
+          <p className="text-sm text-[color:var(--color-fg-secondary)] whitespace-pre-wrap">
+            {message}
+          </p>
+        ) : (
+          <div className="text-sm text-[color:var(--color-fg-secondary)]">
+            {message}
+          </div>
+        )}
 
         {/* 버튼 그룹 */}
         <div className="flex gap-2 justify-end pt-2">

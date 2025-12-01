@@ -28,9 +28,10 @@ interface AIDockProps {
   messages: AIMessage[];
   isLoading?: boolean;
   onSend?: (text: string) => void;
+  threadCategory?: "PRIVATE" | "GROUP" | "PUBLIC";
 }
 
-export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, messages, isLoading, onSend }: AIDockProps) {
+export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, messages, isLoading, onSend, threadCategory }: AIDockProps) {
   const getInitialPosition = useCallback(() => {
     const width = 384; // w-96
     const height = 600;
@@ -165,7 +166,9 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
         <Sparkles className="w-5 h-5 text-white" />
         <div className="flex-1">
           <div className="text-sm font-bold text-white">AI</div>
-          <div className="text-xs text-white/80">@ai [질문생성/요점정리]</div>
+          {threadCategory === "GROUP" && (
+            <div className="text-xs text-white/80">@ai [질문생성/요점정리]</div>
+          )}
         </div>
         {onMinimize && (
           <button

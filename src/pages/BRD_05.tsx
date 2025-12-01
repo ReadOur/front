@@ -17,7 +17,7 @@ import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { ConfirmModal } from "@/components/ConfirmModal/ConfirmModal";
 import DOMPurify from "dompurify";
-import { getDownloadUrl, formatFileSize, isImageFile } from "@/api/files";
+import { getDownloadUrl, formatFileSize, isImageFile, getImageBlobUrl, downloadFile } from "@/api/files";
 import { isLoggedIn } from "@/utils/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar } from "@/components/Avatar/Avatar";
@@ -32,6 +32,227 @@ function decodeHtmlEntities(text: string): string {
   const textarea = document.createElement('textarea');
   textarea.innerHTML = text;
   return textarea.value;
+}
+
+/**
+ * 이미지 미리보기 컴포넌트 (fetch로 Authorization 헤더 사용)
+ */
+function ImagePreview({ 
+  attachment, 
+  onDownload 
+}: { 
+  attachment: { id: number; fileUrl?: string; url?: string; fileName?: string; originalFilename?: string };
+  onDownload: () => void;
+}) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let currentBlobUrl: string | null = null;
+    let cancelled = false;
+
+    const loadImage = async () => {
+      const rawImageUrl = attachment.fileUrl || attachment.url;
+      console.log('[ImagePreview] 이미지 로드 시작:', {
+        fileUrl: attachment.fileUrl,
+        url: attachment.url,
+        rawImageUrl,
+        attachmentId: attachment.id,
+      });
+
+      if (!rawImageUrl) {
+        console.warn('[ImagePreview] 이미지 URL이 없습니다');
+        if (!cancelled) {
+          setError(true);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const blobUrl = await getImageBlobUrl(rawImageUrl);
+        console.log('[ImagePreview] 이미지 로드 완료:', blobUrl);
+        
+        if (!cancelled) {
+          currentBlobUrl = blobUrl;
+          setImageSrc(blobUrl);
+          setIsLoading(false);
+          setError(false); // 성공 시 에러 상태 초기화
+        } else {
+          // 취소된 경우 blob URL 정리
+          if (blobUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(blobUrl);
+          }
+        }
+      } catch (err) {
+        console.error('[ImagePreview] 이미지 로드 실패:', err);
+        if (!cancelled) {
+          // fetch 실패 시 원본 URL로 직접 시도
+          console.log('[ImagePreview] 원본 URL로 직접 시도:', rawImageUrl);
+          setImageSrc(rawImageUrl);
+          setIsLoading(false);
+          // 원본 URL도 실패할 수 있으므로 에러 상태는 onError에서 처리
+        }
+      }
+    };
+
+    loadImage();
+
+    // cleanup: blob URL 해제
+    return () => {
+      cancelled = true;
+      if (currentBlobUrl && currentBlobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(currentBlobUrl);
+      }
+      // 이전 imageSrc도 정리
+      setImageSrc((prev) => {
+        if (prev && prev.startsWith('blob:')) {
+          URL.revokeObjectURL(prev);
+        }
+        return null;
+      });
+    };
+  }, [attachment.fileUrl, attachment.url]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <div className="w-full h-48 bg-[color:var(--color-bg-elev-2)] rounded-[var(--radius-md)] flex items-center justify-center">
+          <span className="text-sm text-[color:var(--color-fg-muted)]">이미지 로딩 중...</span>
+        </div>
+        <p className="text-xs text-[color:var(--color-fg-muted)]">
+          {attachment.fileName || attachment.originalFilename}
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !imageSrc) {
+    return (
+      <div className="space-y-2">
+        <div className="w-full h-48 bg-[color:var(--color-bg-elev-2)] rounded-[var(--radius-md)] flex items-center justify-center border border-[color:var(--color-border-subtle)]">
+          <span className="text-sm text-[color:var(--color-fg-muted)]">이미지를 불러올 수 없습니다</span>
+        </div>
+        <button
+          onClick={onDownload}
+          className="text-xs text-[color:var(--color-accent)] hover:underline underline-offset-2"
+          type="button"
+        >
+          {attachment.fileName || attachment.originalFilename} (다운로드)
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <button
+        onClick={onDownload}
+        className="block w-full"
+        type="button"
+      >
+        <img
+          src={imageSrc}
+          alt={attachment.fileName || attachment.originalFilename}
+          className="max-w-full h-auto rounded-[var(--radius-md)] border border-[color:var(--color-border-subtle)] cursor-pointer hover:opacity-90 transition-opacity"
+          onError={(e) => {
+            console.error('[ImagePreview] img 태그 onError 발생:', imageSrc);
+            // 무한 루프 방지: 에러 상태로 전환
+            setError(true);
+            setIsLoading(false);
+          }}
+        />
+      </button>
+      <p className="text-xs text-[color:var(--color-fg-muted)]">
+        {attachment.fileName || attachment.originalFilename}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * 본문 내용 렌더링 컴포넌트 (이미지 fetch 처리)
+ */
+function ContentWithImages({ 
+  content, 
+  isSpoiler, 
+  isSpoilerRevealed, 
+  onRevealSpoiler 
+}: { 
+  content: string;
+  isSpoiler: boolean;
+  isSpoilerRevealed: boolean;
+  onRevealSpoiler: () => void;
+}) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { accessToken } = useAuth();
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!contentRef.current || !content) return;
+
+    // 본문 내 모든 이미지 태그 찾기
+    const images = contentRef.current.querySelectorAll('img');
+    
+    images.forEach((img) => {
+      const originalSrc = img.getAttribute('src');
+      if (!originalSrc) return;
+
+      // 모든 이미지를 getImageBlobUrl로 처리 (S3 URL 포함)
+      const loadImage = async () => {
+        try {
+          console.log('[ContentWithImages] 본문 이미지 로드 시작:', originalSrc);
+          const blobUrl = await getImageBlobUrl(originalSrc);
+          console.log('[ContentWithImages] 본문 이미지 로드 완료:', blobUrl);
+          
+          // blob URL인 경우 정리 목록에 추가
+          if (blobUrl.startsWith('blob:')) {
+            blobUrlsRef.current.add(blobUrl);
+          }
+          
+          img.src = blobUrl;
+        } catch (error) {
+          console.error('[ContentWithImages] 본문 이미지 로드 실패:', error);
+          // 에러 시 원본 URL 유지 (브라우저가 직접 시도)
+          img.src = originalSrc;
+        }
+      };
+
+      loadImage();
+    });
+
+    // cleanup: blob URL 정리
+    return () => {
+      blobUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      blobUrlsRef.current.clear();
+    };
+  }, [content, accessToken]);
+
+  return (
+    <>
+      <div
+        ref={contentRef}
+        className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
+          isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
+        }`}
+        aria-hidden={isSpoiler && !isSpoilerRevealed}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+      {isSpoiler && !isSpoilerRevealed && (
+        <button
+          type="button"
+          onClick={onRevealSpoiler}
+          className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
+          aria-label="스포일러 가림막 해제"
+        >
+          스포일러 방지. 클릭하면 해제합니다.
+        </button>
+      )}
+    </>
+  );
 }
 
 /**
@@ -150,6 +371,7 @@ export default function PostShow() {
 
   // 본문 HTML 가공 (요약 텍스트 추출용)
   // - useMemo로 DOMPurify/DOM 파싱 비용을 post?.content 변경 시점에만 실행
+  // - 이미지 처리는 ContentWithImages 컴포넌트에서 fetch로 처리
   const sanitizedContent = useMemo(
     () => DOMPurify.sanitize(decodeHtmlEntities(post?.content ?? "")),
     [post?.content]
@@ -780,40 +1002,50 @@ export default function PostShow() {
         {/* HTML 태그(p 태그 등)를 렌더링하기 위해 dangerouslySetInnerHTML 사용 */}
         {/* DOMPurify로 XSS 공격 방지를 위한 sanitize 적용 */}
         <div className="relative mt-3 sm:mt-4">
-          <div
-            className={`text-sm sm:text-base text-[color:var(--color-fg-primary)] leading-relaxed ${
-              post.isSpoiler && !isSpoilerRevealed ? "blur-sm select-none" : ""
-            }`}
-            aria-hidden={post.isSpoiler && !isSpoilerRevealed}
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+          <ContentWithImages 
+            content={sanitizedContent} 
+            isSpoiler={post.isSpoiler}
+            isSpoilerRevealed={isSpoilerRevealed}
+            onRevealSpoiler={() => setIsSpoilerRevealed(true)}
           />
-
-          {post.isSpoiler && !isSpoilerRevealed && (
-            <button
-              type="button"
-              onClick={() => setIsSpoilerRevealed(true)}
-              className="absolute inset-x-0 top-[60px] bottom-0 flex items-center justify-center rounded-lg bg-[color:var(--color-bg-elev-1)]/95 text-center text-sm sm:text-base font-semibold text-[color:var(--color-fg-primary)]"
-              aria-label="스포일러 가림막 해제"
-            >
-              스포일러 방지. 클릭하면 해제합니다.
-            </button>
-          )}
         </div>
 
         {/* 첨부파일 영역 (본문 아래) */}
         {post.attachments && post.attachments.length > 0 && (
           <div className="mt-4 pt-4 border-t border-[color:var(--color-border-subtle)]">
+            <h4 className="text-base font-semibold text-[color:var(--color-fg-primary)] mb-2">첨부파일</h4>
             <div className="flex flex-wrap gap-3">
               {post.attachments.map((attachment) => (
-                <a
+                <button
                   key={attachment.id}
-                  href={getDownloadUrl(attachment.id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-[color:var(--color-accent)] hover:underline underline-offset-2"
+                  onClick={async () => {
+                    try {
+                      const blob = await downloadFile(attachment.id);
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = attachment.fileName || attachment.originalFilename || 'download';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                      console.error('파일 다운로드 실패:', error);
+                      toast.show({ title: '파일 다운로드에 실패했습니다.', variant: 'error' });
+                    }
+                  }}
+                  className="text-sm text-[color:var(--color-accent)] hover:underline underline-offset-2 flex items-center gap-1"
                 >
+                  <span className="text-lg">
+                    {isImageFile(attachment.mimeType || attachment.contentType) ? '🖼️' : '📄'}
+                  </span>
                   {attachment.fileName || attachment.originalFilename}
-                </a>
+                  {attachment.fileSize || attachment.size ? (
+                    <span className="text-xs text-[color:var(--color-fg-muted)]">
+                      ({formatFileSize(attachment.fileSize || attachment.size)})
+                    </span>
+                  ) : null}
+                </button>
               ))}
             </div>
           </div>

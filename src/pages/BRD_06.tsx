@@ -97,6 +97,21 @@ export const BRD_06 = (): React.JSX.Element => {
     enabled: isEditMode,
   });
 
+  // API 응답 디버깅
+  useEffect(() => {
+    if (existingPost) {
+      console.log('[BRD_06] usePost 응답 데이터:', {
+        postId: existingPost.postId,
+        title: existingPost.title,
+        rawAttachments: existingPost.attachments,
+        attachmentsType: typeof existingPost.attachments,
+        attachmentsIsArray: Array.isArray(existingPost.attachments),
+        attachmentsLength: existingPost.attachments?.length,
+        fullPost: existingPost,
+      });
+    }
+  }, [existingPost]);
+
   // 편집 모드에서 책 정보 로드 (REVIEW 카테고리이고 bookId가 있는 경우만)
   // 빈 문자열은 useBookDetail의 enabled: !!bookId로 인해 API 호출되지 않음
   const existingBookId = existingPost?.bookId ? String(existingPost.bookId) : '';
@@ -105,16 +120,43 @@ export const BRD_06 = (): React.JSX.Element => {
   // 새 글 작성 모드에서 URL 쿼리 파라미터로 전달된 책 정보 로드
   const { data: initialBookDetail } = useBookDetail(initialBookId || '');
 
+  // downloadUrl에서 파일 ID 추출하는 헬퍼 함수
+  const extractFileIdFromDownloadUrl = (downloadUrl: string): number | null => {
+    // downloadUrl 형식: "/api/files/146/download" 또는 "/files/146/download"
+    const match = downloadUrl.match(/\/(\d+)\/download$/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    return null;
+  };
+
   // 수정 모드: 기존 데이터를 폼에 채우기
   useEffect(() => {
     if (isEditMode && existingPost) {
+      // attachments에 id 필드가 없으면 downloadUrl에서 추출
+      const attachmentsWithId = (existingPost.attachments || [])
+        .map((att) => {
+          if (att.id) {
+            return att;
+          }
+          // downloadUrl에서 ID 추출
+          const fileId = att.downloadUrl ? extractFileIdFromDownloadUrl(att.downloadUrl) : null;
+          return {
+            ...att,
+            id: fileId || 0, // 추출 실패 시 0 (나중에 필터링)
+          };
+        })
+        .filter((att) => att.id > 0); // id가 0인 것은 제외
+
       console.log('[BRD_06] 기존 게시글 로드:', {
         postId: existingPost.postId,
         title: existingPost.title,
-        attachments: existingPost.attachments,
-        attachmentsCount: existingPost.attachments?.length || 0,
-        attachmentsIds: existingPost.attachments?.map((a) => a.id) || [],
+        rawAttachments: existingPost.attachments,
+        attachmentsWithId: attachmentsWithId,
+        attachmentsCount: attachmentsWithId.length,
+        attachmentsIds: attachmentsWithId.map((a) => a.id),
       });
+
       setTitle(existingPost.title);
       setContentHtml(existingPost.content);
       // warnings 객체 배열을 문자열 배열로 변환
@@ -124,7 +166,7 @@ export const BRD_06 = (): React.JSX.Element => {
       setChatRoomId(existingPost.chatRoomId);
       setRecruitmentLimit(existingPost.recruitmentLimit);
       setIsSpoiler(existingPost.isSpoiler || false);
-      setAttachments(existingPost.attachments || []);
+      setAttachments(attachmentsWithId);
     }
   }, [isEditMode, existingPost]);
 
@@ -281,9 +323,12 @@ export const BRD_06 = (): React.JSX.Element => {
       .replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>)+$/gi, '') // 뒤쪽 빈 태그
       .trim();
 
-    const inlineAttachmentIds = inlineUploads.map((a) => a.id);
+    const inlineAttachmentIds = inlineUploads.map((a) => a.id).filter((id) => id != null && id > 0);
     const attachmentIds = Array.from(
-      new Set([...(attachments.map((a) => a.id) || []), ...inlineAttachmentIds]),
+      new Set([
+        ...(attachments.map((a) => a.id).filter((id) => id != null && id > 0) || []),
+        ...inlineAttachmentIds,
+      ]),
     );
 
     console.log('[BRD_06] 첨부파일 정보:', {
@@ -297,6 +342,7 @@ export const BRD_06 = (): React.JSX.Element => {
 
     if (isEditMode && postId) {
       // 수정 모드 (작성 API와 동일한 형식으로 모든 필드 전달)
+      // tempId가 있으면 전송 (새로 추가된 파일이 있는 경우)
       const updateData: UpdatePostRequest = {
         title: title.trim(),
         content: safeHtml,
@@ -305,6 +351,7 @@ export const BRD_06 = (): React.JSX.Element => {
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
+        ...(tempUploadId && { tempId: tempUploadId }), // 새로 추가된 파일이 있을 때만 tempId 전송
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,

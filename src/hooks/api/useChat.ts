@@ -251,6 +251,75 @@ export function useSendRoomMessage(
 }
 
 /**
+ * 채팅방 파일 메시지 전송
+ */
+export function useSendRoomFileMessage(
+  options?: UseMutationOptions<RoomMessage, Error, { roomId: number; file: File; onProgress?: (progress: number) => void }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<RoomMessage, Error, { roomId: number; file: File; onProgress?: (progress: number) => void }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, file, onProgress }) => {
+      console.log('[useChat] useSendRoomFileMessage mutationFn 호출:', {
+        roomId,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        hasOnProgress: !!onProgress,
+      });
+      return chatService.sendRoomFileMessage(roomId, file, onProgress);
+    },
+    onMutate: async (variables) => {
+      console.log('[useChat] useSendRoomFileMessage onMutate:', {
+        roomId: variables.roomId,
+        fileName: variables.file.name,
+      });
+      if (options?.onMutate) {
+        return (options.onMutate as any)(variables);
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      console.log('[useChat] useSendRoomFileMessage onSuccess:', {
+        roomId: variables.roomId,
+        fileName: variables.file.name,
+        responseId: data?.id,
+        responseType: data?.type,
+      });
+
+      // 해당 채팅방의 메시지 목록 무효화
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId)
+      });
+
+      // 채팅방 목록 무효화 (lastMessage 업데이트)
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.roomsOverview()
+      });
+      queryClient.invalidateQueries({
+        queryKey: CHAT_QUERY_KEYS.myRooms(0)
+      });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+    onError: (error, variables, context) => {
+      console.error('[useChat] useSendRoomFileMessage onError:', {
+        error,
+        errorMessage: error?.message,
+        roomId: variables.roomId,
+        fileName: variables.file.name,
+      });
+      if (options?.onError) {
+        (options.onError as any)(error, variables, context);
+      }
+    },
+  });
+}
+
+/**
  * 채팅 스레드 생성
  */
 export function useCreateThread(
@@ -546,11 +615,42 @@ export function useDeleteRoom(
 
   return useMutation<void, Error, number, unknown>({
     ...options,
-    mutationFn: chatService.deleteRoom,
+    mutationFn: (roomId) => chatService.deleteRoom(roomId, { query: "프로젝트", page: 0, size: 20 }),
     onSuccess: (data, variables, context) => {
       // 채팅방 목록 무효화
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+
+      // 사용자 정의 onSuccess 실행
+      if (options?.onSuccess) {
+        (options.onSuccess as any)(data, variables, context);
+      }
+    },
+  });
+}
+
+/**
+ * 채팅방 강퇴
+ */
+export function useKickUser(
+  options?: UseMutationOptions<void, Error, { roomId: number; targetUserId: number; reason: string }, unknown>
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { roomId: number; targetUserId: number; reason: string }, unknown>({
+    ...options,
+    mutationFn: ({ roomId, targetUserId, reason }) => chatService.kickUser(roomId, {
+      targetUserId,
+      reason,
+      query: "프로젝트",
+      page: 0,
+      size: 20,
+    }),
+    onSuccess: (data, variables, context) => {
+      // 채팅방 목록 무효화
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomsOverview() });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.myRooms(0) });
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
@@ -635,16 +735,16 @@ export function useRequestAI(
  * 메시지 숨기기
  */
 export function useHideMessage(
-  options?: UseMutationOptions<void, Error, { roomId: number; messageId: number }, unknown>
+  options?: UseMutationOptions<void, Error, { messageId: number }, unknown>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { roomId: number; messageId: number }, unknown>({
+  return useMutation<void, Error, { messageId: number }, unknown>({
     ...options,
-    mutationFn: ({ roomId, messageId }) => chatService.hideMessage(roomId, messageId),
+    mutationFn: ({ messageId }) => chatService.hideMessage(messageId),
     onSuccess: (data, variables, context) => {
-      // 채팅방 메시지 목록 무효화
-      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+      // 모든 채팅방 메시지 목록 무효화 (roomId를 모르므로)
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(0) });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
@@ -658,16 +758,16 @@ export function useHideMessage(
  * 메시지 숨김 해제
  */
 export function useUnhideMessage(
-  options?: UseMutationOptions<void, Error, { roomId: number; messageId: number }, unknown>
+  options?: UseMutationOptions<void, Error, { messageId: number }, unknown>
 ) {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { roomId: number; messageId: number }, unknown>({
+  return useMutation<void, Error, { messageId: number }, unknown>({
     ...options,
-    mutationFn: ({ roomId, messageId }) => chatService.unhideMessage(roomId, messageId),
+    mutationFn: ({ messageId }) => chatService.unhideMessage(messageId),
     onSuccess: (data, variables, context) => {
-      // 채팅방 메시지 목록 무효화
-      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(variables.roomId) });
+      // 모든 채팅방 메시지 목록 무효화 (roomId를 모르므로)
+      queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.roomMessages(0) });
 
       // 사용자 정의 onSuccess 실행
       if (options?.onSuccess) {
