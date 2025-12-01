@@ -2834,7 +2834,6 @@ export default function ChatDock() {
           </div>
         )}
 
-      </div>
     </div>
   );
 }
