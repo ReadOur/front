@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { uploadFile, formatFileSize, isImageFile } from '@/api/files';
+import { uploadFile, formatFileSize, isImageFile, type FileTargetType } from '@/api/files';
 import { Attachment } from '@/types/post';
 import { useToast } from '@/components/Toast/ToastProvider';
 
@@ -17,8 +17,8 @@ export interface FileUploadProps {
   attachments: Attachment[];
   /** 파일 목록 변경 콜백 */
   onChange: (attachments: Attachment[]) => void;
-  /** 파일 업로드 대상 타입 (예: 213 = 게시글) */
-  targetType: number;
+  /** 파일 업로드 대상 타입 (POST | CHAT) */
+  targetType: FileTargetType;
   /** 파일 업로드 대상 ID */
   targetId: number;
   /** 최대 파일 개수 */

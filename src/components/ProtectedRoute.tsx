@@ -1,5 +1,5 @@
-import { ReactNode, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { ReactNode, useEffect, useRef } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -13,14 +13,14 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+  const alertedRef = useRef(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !alertedRef.current) {
+      alertedRef.current = true;
       alert("권한이 필요합니다.");
-      navigate("/login", { state: { from: location }, replace: true });
     }
-  }, [isAuthenticated, isLoading, location, navigate]);
+  }, [isAuthenticated, isLoading]);
 
   // 초기 로딩 중에는 아무것도 렌더링하지 않음 (깜빡임 방지)
   if (isLoading) {
@@ -28,8 +28,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    // useEffect에서 alert 후 리다이렉트 처리
-    return null;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return <>{children}</>;
