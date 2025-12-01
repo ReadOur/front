@@ -130,6 +130,7 @@ export interface CreatePostRequest {
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
   attachmentIds?: string[];
+  tempId?: string;
 }
 
 /**
@@ -145,6 +146,7 @@ export interface UpdatePostRequest {
   isSpoiler?: boolean;
   warnings?: string[]; // 스포일러/주의사항 태그
   attachmentIds?: string[];
+  tempId?: string;
 }
 
 /**
