@@ -12,8 +12,8 @@ import { Attachment } from '@/types/post';
  */
 export interface UploadFileParams {
   file: File;
-  targetType: number;
-  targetId: number;
+  targetType: number | string;
+  targetId: number | string;
   onProgress?: (progress: number) => void;
 }
 
@@ -22,8 +22,24 @@ export interface UploadFileParams {
  */
 export interface UploadFilesParams {
   files: File[];
-  targetType: number;
-  targetId: number;
+  targetType: number | string;
+  targetId: number | string;
+  onProgress?: (progress: number) => void;
+}
+
+export interface TempUploadResponseFile extends Attachment {
+  fileId: number;
+  tempId: string;
+}
+
+export interface TempUploadResponse {
+  tempId: string;
+  files: TempUploadResponseFile[];
+}
+
+export interface UploadTempFilesParams {
+  files: File[];
+  tempId?: string;
   onProgress?: (progress: number) => void;
 }
 
@@ -94,6 +110,47 @@ export async function uploadFiles(params: UploadFilesParams): Promise<Attachment
     fileSize: attachment.size,
     mimeType: attachment.contentType,
   }));
+}
+
+/**
+ * 임시 파일 업로드 (게시글 초안용)
+ */
+export async function uploadTempFiles(params: UploadTempFilesParams): Promise<{
+  tempId: string;
+  attachments: Attachment[];
+}> {
+  const { files, tempId, onProgress } = params;
+  const formData = new FormData();
+
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  if (tempId) {
+    formData.append('tempId', tempId);
+  }
+
+  const result = await apiClient.upload<TempUploadResponse>(
+    FILE_ENDPOINTS.TEMP_UPLOAD,
+    formData,
+    (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(progress);
+      }
+    }
+  );
+
+  const attachments = (result.files || []).map((file) => ({
+    ...file,
+    id: file.fileId,
+    fileName: file.originalFilename,
+    fileUrl: file.url,
+    fileSize: file.size,
+    mimeType: file.contentType,
+  }));
+
+  return { tempId: result.tempId, attachments };
 }
 
 /**
@@ -174,6 +231,7 @@ export function isImageFile(mimeType: string): boolean {
 export const fileService = {
   uploadFile,
   uploadFiles,
+  uploadTempFiles,
   getFileMetadata,
   downloadFile,
   getDownloadUrl,

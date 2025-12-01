@@ -16,7 +16,8 @@ import "./ChatDock.css";
 import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
 import { extractUserIdFromToken } from "@/utils/auth";
-import { AiCommandType, AiJobResponse, RoomMessageType, SessionClosingPayload } from "@/types";
+import { AiCommandType, AiJobResponse, RoomMessage, RoomMessageType, SessionClosingPayload } from "@/types";
+import { formatFileSize, isImageFile, uploadFiles } from "@/api/files";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -211,6 +212,14 @@ export interface ChatUser {
   online?: boolean;
 }
 
+export interface ChatAttachment {
+  url: string;
+  name?: string;
+  size?: number;
+  mimeType?: string;
+  downloadUrl?: string;
+}
+
 export interface ChatMessage {
   id: string;
   threadId: string;
@@ -225,6 +234,7 @@ export interface ChatMessage {
   senderNickname?: string; // 발신자 닉네임
   senderRole?: string; // 발신자 역할
   type?: RoomMessageType;
+  attachment?: ChatAttachment;
 }
 
 export type ChatCategory = "PRIVATE" | "GROUP" | "PUBLIC";
@@ -238,6 +248,52 @@ export interface ChatThread {
   isPinned?: boolean; // 상단 고정 여부
   joined?: boolean; // 참여 여부 (공개 채팅방용)
 }
+
+const parseAttachmentExtra = (extra?: string): ChatAttachment | null => {
+  if (!extra) return null;
+
+  try {
+    const parsed = typeof extra === "string" ? JSON.parse(extra) : extra;
+    if (parsed && typeof parsed === "object" && "url" in parsed) {
+      const payload = parsed as Record<string, any>;
+      return {
+        url: payload.url,
+        name: payload.name,
+        size: payload.size,
+        mimeType: payload.mimeType || payload.contentType,
+        downloadUrl: payload.downloadUrl || payload.url,
+      };
+    }
+  } catch (error) {
+    console.warn("첨부 메타데이터 파싱 실패", error);
+  }
+
+  return null;
+};
+
+const mapRoomMessageToChatMessage = (msg: RoomMessage): ChatMessage => {
+  const attachment = parseAttachmentExtra(msg.body.extra);
+  const fallbackText =
+    msg.body.text ??
+    (msg.type === "IMAGE" && attachment?.url
+      ? "[이미지]"
+      : msg.type === "FILE" && attachment?.name
+        ? attachment.name
+        : "");
+
+  return {
+    id: msg.id.toString(),
+    threadId: msg.roomId.toString(),
+    fromId: msg.senderId.toString(),
+    senderId: msg.senderId.toString(),
+    text: fallbackText,
+    createdAt: new Date(msg.createdAt).getTime(),
+    senderNickname: msg.senderNickname,
+    senderRole: msg.senderRole,
+    type: msg.type,
+    attachment,
+  };
+};
 
 const GROUP_AI_ALLOWED_ROLES = new Set(["OWNER", "MANAGER"]);
 
@@ -1181,6 +1237,50 @@ function ChatWindow({
           const senderId = (m.fromId ?? m.senderId)?.toString();
           const mine = senderId === me.id?.toString();
           const isHidden = hiddenMessageIds.has(m.id);
+          const attachment = m.attachment;
+          const isImageMessage = m.type === "IMAGE" && attachment?.url;
+
+          const renderAttachment = () => {
+            if (!attachment) return null;
+            return (
+              <div className="space-y-2">
+                {isImageMessage && (
+                  <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)]">
+                    <img
+                      src={attachment.url}
+                      alt={attachment.name || "이미지"}
+                      className="max-h-64 w-full object-contain bg-black/5"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-sm text-[color:var(--chatdock-fg-primary)] break-all">
+                  <span className="font-semibold">{attachment.name || (isImageMessage ? "이미지" : "파일")}</span>
+                  {attachment.size && (
+                    <span className="text-xs text-[color:var(--chatdock-fg-muted)]">{formatFileSize(attachment.size)}</span>
+                  )}
+                  {attachment.downloadUrl && (
+                    <a
+                      href={attachment.downloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[color:var(--color-primary)] underline-offset-2 hover:underline"
+                    >
+                      다운로드
+                    </a>
+                  )}
+                </div>
+                {m.text && !isImageMessage && (
+                  <div className="text-sm whitespace-pre-wrap break-words">{m.text}</div>
+                )}
+              </div>
+            );
+          };
+
+          const renderMessageContent = () => {
+            if (isHidden) return <div className="text-sm leading-snug whitespace-pre-wrap break-words">가려진 메시지</div>;
+            if (attachment) return renderAttachment();
+            return <div className="text-sm leading-snug whitespace-pre-wrap break-words">{m.text}</div>;
+          };
           return (
             <div key={m.id} className="relative group">
               <div className={cls("flex items-start gap-1 w-full", mine ? "justify-end" : "justify-start")}> 
@@ -1272,9 +1372,7 @@ function ChatWindow({
                       "bg-[color:var(--color-accent)] text-[color:var(--chatdock-on-accent)]",
                       isHidden && "opacity-30 blur-sm"
                     )}>
-                      <div className="text-sm leading-snug whitespace-pre-wrap break-words">
-                        {isHidden ? "가려진 메시지" : m.text}
-                      </div>
+                      {renderMessageContent()}
                       <div className="mt-1 text-[10px] opacity-80">
                         {new Date(m.createdAt).toLocaleTimeString()}
                       </div>
@@ -1297,9 +1395,7 @@ function ChatWindow({
                           {m.senderNickname || "알 수 없는 사용자"}
                         </button>
                       )}
-                      <div className="text-sm leading-snug whitespace-pre-wrap break-words">
-                        {isHidden ? "가려진 메시지" : m.text}
-                      </div>
+                      {renderMessageContent()}
                       <div className="mt-1 text-[10px] text-[color:var(--chatdock-fg-muted)]">
                         {new Date(m.createdAt).toLocaleTimeString()}
                       </div>
@@ -2074,6 +2170,12 @@ export default function ChatDock() {
   const [messageHasMore, setMessageHasMore] = useState<Record<string, boolean>>({});
   const [typing] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
+  const [activeDropThreadId, setActiveDropThreadId] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingThreadId, setPendingThreadId] = useState<string | null>(null);
+  const [pendingPreviews, setPendingPreviews] = useState<Record<string, string>>({});
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // ===== 패널 자동 닫힘 타이머 관련 =====
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2101,6 +2203,99 @@ export default function ChatDock() {
     };
   }, []);
 
+  const resetPendingUploads = useCallback(() => {
+    Object.values(pendingPreviews).forEach((url) => URL.revokeObjectURL(url));
+    setPendingFiles([]);
+    setPendingThreadId(null);
+    setPendingPreviews({});
+    setIsUploadModalOpen(false);
+    setUploadProgress(0);
+    setActiveDropThreadId(null);
+  }, [pendingPreviews]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(pendingPreviews).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [pendingPreviews]);
+
+  const handleThreadDragOver = (event: React.DragEvent, threadId: string) => {
+    if (!event.dataTransfer?.files?.length) return;
+    event.preventDefault();
+    setActiveDropThreadId(threadId);
+  };
+
+  const handleThreadDragLeave = (event: React.DragEvent, threadId: string) => {
+    event.preventDefault();
+    setActiveDropThreadId((prev) => (prev === threadId ? null : prev));
+  };
+
+  const handleThreadDrop = (event: React.DragEvent, threadId: string) => {
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer?.files || []);
+    setActiveDropThreadId(null);
+
+    if (!files.length) return;
+
+    const previews: Record<string, string> = {};
+    files.forEach((file) => {
+      if (isImageFile(file.type)) {
+        previews[file.name] = URL.createObjectURL(file);
+      }
+    });
+
+    setPendingFiles(files);
+    setPendingThreadId(threadId);
+    setPendingPreviews(previews);
+    setIsUploadModalOpen(true);
+  };
+
+  const handleConfirmFileSend = async () => {
+    if (!pendingThreadId || pendingFiles.length === 0 || !myUserId) {
+      resetPendingUploads();
+      return;
+    }
+
+    const roomId = parseInt(pendingThreadId, 10);
+    setUploadProgress(0);
+
+    try {
+      const uploaded = await uploadFiles({
+        files: pendingFiles,
+        targetType: "CHAT",
+        targetId: roomId,
+        onProgress: (progress) => setUploadProgress(progress),
+      });
+
+      uploaded.forEach((attachment) => {
+        const payload = {
+          url: attachment.fileUrl || attachment.url,
+          name: attachment.fileName || attachment.originalFilename,
+          size: attachment.fileSize || attachment.size,
+          mimeType: attachment.mimeType || attachment.contentType,
+          downloadUrl: attachment.downloadUrl || attachment.url,
+        };
+        const isImage = isImageFile(payload.mimeType || "");
+        const text = isImage ? "[이미지]" : payload.name || "파일";
+
+        sendMessageMutation.mutate({
+          senderId: myUserId,
+          roomId,
+          type: isImage ? "IMAGE" : "FILE",
+          body: { text, extra: JSON.stringify(payload) },
+          replyToMsgId: null,
+        });
+      });
+
+      toast.show({ title: "파일을 전송했습니다.", variant: "success" });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || "파일 전송에 실패했습니다.";
+      toast.show({ title: message, variant: "error" });
+    } finally {
+      resetPendingUploads();
+    }
+  };
+
   // ===== 메시지 로딩 =====
   // 채팅방이 열릴 때 메시지 가져오기
   useEffect(() => {
@@ -2120,17 +2315,7 @@ export default function ChatDock() {
         // 백엔드 메시지를 UI 형식으로 변환
         const convertedMessages: ChatMessage[] = response.items
           .filter((msg) => !shouldHideAiMessage(msg))
-          .map((msg) => ({
-            id: msg.id.toString(),
-            threadId: msg.roomId.toString(),
-            fromId: msg.senderId.toString(),
-            senderId: msg.senderId.toString(),
-            text: msg.body.text ?? "",
-            createdAt: new Date(msg.createdAt).getTime(),
-            senderNickname: msg.senderNickname,
-            senderRole: msg.senderRole,
-            type: msg.type,
-          }))
+          .map(mapRoomMessageToChatMessage)
           .sort((a, b) => a.createdAt - b.createdAt);
 
         setMessages((prev) => ({
@@ -2171,17 +2356,7 @@ export default function ChatDock() {
 
         const convertedMessages: ChatMessage[] = response.items
           .filter((msg) => !shouldHideAiMessage(msg))
-          .map((msg) => ({
-            id: msg.id.toString(),
-            threadId: msg.roomId.toString(),
-            fromId: msg.senderId.toString(),
-            senderId: msg.senderId.toString(),
-            text: msg.body.text ?? "",
-            createdAt: new Date(msg.createdAt).getTime(),
-            senderNickname: msg.senderNickname,
-            senderRole: msg.senderRole,
-            type: msg.type,
-          }))
+          .map(mapRoomMessageToChatMessage)
           .sort((a, b) => a.createdAt - b.createdAt);
 
         let added = false;
@@ -2505,6 +2680,10 @@ export default function ChatDock() {
           return (
             <div
               key={id}
+              className={cls(
+                activeDropThreadId === id &&
+                  "ring-2 ring-[color:var(--color-accent)] ring-offset-2 ring-offset-[color:var(--chatdock-bg-elev-2)]"
+              )}
               style={{ position: "fixed", left: pos.x, top: pos.y, zIndex: z }}
               onPointerMove={(e) => {
                 onDragMove(e);
@@ -2519,6 +2698,9 @@ export default function ChatDock() {
                 onResizeEnd(e);
               }}
               onMouseDown={() => bringToFront(id)}   // ✅ 클릭 시 맨 위
+              onDragOver={(e) => handleThreadDragOver(e, id)}
+              onDragLeave={(e) => handleThreadDragLeave(e, id)}
+              onDrop={(e) => handleThreadDrop(e, id)}
             >
               <ChatWindow
                 me={me}
@@ -2565,9 +2747,94 @@ export default function ChatDock() {
           );
         })}
 
-        </div>
+        {isUploadModalOpen && pendingThreadId && (
+          <div
+            className="fixed inset-0 z-[140] bg-black/50 flex items-center justify-center"
+            onClick={resetPendingUploads}
+          >
+            <div
+              className="w-[480px] max-w-[90vw] rounded-[var(--radius-lg)] border border-[color:var(--chatdock-border-strong)] bg-[color:var(--chatdock-bg-elev-1)] shadow-2xl p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-2 mb-4">
+                <div>
+                  <div className="text-lg font-semibold text-[color:var(--chatdock-fg-primary)]">파일 전송</div>
+                  <div className="text-xs text-[color:var(--chatdock-fg-muted)]">
+                    {threads.find((t) => t.id === pendingThreadId)?.users.map((u) => u.name).join(", ") || "채팅방"}
+                    에 보낼 파일을 확인하세요.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetPendingUploads}
+                  className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-[color:var(--chatdock-bg-hover)] text-[color:var(--chatdock-fg-muted)]"
+                  aria-label="파일 전송 모달 닫기"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="max-h-64 overflow-y-auto space-y-3 mb-2">
+                {pendingFiles.map((file) => {
+                  const preview = pendingPreviews[file.name];
+                  const isImage = isImageFile(file.type);
+                  return (
+                    <div
+                      key={file.name}
+                      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] p-2 bg-[color:var(--chatdock-bg-elev-2)]"
+                    >
+                      <div className="w-14 h-14 rounded-md overflow-hidden bg-[color:var(--chatdock-bg-elev-1)] grid place-items-center text-xl">
+                        {preview ? (
+                          <img src={preview} alt={file.name} className="w-full h-full object-cover" />
+                        ) : isImage ? (
+                          "🖼️"
+                        ) : (
+                          "📎"
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-[color:var(--chatdock-fg-primary)] break-all">{file.name}</div>
+                        <div className="text-xs text-[color:var(--chatdock-fg-muted)]">{formatFileSize(file.size)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {uploadProgress > 0 && (
+                <div className="mb-3">
+                  <div className="text-xs text-[color:var(--chatdock-fg-muted)] mb-1">업로드 {uploadProgress}%</div>
+                  <div className="w-full h-2 rounded-full bg-[color:var(--chatdock-bg-elev-2)] overflow-hidden">
+                    <div
+                      className="h-full bg-[color:var(--color-accent)]"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={resetPendingUploads}
+                  className="px-4 py-2 rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] hover:bg-[color:var(--chatdock-bg-hover)] text-sm"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmFileSend}
+                  disabled={uploadProgress > 0 && uploadProgress < 100}
+                  className="px-4 py-2 rounded-[var(--radius-md)] bg-[color:var(--color-primary)] text-[color:var(--on-primary)] hover:opacity-90 text-sm disabled:opacity-60"
+                >
+                  전송
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
   );
-
 }
-
-

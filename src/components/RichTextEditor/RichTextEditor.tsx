@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { InlineImage } from "./extensions/InlineImage";
 
 type RichTextEditorProps = {
   valueHtml: string;
@@ -11,14 +12,18 @@ type RichTextEditorProps = {
   placeholder?: string;
   /** 외부에서 높이/보더/배경 등을 제어하고 싶을 때 사용 */
   className?: string;
+  onUploadImage?: (file: File) => Promise<{ src: string; alt?: string; title?: string } | null>;
 };
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
-                                                                valueHtml,
-                                                                onChange,
-                                                                placeholder = "내용 입력하세요",
-                                                                className = "",
-                                                              }) => {
+  valueHtml,
+  onChange,
+  placeholder = "내용 입력하세요",
+  className = "",
+  onUploadImage,
+}) => {
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -31,6 +36,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         openOnClick: true,
         protocols: ["http", "https", "mailto", "tel"],
       }),
+      InlineImage,
       Placeholder.configure({ placeholder }),
     ],
     content: valueHtml || "<p></p>",
@@ -67,6 +73,30 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       return;
     }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  };
+
+  const handleImageFile = async (file: File) => {
+    if (!onUploadImage) return;
+    setIsUploadingImage(true);
+    try {
+      const uploaded = await onUploadImage(file);
+      if (uploaded?.src) {
+        editor.chain().focus().setImage(uploaded).run();
+      }
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const insertImage = () => {
+    if (onUploadImage) {
+      imageInputRef.current?.click();
+      return;
+    }
+    const url = window.prompt("이미지 URL을 입력하세요:");
+    if (!url) return;
+    const alt = window.prompt("대체 텍스트(선택)를 입력하세요:", "");
+    editor.chain().focus().setImage({ src: url, alt: alt ?? undefined }).run();
   };
 
   return (
@@ -151,6 +181,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           aria-label="링크"
         >🔗</button>
 
+        <button
+          type="button"
+          onClick={insertImage}
+          disabled={isUploadingImage}
+          className={
+            "px-1.5 py-1 rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] " +
+            (isUploadingImage ? "opacity-60 cursor-wait" : "")
+          }
+          aria-label="이미지"
+        >
+          {isUploadingImage ? "업로드 중" : "🖼️"}
+        </button>
+
         <div className="ml-auto flex gap-1">
           <button
             type="button"
@@ -186,6 +229,24 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       >
         <EditorContent editor={editor} className="min-h-full" />
       </div>
+
+      {onUploadImage && (
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleImageFile(file);
+            }
+            if (imageInputRef.current) {
+              imageInputRef.current.value = "";
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

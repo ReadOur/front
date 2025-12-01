@@ -85,7 +85,9 @@ export const COMMENT_ENDPOINTS = {
  * 파일 관련 엔드포인트
  */
 export const FILE_ENDPOINTS = {
-  UPLOAD: (targetType: number, targetId: number) => `/files?targetType=${targetType}&targetId=${targetId}`,
+  UPLOAD: (targetType: string | number, targetId: string | number) =>
+    `/files?targetType=${targetType}&targetId=${targetId}`,
+  TEMP_UPLOAD: "/files/temp",
   METADATA: (fileId: number) => `/files/${fileId}`,
   DOWNLOAD: (fileId: number) => `/files/${fileId}/download`,
 } as const;
