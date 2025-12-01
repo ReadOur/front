@@ -68,6 +68,20 @@ export default function PostShow() {
   const navigate = useNavigate();
   const toast = useToast();
   const { accessToken } = useAuth();
+  const currentUserId = useMemo(() => {
+    const userIdStr = extractUserIdFromToken(accessToken);
+    return userIdStr ? Number(userIdStr) : null;
+  }, [accessToken]);
+
+  const loginRedirectPath = postId ? `/boards/${postId}` : "/boards";
+
+  const ensureLoggedIn = () => {
+    if (isLoggedIn()) return true;
+
+    toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
+    navigate("/login", { state: { from: { pathname: loginRedirectPath } } });
+    return false;
+  };
 
   // 댓글 입력 필드의 상태 관리
   const [commentText, setCommentText] = useState("");
@@ -142,6 +156,11 @@ export default function PostShow() {
   const sanitizedContent = useMemo(
     () => DOMPurify.sanitize(decodeHtmlEntities(post?.content ?? "")),
     [post?.content]
+  );
+
+  const isPostAuthor = useMemo(
+    () => post?.authorId !== undefined && currentUserId !== null && post.authorId === currentUserId,
+    [currentUserId, post?.authorId]
   );
 
   const plainContentSummary = useMemo(() => {
@@ -301,15 +320,14 @@ export default function PostShow() {
    * 댓글 수정 모드 진입 핸들러
    * - 댓글 수정 모드로 전환하고 현재 내용을 편집 필드에 설정
    */
-  function handleCommentEdit(commentId: number, content: string) {
-    // TODO: 로그인 기능 구현 후 활성화
-    // if (!isLoggedIn()) {
-    //   toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-    //   navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-    //   return;
-    // }
+  function handleCommentEdit(commentId: number, content: string, authorId: number) {
+    if (!ensureLoggedIn()) return;
 
-    // TODO: 작성자 권한 체크
+    if (!currentUserId || currentUserId !== authorId) {
+      toast.show({ title: "작성자만 댓글을 수정할 수 있습니다.", variant: "warning" });
+      return;
+    }
+
     setEditingCommentId(commentId);
     setEditingCommentText(content);
   }
@@ -320,6 +338,15 @@ export default function PostShow() {
    */
   function handleCommentUpdate() {
     if (!editingCommentText.trim() || editingCommentId === null || !postId) return;
+
+    if (!ensureLoggedIn()) return;
+
+    const targetComment = post?.comments?.find((comment) => comment.commentId === editingCommentId);
+    if (!targetComment || !currentUserId || targetComment.authorId !== currentUserId) {
+      toast.show({ title: "작성자만 댓글을 수정할 수 있습니다.", variant: "warning" });
+      handleCommentEditCancel();
+      return;
+    }
 
     updateCommentMutation.mutate({
       commentId: String(editingCommentId),
@@ -342,17 +369,16 @@ export default function PostShow() {
    * 댓글 삭제 핸들러
    * - 삭제 확인 모달 표시
    */
-  function handleCommentDelete(commentId: string) {
+  function handleCommentDelete(commentId: string, authorId: number) {
     if (!postId) return;
 
-    // TODO: 로그인 기능 구현 후 활성화
-    // if (!isLoggedIn()) {
-    //   toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-    //   navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-    //   return;
-    // }
+    if (!ensureLoggedIn()) return;
 
-    // TODO: 작성자 권한 체크
+    if (!currentUserId || currentUserId !== authorId) {
+      toast.show({ title: "작성자만 댓글을 삭제할 수 있습니다.", variant: "warning" });
+      return;
+    }
+
     setDeletingCommentId(commentId);
     setDeleteCommentModalOpen(true);
   }
@@ -362,6 +388,23 @@ export default function PostShow() {
    */
   function confirmCommentDelete() {
     if (!postId || !deletingCommentId) return;
+
+    if (!ensureLoggedIn()) {
+      setDeleteCommentModalOpen(false);
+      setDeletingCommentId(null);
+      return;
+    }
+
+    const targetComment = post?.comments?.find(
+      (comment) => String(comment.commentId) === deletingCommentId
+    );
+
+    if (!targetComment || !currentUserId || targetComment.authorId !== currentUserId) {
+      toast.show({ title: "작성자만 댓글을 삭제할 수 있습니다.", variant: "warning" });
+      setDeleteCommentModalOpen(false);
+      setDeletingCommentId(null);
+      return;
+    }
     deleteCommentMutation.mutate({ commentId: deletingCommentId, postId });
     setDeleteCommentModalOpen(false);
     setDeletingCommentId(null);
@@ -372,20 +415,14 @@ export default function PostShow() {
    * - 수정 페이지로 이동
    */
   function handleEdit() {
-    if (!postId) return;
+    if (!postId || !post) return;
 
-    // TODO: 로그인 기능 구현 후 활성화
-    // if (!isLoggedIn()) {
-    //   toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-    //   navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-    //   return;
-    // }
+    if (!ensureLoggedIn()) return;
 
-    // TODO: 작성자 권한 체크
-    // if (post.authorId !== currentUser.id) {
-    //   toast.show({ title: "작성자만 수정할 수 있습니다.", variant: "warning" });
-    //   return;
-    // }
+    if (!currentUserId || post.authorId !== currentUserId) {
+      toast.show({ title: "작성자만 수정할 수 있습니다.", variant: "warning" });
+      return;
+    }
     navigate(`/boards/${postId}/edit`);
   }
 
@@ -394,20 +431,14 @@ export default function PostShow() {
    * - 삭제 확인 모달 표시
    */
   function handleDelete() {
-    if (!postId) return;
+    if (!postId || !post) return;
 
-    // TODO: 로그인 기능 구현 후 활성화
-    // if (!isLoggedIn()) {
-    //   toast.show({ title: "로그인이 필요합니다.", variant: "warning" });
-    //   navigate("/login", { state: { from: { pathname: `/boards/${postId}` } } });
-    //   return;
-    // }
+    if (!ensureLoggedIn()) return;
 
-    // TODO: 작성자 권한 체크
-    // if (post.authorId !== currentUser.id) {
-    //   toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
-    //   return;
-    // }
+    if (!currentUserId || post.authorId !== currentUserId) {
+      toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
+      return;
+    }
     setDeletePostModalOpen(true);
   }
 
@@ -416,6 +447,17 @@ export default function PostShow() {
    */
   function confirmPostDelete() {
     if (!postId) return;
+
+    if (!ensureLoggedIn()) {
+      setDeletePostModalOpen(false);
+      return;
+    }
+
+    if (!post || !currentUserId || post.authorId !== currentUserId) {
+      toast.show({ title: "작성자만 삭제할 수 있습니다.", variant: "warning" });
+      setDeletePostModalOpen(false);
+      return;
+    }
     deletePostMutation.mutate(postId);
   }
 
@@ -658,27 +700,30 @@ export default function PostShow() {
 
           {/* 버튼 그룹 */}
           <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-            {/* TODO: 로그인 후 작성자 확인 - post.authorId === currentUser.id 일 때만 표시 */}
-            {/* 수정 버튼 */}
-            <button
-              onClick={handleEdit}
-              className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[color:var(--color-bg-elev-1)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
-              aria-label="게시글 수정"
-            >
-              <span className="hidden sm:inline">✏️ 수정</span>
-              <span className="sm:hidden">✏️</span>
-            </button>
+            {isPostAuthor && (
+              <>
+                {/* 수정 버튼 */}
+                <button
+                  onClick={handleEdit}
+                  className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[color:var(--color-bg-elev-1)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)]"
+                  aria-label="게시글 수정"
+                >
+                  <span className="hidden sm:inline">✏️ 수정</span>
+                  <span className="sm:hidden">✏️</span>
+                </button>
 
-            {/* 삭제 버튼 */}
-            <button
-              onClick={handleDelete}
-              disabled={deletePostMutation.isPending}
-              className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[color:var(--color-error)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-error)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="게시글 삭제"
-            >
-              <span className="hidden sm:inline">🗑️ 삭제</span>
-              <span className="sm:hidden">🗑️</span>
-            </button>
+                {/* 삭제 버튼 */}
+                <button
+                  onClick={handleDelete}
+                  disabled={deletePostMutation.isPending}
+                  className="inline-flex items-center gap-1 bg-[color:var(--color-bg-elev-2)] border border-[color:var(--color-border-subtle)] rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-[color:var(--color-error)] hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-error)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="게시글 삭제"
+                >
+                  <span className="hidden sm:inline">🗑️ 삭제</span>
+                  <span className="sm:hidden">🗑️</span>
+                </button>
+              </>
+            )}
 
             {/* 좋아요 버튼 */}
             {/* - isLiked 상태에 따라 ❤️(좋아요 누름) 또는 🤍(안 누름) 표시 */}
@@ -950,6 +995,7 @@ export default function PostShow() {
             comments.map((comment) => {
               const isEditing = editingCommentId === comment.commentId;
               const isCommentMenuOpen = openCommentMenuId === comment.commentId;
+              const isCommentAuthor = Boolean(currentUserId && currentUserId === comment.authorId);
 
               return (
                 <React.Fragment key={comment.commentId}>
@@ -1047,21 +1093,25 @@ export default function PostShow() {
                     {!isEditing && (
                       <div className="flex gap-2">
                         {/* TODO: 로그인 후 작성자 확인 - comment.authorId === currentUser.id 일 때만 표시 */}
-                        <button
-                          onClick={() => handleCommentEdit(comment.commentId, comment.content)}
-                          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
-                          aria-label="댓글 수정"
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleCommentDelete(String(comment.commentId))}
-                          disabled={deleteCommentMutation.isPending}
-                          className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-error)] disabled:opacity-50"
-                          aria-label="댓글 삭제"
-                        >
-                          삭제
-                        </button>
+                        {isCommentAuthor && (
+                          <>
+                            <button
+                              onClick={() => handleCommentEdit(comment.commentId, comment.content, comment.authorId)}
+                              className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-accent)]"
+                              aria-label="댓글 수정"
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={() => handleCommentDelete(String(comment.commentId), comment.authorId)}
+                              disabled={deleteCommentMutation.isPending}
+                              className="text-xs text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-error)] disabled:opacity-50"
+                              aria-label="댓글 삭제"
+                            >
+                              삭제
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
