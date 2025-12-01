@@ -1,18 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import DOMPurify from "dompurify";
-import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
-import { TagInput } from "@/components/TagInput/TagInput";
-import { FileUpload } from "@/components/FileUpload/FileUpload";
-import { useCreatePost, useUpdatePost, usePost } from "@/hooks/api";
-import { useBookSearch, useBookDetail } from "@/hooks/api/useBook";
-import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
-import { Loading } from "@/components/Loading";
-import { useToast } from "@/components/Toast/ToastProvider";
-import { useQueryClient } from "@tanstack/react-query";
-import { composeFileTargetId, isImageFile, uploadTempFiles } from "@/api/files";
-import { useAuth } from "@/contexts/AuthContext";
-import { extractUserIdFromToken } from "@/utils/auth";
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
+import { RichTextEditor } from '@/components/RichTextEditor/RichTextEditor';
+import { TagInput } from '@/components/TagInput/TagInput';
+import { FileUpload } from '@/components/FileUpload/FileUpload';
+import { useCreatePost, useUpdatePost, usePost } from '@/hooks/api';
+import { useBookSearch, useBookDetail } from '@/hooks/api/useBook';
+import { CreatePostRequest, UpdatePostRequest, Attachment } from '@/types';
+import { Loading } from '@/components/Loading';
+import { useToast } from '@/components/Toast/ToastProvider';
+import { useQueryClient } from '@tanstack/react-query';
+import { composeFileTargetId, isImageFile, uploadTempFiles } from '@/api/files';
+import { useAuth } from '@/contexts/AuthContext';
+import { extractUserIdFromToken } from '@/utils/auth';
 
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -23,24 +23,27 @@ export const BRD_06 = (): React.JSX.Element => {
   const { accessToken } = useAuth();
 
   // URL 쿼리 파라미터에서 카테고리와 bookId 읽기
-  const initialCategory = searchParams.get("category") || "FREE";
-  const initialBookId = searchParams.get("bookId");
+  const initialCategory = searchParams.get('category') || 'FREE';
+  const initialBookId = searchParams.get('bookId');
 
-  const [title, setTitle] = useState<string>("");
-  const [contentHtml, setContentHtml] = useState<string>("");
+  const [title, setTitle] = useState<string>('');
+  const [contentHtml, setContentHtml] = useState<string>('');
   const [warnings, setWarnings] = useState<string[]>([]);
   const [category, setCategory] = useState<string>(initialCategory);
   const [bookId, setBookId] = useState<number | undefined>(
-    initialBookId ? parseInt(initialBookId) : undefined
+    initialBookId ? parseInt(initialBookId) : undefined,
   );
-  const [bookSearchQuery, setBookSearchQuery] = useState<string>("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
-  const [selectedBookInfo, setSelectedBookInfo] = useState<{ title: string; author: string } | null>(null);
+  const [bookSearchQuery, setBookSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
+  const [selectedBookInfo, setSelectedBookInfo] = useState<{
+    title: string;
+    author: string;
+  } | null>(null);
   const [showBookDropdown, setShowBookDropdown] = useState<boolean>(false);
   const [chatRoomId, setChatRoomId] = useState<number | undefined>(undefined);
   const [recruitmentLimit, setRecruitmentLimit] = useState<number | undefined>(10);
-  const [chatRoomName, setChatRoomName] = useState<string>("");
-  const [chatRoomDescription, setChatRoomDescription] = useState<string>("");
+  const [chatRoomName, setChatRoomName] = useState<string>('');
+  const [chatRoomDescription, setChatRoomDescription] = useState<string>('');
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [inlineUploads, setInlineUploads] = useState<Attachment[]>([]);
@@ -49,27 +52,27 @@ export const BRD_06 = (): React.JSX.Element => {
   const currentUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
   const postIdNumber = useMemo(() => (postId ? Number(postId) : 0), [postId]);
   const postTargetId = useMemo(
-    () => composeFileTargetId("POST", currentUserId, postIdNumber),
-    [currentUserId, postIdNumber]
+    () => composeFileTargetId('POST', currentUserId, postIdNumber),
+    [currentUserId, postIdNumber],
   );
 
   // 주의사항/태그 자동완성을 위한 추천 목록
   const suggestedWarnings = [
-    "스포일러",
-    "주의",
-    "반전",
-    "결말",
-    "추천",
-    "비추천",
-    "감동",
-    "재미",
-    "지루",
-    "힐링",
-    "스릴러",
-    "로맨스",
-    "판타지",
-    "SF",
-    "미스터리",
+    '스포일러',
+    '주의',
+    '반전',
+    '결말',
+    '추천',
+    '비추천',
+    '감동',
+    '재미',
+    '지루',
+    '힐링',
+    '스릴러',
+    '로맨스',
+    '판타지',
+    'SF',
+    '미스터리',
   ];
 
   // 책 검색어 debounce (300ms 후 실행)
@@ -83,24 +86,24 @@ export const BRD_06 = (): React.JSX.Element => {
 
   // 책 검색 (REVIEW 카테고리용) - debounced 검색어 사용
   const { data: bookSearchResults, isLoading: isSearchingBooks } = useBookSearch({
-    type: "TITLE",
+    type: 'TITLE',
     keyword: debouncedSearchQuery,
     page: 0,
     size: 3,
   });
 
   // 수정 모드: 기존 게시글 로드
-  const { data: existingPost, isLoading: isLoadingPost } = usePost(postId || "", {
+  const { data: existingPost, isLoading: isLoadingPost } = usePost(postId || '', {
     enabled: isEditMode,
   });
 
   // 편집 모드에서 책 정보 로드 (REVIEW 카테고리이고 bookId가 있는 경우만)
   // 빈 문자열은 useBookDetail의 enabled: !!bookId로 인해 API 호출되지 않음
-  const existingBookId = existingPost?.bookId ? String(existingPost.bookId) : "";
+  const existingBookId = existingPost?.bookId ? String(existingPost.bookId) : '';
   const { data: existingBookDetail } = useBookDetail(existingBookId);
 
   // 새 글 작성 모드에서 URL 쿼리 파라미터로 전달된 책 정보 로드
-  const { data: initialBookDetail } = useBookDetail(initialBookId || "");
+  const { data: initialBookDetail } = useBookDetail(initialBookId || '');
 
   // 수정 모드: 기존 데이터를 폼에 채우기
   useEffect(() => {
@@ -108,13 +111,11 @@ export const BRD_06 = (): React.JSX.Element => {
       setTitle(existingPost.title);
       setContentHtml(existingPost.content);
       // warnings 객체 배열을 문자열 배열로 변환
-      setWarnings(existingPost.warnings?.map(w => w.id.warning) || []);
+      setWarnings(existingPost.warnings?.map((w) => w.id.warning) || []);
       setCategory(existingPost.category);
       setBookId(existingPost.bookId);
       setChatRoomId(existingPost.chatRoomId);
       setRecruitmentLimit(existingPost.recruitmentLimit);
-      setChatRoomName(existingPost.chatRoomName || "");
-      setChatRoomDescription(existingPost.chatRoomDescription || "");
       setIsSpoiler(existingPost.isSpoiler || false);
       setAttachments(existingPost.attachments || []);
     }
@@ -143,10 +144,10 @@ export const BRD_06 = (): React.JSX.Element => {
   const queryClient = useQueryClient();
 
   const handleInlineImageUpload = async (
-    file: File
+    file: File,
   ): Promise<{ src: string; alt?: string; title?: string } | null> => {
     if (!isImageFile(file.type)) {
-      toast.show({ title: "이미지 파일만 삽입할 수 있습니다.", variant: "warning" });
+      toast.show({ title: '이미지 파일만 삽입할 수 있습니다.', variant: 'warning' });
       return null;
     }
 
@@ -174,8 +175,8 @@ export const BRD_06 = (): React.JSX.Element => {
         title: attachment.fileName,
       };
     } catch (error: any) {
-      const message = error?.response?.data?.message || "이미지 업로드에 실패했습니다.";
-      toast.show({ title: message, variant: "error" });
+      const message = error?.response?.data?.message || '이미지 업로드에 실패했습니다.';
+      toast.show({ title: message, variant: 'error' });
       return null;
     }
   };
@@ -183,47 +184,47 @@ export const BRD_06 = (): React.JSX.Element => {
   const createPostMutation = useCreatePost({
     onSuccess: async () => {
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
-      await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: ['posts'], refetchType: 'all' });
 
-      toast.show({ title: "게시글이 작성되었습니다.", variant: "success" });
-      navigate("/boards"); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
+      toast.show({ title: '게시글이 작성되었습니다.', variant: 'success' });
+      navigate('/boards'); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출
-      const errorMessage = error.response?.data?.message || error.message || "게시글 작성에 실패했습니다.";
-      toast.show({ title: errorMessage, variant: "error" });
+      const errorMessage =
+        error.response?.data?.message || error.message || '게시글 작성에 실패했습니다.';
+      toast.show({ title: errorMessage, variant: 'error' });
     },
   });
-
 
   const updatePostMutation = useUpdatePost({
     onSuccess: async (data) => {
       // 모든 posts 관련 쿼리 무효화 (상세 페이지 및 리스트 모두)
-      await queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
+      await queryClient.invalidateQueries({ queryKey: ['posts'], refetchType: 'all' });
 
-      toast.show({ title: "게시글이 수정되었습니다.", variant: "success" });
+      toast.show({ title: '게시글이 수정되었습니다.', variant: 'success' });
       navigate(`/boards/${data.postId}`);
     },
     onError: (error: any) => {
       // 백엔드 응답에서 message 추출
-      const errorMessage = error.response?.data?.message || error.message || "게시글 수정에 실패했습니다.";
-      toast.show({ title: errorMessage, variant: "error" });
+      const errorMessage =
+        error.response?.data?.message || error.message || '게시글 수정에 실패했습니다.';
+      toast.show({ title: errorMessage, variant: 'error' });
     },
   });
-
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
 
     // 제목 검증
     if (!title.trim()) {
-      toast.show({ title: "제목을 입력해주세요.", variant: "warning" });
+      toast.show({ title: '제목을 입력해주세요.', variant: 'warning' });
       return;
     }
 
     // REVIEW 카테고리 책 ID 필수 검증
-    if (category === "REVIEW" && !bookId) {
-      toast.show({ title: "리뷰 작성 시 책을 선택해주세요.", variant: "warning" });
+    if (category === 'REVIEW' && !bookId) {
+      toast.show({ title: '리뷰 작성 시 책을 선택해주세요.', variant: 'warning' });
       return;
     }
 
@@ -237,7 +238,9 @@ export const BRD_06 = (): React.JSX.Element => {
       .trim();
 
     const inlineAttachmentIds = inlineUploads.map((a) => String(a.id));
-    const attachmentIds = Array.from(new Set([...(attachments.map((a) => String(a.id)) || []), ...inlineAttachmentIds]));
+    const attachmentIds = Array.from(
+      new Set([...(attachments.map((a) => String(a.id)) || []), ...inlineAttachmentIds]),
+    );
 
     if (isEditMode && postId) {
       // 수정 모드
@@ -245,8 +248,8 @@ export const BRD_06 = (): React.JSX.Element => {
         title: title.trim(),
         content: safeHtml,
         category: category,
-        bookId: category === "REVIEW" ? bookId : undefined,
-        chatRoomId: category === "GROUP" ? chatRoomId : undefined,
+        bookId: category === 'REVIEW' ? bookId : undefined,
+        chatRoomId: category === 'GROUP' ? chatRoomId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
@@ -259,13 +262,13 @@ export const BRD_06 = (): React.JSX.Element => {
         title: title.trim(),
         content: safeHtml,
         category: category,
-        bookId: category === "REVIEW" ? bookId : undefined,
+        bookId: category === 'REVIEW' ? bookId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
         tempId: tempUploadId,
         // GROUP 카테고리일 때 모임 관련 필드 추가
-        ...(category === "GROUP" && {
+        ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,
           chatRoomName: chatRoomName.trim() || title.trim(),
           chatRoomDescription: chatRoomDescription.trim() || safeHtml,
@@ -287,7 +290,7 @@ export const BRD_06 = (): React.JSX.Element => {
         <div className="text-center">
           <p className="text-[color:var(--color-error)] mb-4">게시글을 찾을 수 없습니다.</p>
           <button
-            onClick={() => navigate("/boards")}
+            onClick={() => navigate('/boards')}
             className="px-4 py-2 bg-[color:var(--color-accent)] rounded-lg hover:opacity-90"
           >
             목록으로 돌아가기
@@ -302,12 +305,11 @@ export const BRD_06 = (): React.JSX.Element => {
   return (
     <div
       className="w-full min-h-screen bg-[color:var(--color-bg-canvas)] text-[color:var(--color-fg-primary)]"
-      style={{ fontFamily: "var(--font-sans, ui-sans-serif, system-ui)" }}
+      style={{ fontFamily: 'var(--font-sans, ui-sans-serif, system-ui)' }}
     >
       {/* ▼ 전체를 50px 내림 */}
       <div className="mx-auto max-w-[var(--layout-max)] px-6 py-8 mt-[50px]">
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {/** ─────────────────────────────────────────────
            상단 컨트롤: 한 줄로 (카테고리 / 공지 / 태그)
            공지 블록은 절반 크기 수준으로 축소
@@ -315,7 +317,10 @@ export const BRD_06 = (): React.JSX.Element => {
           <div className="flex items-center gap-4">
             {/* 카테고리 */}
             <div className="min-w-[200px]">
-              <label htmlFor="category" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+              <label
+                htmlFor="category"
+                className="block mb-2 text-sm text-[color:var(--color-fg-muted)]"
+              >
                 카테고리 {isEditMode && <span className="text-xs">(변경 불가)</span>}
               </label>
               <select
@@ -343,15 +348,22 @@ export const BRD_06 = (): React.JSX.Element => {
             </div>
 
             {/* 책 검색 (REVIEW 카테고리인 경우) */}
-            {category === "REVIEW" && (
+            {category === 'REVIEW' && (
               <div className="min-w-[300px] relative">
-                <label htmlFor="bookSearch" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                <label
+                  htmlFor="bookSearch"
+                  className="block mb-2 text-sm text-[color:var(--color-fg-muted)]"
+                >
                   책 검색 {isEditMode && <span className="text-xs">(변경 불가)</span>}
                 </label>
                 <input
                   id="bookSearch"
                   type="text"
-                  value={selectedBookInfo ? `${selectedBookInfo.title} - ${selectedBookInfo.author}` : bookSearchQuery}
+                  value={
+                    selectedBookInfo
+                      ? `${selectedBookInfo.title} - ${selectedBookInfo.author}`
+                      : bookSearchQuery
+                  }
                   onChange={(e) => {
                     if (!isEditMode) {
                       setBookSearchQuery(e.target.value);
@@ -378,59 +390,68 @@ export const BRD_06 = (): React.JSX.Element => {
                 />
 
                 {/* 검색 결과 드롭다운 */}
-                {showBookDropdown && bookSearchQuery.length > 0 && !selectedBookInfo && !isEditMode && (
-                  <div
-                    className="absolute top-full mt-2 w-full rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] shadow-lg z-10 max-h-[300px] overflow-y-auto"
-                  >
-                    {isSearchingBooks ? (
-                      <div className="p-4 text-center text-[color:var(--color-fg-muted)]">
-                        검색 중...
-                      </div>
-                    ) : bookSearchResults && bookSearchResults.content.length > 0 ? (
-                      <div>
-                        {bookSearchResults.content.slice(0, 3).map((book) => (
-                          <div
-                            key={book.bookId || book.isbn13}
-                            onClick={() => {
-                              if (book.bookId) {
-                                setBookId(book.bookId);
-                                setSelectedBookInfo({ title: book.bookname, author: book.authors });
-                                setBookSearchQuery("");
-                                setShowBookDropdown(false);
-                              }
-                            }}
-                            className="p-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-2)] transition border-b border-[color:var(--color-border-subtle)] last:border-b-0"
-                          >
-                            <div className="font-medium text-[color:var(--color-fg-primary)]">
-                              {book.bookname}
+                {showBookDropdown &&
+                  bookSearchQuery.length > 0 &&
+                  !selectedBookInfo &&
+                  !isEditMode && (
+                    <div className="absolute top-full mt-2 w-full rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] border border-[color:var(--color-border-subtle)] shadow-lg z-10 max-h-[300px] overflow-y-auto">
+                      {isSearchingBooks ? (
+                        <div className="p-4 text-center text-[color:var(--color-fg-muted)]">
+                          검색 중...
+                        </div>
+                      ) : bookSearchResults && bookSearchResults.content.length > 0 ? (
+                        <div>
+                          {bookSearchResults.content.slice(0, 3).map((book) => (
+                            <div
+                              key={book.bookId || book.isbn13}
+                              onClick={() => {
+                                if (book.bookId) {
+                                  setBookId(book.bookId);
+                                  setSelectedBookInfo({
+                                    title: book.bookname,
+                                    author: book.authors,
+                                  });
+                                  setBookSearchQuery('');
+                                  setShowBookDropdown(false);
+                                }
+                              }}
+                              className="p-3 cursor-pointer hover:bg-[color:var(--color-bg-elev-2)] transition border-b border-[color:var(--color-border-subtle)] last:border-b-0"
+                            >
+                              <div className="font-medium text-[color:var(--color-fg-primary)]">
+                                {book.bookname}
+                              </div>
+                              <div className="text-sm text-[color:var(--color-fg-muted)] mt-1">
+                                {book.authors}
+                              </div>
                             </div>
-                            <div className="text-sm text-[color:var(--color-fg-muted)] mt-1">
-                              {book.authors}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-[color:var(--color-fg-muted)]">
-                        검색 결과가 없습니다
-                      </div>
-                    )}
-                  </div>
-                )}
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-[color:var(--color-fg-muted)]">
+                          검색 결과가 없습니다
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             )}
 
             {/* 모집 인원 입력 (GROUP 카테고리인 경우) */}
-            {category === "GROUP" && (
+            {category === 'GROUP' && (
               <div className="min-w-[200px]">
-                <label htmlFor="recruitmentLimit" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                <label
+                  htmlFor="recruitmentLimit"
+                  className="block mb-2 text-sm text-[color:var(--color-fg-muted)]"
+                >
                   모집 인원 {isEditMode && <span className="text-xs">(변경 불가)</span>}
                 </label>
                 <input
                   id="recruitmentLimit"
                   type="number"
-                  value={recruitmentLimit || ""}
-                  onChange={(e) => setRecruitmentLimit(e.target.value ? Number(e.target.value) : undefined)}
+                  value={recruitmentLimit || ''}
+                  onChange={(e) =>
+                    setRecruitmentLimit(e.target.value ? Number(e.target.value) : undefined)
+                  }
                   placeholder="예: 10"
                   min={2}
                   max={100}
@@ -447,7 +468,6 @@ export const BRD_06 = (): React.JSX.Element => {
                 />
               </div>
             )}
-
 
             {/* 스포일러 체크 */}
             <label className="inline-flex items-center gap-2 select-none">
@@ -486,7 +506,9 @@ export const BRD_06 = (): React.JSX.Element => {
           <div className="rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] overflow-hidden">
             {/* 제목 영역 */}
             <div className="px-6 pt-[36px]">
-              <label htmlFor="title-input" className="sr-only">제목</label>
+              <label htmlFor="title-input" className="sr-only">
+                제목
+              </label>
               <input
                 id="title-input"
                 type="text"
@@ -520,7 +542,7 @@ export const BRD_06 = (): React.JSX.Element => {
                   valueHtml={contentHtml}
                   onChange={setContentHtml}
                   placeholder="내용을 입력해주세요."
-                  className="h-full"   // ← 부모 높이를 가득 채우도록
+                  className="h-full" // ← 부모 높이를 가득 채우도록
                   onUploadImage={handleInlineImageUpload}
                 />
               </div>
@@ -542,13 +564,18 @@ export const BRD_06 = (): React.JSX.Element => {
           </div>
 
           {/* 모임 채팅방 정보 (GROUP 카테고리인 경우) */}
-          {category === "GROUP" && !isEditMode && (
+          {category === 'GROUP' && !isEditMode && (
             <div className="rounded-[var(--radius-md)] bg-[color:var(--color-bg-elev-1)] p-6 border border-[color:var(--color-border-subtle)]">
-              <h3 className="text-lg font-semibold text-[color:var(--color-fg-primary)] mb-4">모임 채팅방 설정</h3>
+              <h3 className="text-lg font-semibold text-[color:var(--color-fg-primary)] mb-4">
+                모임 채팅방 설정
+              </h3>
 
               {/* 채팅방 이름 */}
               <div className="mb-4">
-                <label htmlFor="chatRoomName" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                <label
+                  htmlFor="chatRoomName"
+                  className="block mb-2 text-sm text-[color:var(--color-fg-muted)]"
+                >
                   채팅방 이름 (선택)
                 </label>
                 <input
@@ -571,7 +598,10 @@ export const BRD_06 = (): React.JSX.Element => {
 
               {/* 채팅방 설명 */}
               <div>
-                <label htmlFor="chatRoomDescription" className="block mb-2 text-sm text-[color:var(--color-fg-muted)]">
+                <label
+                  htmlFor="chatRoomDescription"
+                  className="block mb-2 text-sm text-[color:var(--color-fg-muted)]"
+                >
                   채팅방 설명 (선택)
                 </label>
                 <textarea
@@ -600,15 +630,15 @@ export const BRD_06 = (): React.JSX.Element => {
 
           {/* 파일 첨부 */}
           <div>
-              <FileUpload
-                attachments={attachments}
-                onChange={setAttachments}
-                targetType="POST"
-                targetId={postTargetId}
-                maxFiles={10}
-                maxFileSize={10 * 1024 * 1024}
-                disabled={isPending}
-              />
+            <FileUpload
+              attachments={attachments}
+              onChange={setAttachments}
+              targetType="POST"
+              targetId={postTargetId}
+              maxFiles={10}
+              maxFileSize={10 * 1024 * 1024}
+              disabled={isPending}
+            />
           </div>
 
           {/* 등록/수정 버튼: 더 키움 */}
@@ -631,15 +661,15 @@ export const BRD_06 = (): React.JSX.Element => {
                 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-bg-canvas)]
                 disabled:opacity-50 disabled:cursor-not-allowed
               "
-              aria-label={isEditMode ? "게시글 수정" : "게시글 등록"}
+              aria-label={isEditMode ? '게시글 수정' : '게시글 등록'}
             >
               {isPending
                 ? isEditMode
-                  ? "수정 중..."
-                  : "등록 중..."
+                  ? '수정 중...'
+                  : '등록 중...'
                 : isEditMode
-                ? "수정"
-                : "등록"}
+                  ? '수정'
+                  : '등록'}
             </button>
           </div>
         </form>
