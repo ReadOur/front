@@ -1629,6 +1629,19 @@ function ChatWindow({
               attachmentDownloadUrl: attachment?.downloadUrl,
             });
           }
+          
+          // IMAGE 타입 디버그 로그
+          if (m.type === "IMAGE") {
+            console.log('[ChatWindow] IMAGE 타입 메시지:', {
+              messageId: m.id,
+              type: m.type,
+              attachment,
+              hasAttachment: !!attachment,
+              attachmentUrl: attachment?.url,
+              attachmentDownloadUrl: attachment?.downloadUrl,
+              isImageMessage,
+            });
+          }
 
           // FILE 타입에서 이미지 확장자 판별
           const mimeType = attachment?.mimeType || attachment?.contentType || "";
@@ -1700,13 +1713,20 @@ function ChatWindow({
               <div className="space-y-2">
                 {/* IMAGE 타입 메시지 */}
                 {isImageMessage && (
-                  <button
-                    onClick={handleDownload}
-                    className="block w-full"
-                    type="button"
-                  >
-                    <ImageMessagePreview url={attachment.url || attachment.downloadUrl || ""} name={attachment.name || "이미지"} />
-                  </button>
+                  <div>
+                    {console.log('[ChatWindow] IMAGE 타입 렌더링:', {
+                      messageId: m.id,
+                      url: attachment.url || attachment.downloadUrl || "",
+                      name: attachment.name || "이미지",
+                    })}
+                    <button
+                      onClick={handleDownload}
+                      className="block w-full"
+                      type="button"
+                    >
+                      <ImageMessagePreview url={attachment.url || attachment.downloadUrl || ""} name={attachment.name || "이미지"} />
+                    </button>
+                  </div>
                 )}
                 {/* FILE 타입 메시지 - 이미지인 경우 큰 미리보기 */}
                 {m.type === "FILE" && isFileImage && (
@@ -1725,37 +1745,47 @@ function ChatWindow({
                   </div>
                 )}
                 {/* FILE 타입 메시지 - 이미지가 아닌 경우 */}
-                {m.type === "FILE" && !isFileImage && (
-                  <div className="w-full py-1 flex items-center gap-2">
-                    <span className="text-lg flex-shrink-0">📄</span>
-                    <button
-                      onClick={handleDownload}
-                      className="text-sm font-semibold hover:underline underline-offset-2 break-words text-left flex-1 min-w-0"
-                      type="button"
-                      title={attachment?.name || m.text || "파일"}
-                      style={{ 
-                        color: senderId === me.id.toString() ? '#0f0f0f' : '#007bff',
-                        textAlign: 'left',
-                        display: 'block',
-                        width: '100%',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        lineHeight: '1.5',
-                        opacity: 1,
-                        visibility: 'visible',
-                        background: 'transparent',
-                        border: 'none',
-                        padding: 0,
-                        margin: 0,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <span style={{ display: 'inline-block', width: '100%', color: 'inherit' }}>
-                        {attachment?.name || m.text || "파일"}
-                      </span>
-                    </button>
-                  </div>
-                )}
+                {m.type === "FILE" && !isFileImage && (() => {
+                  const fileName = attachment?.name || m.text || "파일";
+                  console.log('[ChatWindow] FILE 타입 (이미지 아님) 렌더링:', {
+                    messageId: m.id,
+                    fileName,
+                    attachmentName: attachment?.name,
+                    mText: m.text,
+                    hasAttachment: !!attachment,
+                  });
+                  return (
+                    <div className="w-full py-1 flex items-center gap-2">
+                      <span className="text-lg flex-shrink-0">📄</span>
+                      <button
+                        onClick={handleDownload}
+                        className="text-sm font-semibold hover:underline underline-offset-2 break-words text-left flex-1 min-w-0"
+                        type="button"
+                        title={fileName}
+                        style={{ 
+                          color: senderId === me.id.toString() ? '#0f0f0f' : '#007bff',
+                          textAlign: 'left',
+                          display: 'block',
+                          width: '100%',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          lineHeight: '1.5',
+                          opacity: 1,
+                          visibility: 'visible',
+                          background: 'transparent',
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span style={{ display: 'inline-block', width: '100%', color: 'inherit' }}>
+                          {fileName}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })()}
                 {/* IMAGE 타입이 아닌 경우 파일 정보 표시 */}
                 {!isImageMessage && m.type !== "FILE" && (
                   <div className="flex items-center gap-2 text-sm text-[color:var(--chatdock-fg-primary)] break-all">
@@ -3007,18 +3037,15 @@ export default function ChatDock() {
       return;
     }
 
-    // 백엔드 메시지를 UI 형식으로 변환
-    const convertedMessage: ChatMessage = {
-      id: message.id.toString(),
-      threadId: threadId,
-      fromId: message.senderId.toString(),
-      senderId: message.senderId.toString(),
-      text: message.body.text ?? "",
-      createdAt: new Date(message.createdAt).getTime(),
-      senderNickname: message.senderNickname,
-      senderRole: message.senderRole,
+    // 백엔드 메시지를 UI 형식으로 변환 (mapRoomMessageToChatMessage 사용하여 attachment 파싱)
+    const convertedMessage = mapRoomMessageToChatMessage(message as RoomMessage);
+    
+    console.log('[handleWebSocketMessage] 새 메시지 변환:', {
+      messageId: message.id,
       type: message.type,
-    };
+      convertedMessage,
+      attachment: convertedMessage.attachment,
+    });
 
     // 메시지 목록에 추가
     setMessages((prev) => ({
