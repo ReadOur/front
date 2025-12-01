@@ -108,6 +108,13 @@ export const BRD_06 = (): React.JSX.Element => {
   // 수정 모드: 기존 데이터를 폼에 채우기
   useEffect(() => {
     if (isEditMode && existingPost) {
+      console.log('[BRD_06] 기존 게시글 로드:', {
+        postId: existingPost.postId,
+        title: existingPost.title,
+        attachments: existingPost.attachments,
+        attachmentsCount: existingPost.attachments?.length || 0,
+        attachmentsIds: existingPost.attachments?.map((a) => a.id) || [],
+      });
       setTitle(existingPost.title);
       setContentHtml(existingPost.content);
       // warnings 객체 배열을 문자열 배열로 변환
@@ -157,6 +164,13 @@ export const BRD_06 = (): React.JSX.Element => {
         tempId: tempUploadId ? String(tempUploadId) : undefined,
       });
 
+      console.log('[BRD_06] 인라인 이미지 업로드 성공:', {
+        tempId: nextTempId,
+        uploaded: uploaded,
+        uploadedIds: uploaded.map((a) => a.id),
+        previousTempId: tempUploadId,
+      });
+
       setTempUploadId(nextTempId);
       setInlineUploads((prev) => {
         const merged = [...prev];
@@ -164,6 +178,12 @@ export const BRD_06 = (): React.JSX.Element => {
           if (!merged.find((item) => item.id === att.id)) {
             merged.push(att);
           }
+        });
+        console.log('[BRD_06] 인라인 업로드 목록 업데이트:', {
+          previous: prev,
+          newUploads: uploaded,
+          merged: merged,
+          mergedIds: merged.map((a) => a.id),
         });
         return merged;
       });
@@ -182,7 +202,13 @@ export const BRD_06 = (): React.JSX.Element => {
   };
 
   const createPostMutation = useCreatePost({
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      console.log('[BRD_06] 작성 API 성공 응답:', {
+        postId: data.postId,
+        attachments: data.attachments,
+        attachmentsCount: data.attachments?.length || 0,
+        fullResponse: data,
+      });
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
       await queryClient.invalidateQueries({ queryKey: ['posts'], refetchType: 'all' });
 
@@ -190,6 +216,12 @@ export const BRD_06 = (): React.JSX.Element => {
       navigate('/boards'); // 리스트 페이지로 이동 (refetchOnMount로 자동 갱신됨)
     },
     onError: (error: any) => {
+      console.error('[BRD_06] 작성 API 에러:', {
+        error,
+        response: error.response,
+        responseData: error.response?.data,
+        message: error.message,
+      });
       // 백엔드 응답에서 message 추출
       const errorMessage =
         error.response?.data?.message || error.message || '게시글 작성에 실패했습니다.';
@@ -199,6 +231,12 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const updatePostMutation = useUpdatePost({
     onSuccess: async (data) => {
+      console.log('[BRD_06] 수정 API 성공 응답:', {
+        postId: data.postId,
+        attachments: data.attachments,
+        attachmentsCount: data.attachments?.length || 0,
+        fullResponse: data,
+      });
       // 모든 posts 관련 쿼리 무효화 (상세 페이지 및 리스트 모두)
       await queryClient.invalidateQueries({ queryKey: ['posts'], refetchType: 'all' });
 
@@ -206,6 +244,12 @@ export const BRD_06 = (): React.JSX.Element => {
       navigate(`/boards/${data.postId}`);
     },
     onError: (error: any) => {
+      console.error('[BRD_06] 수정 API 에러:', {
+        error,
+        response: error.response,
+        responseData: error.response?.data,
+        message: error.message,
+      });
       // 백엔드 응답에서 message 추출
       const errorMessage =
         error.response?.data?.message || error.message || '게시글 수정에 실패했습니다.';
@@ -242,19 +286,38 @@ export const BRD_06 = (): React.JSX.Element => {
       new Set([...(attachments.map((a) => a.id) || []), ...inlineAttachmentIds]),
     );
 
+    console.log('[BRD_06] 첨부파일 정보:', {
+      attachments: attachments,
+      attachmentsIds: attachments.map((a) => a.id),
+      inlineUploads: inlineUploads,
+      inlineAttachmentIds: inlineAttachmentIds,
+      finalAttachmentIds: attachmentIds,
+      tempUploadId: tempUploadId,
+    });
+
     if (isEditMode && postId) {
-      // 수정 모드
+      // 수정 모드 (작성 API와 동일한 형식으로 모든 필드 전달)
       const updateData: UpdatePostRequest = {
         title: title.trim(),
         content: safeHtml,
         category: category,
         bookId: category === 'REVIEW' ? bookId : undefined,
-        chatRoomId: category === 'GROUP' ? chatRoomId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
-        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
-        tempId: tempUploadId,
+        attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
+        // GROUP 카테고리일 때 모임 관련 필드 추가
+        ...(category === 'GROUP' && {
+          recruitmentLimit: recruitmentLimit,
+          chatRoomName: chatRoomName.trim() || title.trim(),
+          chatRoomDescription: chatRoomDescription.trim() || safeHtml,
+        }),
       };
+      console.log('[BRD_06] 수정 API 전송 데이터:', {
+        postId,
+        updateData,
+        attachmentIds: updateData.attachmentIds,
+        attachmentIdsLength: updateData.attachmentIds?.length || 0,
+      });
       updatePostMutation.mutate({ postId, data: updateData });
     } else {
       // 작성 모드
@@ -265,7 +328,7 @@ export const BRD_06 = (): React.JSX.Element => {
         bookId: category === 'REVIEW' ? bookId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
-        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
+        attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
         tempId: tempUploadId,
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
@@ -274,6 +337,12 @@ export const BRD_06 = (): React.JSX.Element => {
           chatRoomDescription: chatRoomDescription.trim() || safeHtml,
         }),
       };
+      console.log('[BRD_06] 작성 API 전송 데이터:', {
+        createData,
+        attachmentIds: createData.attachmentIds,
+        attachmentIdsLength: createData.attachmentIds?.length || 0,
+        tempId: createData.tempId,
+      });
       createPostMutation.mutate(createData);
     }
   };

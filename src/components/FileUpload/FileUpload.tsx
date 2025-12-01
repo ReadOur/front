@@ -102,11 +102,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
         // tempId 업데이트
         if (onTempIdChange && nextTempId) {
+          console.log('[FileUpload] tempId 업데이트:', {
+            previousTempId: tempId,
+            newTempId: nextTempId,
+          });
           onTempIdChange(nextTempId);
         }
 
         // 업로드 완료 후 목록 업데이트
-        onChange([...attachments, ...uploadedAttachments]);
+        const newAttachments = [...attachments, ...uploadedAttachments];
+        console.log('[FileUpload] 파일 업로드 완료:', {
+          uploadedFiles: uploadedAttachments,
+          uploadedIds: uploadedAttachments.map((a) => a.id),
+          previousAttachments: attachments,
+          previousIds: attachments.map((a) => a.id),
+          newAttachments: newAttachments,
+          newIds: newAttachments.map((a) => a.id),
+        });
+        onChange(newAttachments);
 
         // 업로드 중인 파일 목록에서 제거
         setUploadingFiles(new Map());
