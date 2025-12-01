@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { uploadFile, formatFileSize, isImageFile, type FileTargetType } from '@/api/files';
+import { uploadTempFiles, formatFileSize, isImageFile } from '@/api/files';
 import { Attachment } from '@/types/post';
 import { useToast } from '@/components/Toast/ToastProvider';
 
@@ -17,10 +17,10 @@ export interface FileUploadProps {
   attachments: Attachment[];
   /** 파일 목록 변경 콜백 */
   onChange: (attachments: Attachment[]) => void;
-  /** 파일 업로드 대상 타입 (POST | CHAT) */
-  targetType: FileTargetType;
-  /** 파일 업로드 대상 ID */
-  targetId: number;
+  /** 임시 업로드 ID (같은 tempId로 묶인 파일들은 같은 그룹으로 관리) */
+  tempId?: string;
+  /** 임시 업로드 ID 변경 콜백 */
+  onTempIdChange?: (tempId: string) => void;
   /** 최대 파일 개수 */
   maxFiles?: number;
   /** 최대 파일 크기 (바이트) */
@@ -36,8 +36,8 @@ export interface FileUploadProps {
 export const FileUpload: React.FC<FileUploadProps> = ({
   attachments,
   onChange,
-  targetType,
-  targetId,
+  tempId,
+  onTempIdChange,
   maxFiles = 10,
   maxFileSize = 10 * 1024 * 1024, // 10MB
   accept,
@@ -84,22 +84,26 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       setUploadingFiles(newUploadingFiles);
 
       try {
-        const uploadPromises = files.map((file) =>
-          uploadFile({
-            file,
-            targetType,
-            targetId,
-            onProgress: (progress) => {
-              setUploadingFiles((prev) => {
-                const next = new Map(prev);
+        // 임시 업로드 API 사용 (여러 파일을 한 번에 업로드)
+        const { tempId: nextTempId, attachments: uploadedAttachments } = await uploadTempFiles({
+          files,
+          tempId,
+          onProgress: (progress) => {
+            // 전체 진행률을 각 파일에 동일하게 적용 (간단한 구현)
+            setUploadingFiles((prev) => {
+              const next = new Map(prev);
+              files.forEach((file) => {
                 next.set(file.name, progress);
-                return next;
               });
-            },
-          })
-        );
+              return next;
+            });
+          },
+        });
 
-        const uploadedAttachments = await Promise.all(uploadPromises);
+        // tempId 업데이트
+        if (onTempIdChange && nextTempId) {
+          onTempIdChange(nextTempId);
+        }
 
         // 업로드 완료 후 목록 업데이트
         onChange([...attachments, ...uploadedAttachments]);
@@ -111,16 +115,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           title: `${files.length}개의 파일이 업로드되었습니다.`,
           variant: 'success',
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error('File upload error:', error);
+        const message = error?.response?.data?.message || '파일 업로드에 실패했습니다.';
         toast.show({
-          title: '파일 업로드에 실패했습니다.',
+          title: message,
           variant: 'error',
         });
         setUploadingFiles(new Map());
       }
     },
-    [attachments, disabled, maxFiles, maxFileSize, onChange, toast, uploadingFiles, targetType, targetId]
+    [attachments, disabled, maxFiles, maxFileSize, onChange, toast, uploadingFiles, tempId, onTempIdChange]
   );
 
   /**
