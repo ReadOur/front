@@ -375,9 +375,19 @@ const mapRoomMessageToChatMessage = (msg: RoomMessage): ChatMessage => {
         mimeType: body.mimeType || body.contentType,
         downloadUrl: body.downloadUrl || body.url,
       };
+      console.log('[mapRoomMessageToChatMessage] FILE/IMAGE 타입 body에서 attachment 파싱:', {
+        type: msg.type,
+        body,
+        parsedAttachment: attachment,
+      });
     } else {
       // body.extra에서 파싱 시도
       attachment = parseAttachmentExtra(msg.body.extra);
+      console.log('[mapRoomMessageToChatMessage] FILE/IMAGE 타입 extra에서 attachment 파싱:', {
+        type: msg.type,
+        extra: msg.body.extra,
+        parsedAttachment: attachment,
+      });
     }
   } else {
     // 다른 타입은 기존대로 extra에서 파싱
@@ -546,7 +556,73 @@ function ThreadChip({
   );
 }
 
-// FILE 타입 이미지 미리보기 컴포넌트
+// 이미지 메시지 미리보기 컴포넌트 (큰 이미지용)
+function ImageMessagePreview({ url, name, className = "max-h-64 w-full object-contain bg-black/5" }: { url: string; name: string; className?: string }) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!url) {
+      setError(true);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadImage = async () => {
+      try {
+        setError(false);
+        console.log('[ImageMessagePreview] 이미지 로드 시작:', { url, name });
+        const blobUrl = await getImageBlobUrl(url);
+        console.log('[ImageMessagePreview] 이미지 로드 성공:', { originalUrl: url, blobUrl });
+        if (isMounted) {
+          setImageSrc(blobUrl);
+        }
+      } catch (err) {
+        console.error("[ImageMessagePreview] 이미지 로드 실패:", err, { url, name });
+        if (isMounted) {
+          setError(true);
+        }
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      isMounted = false;
+      if (imageSrc && imageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(imageSrc);
+      }
+    };
+  }, [url, name]);
+
+  if (error || !imageSrc) {
+    return (
+      <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)] flex items-center justify-center min-h-[200px]">
+        <div className="text-center">
+          <div className="text-4xl mb-2">🖼️</div>
+          <div className="text-sm text-[color:var(--chatdock-fg-muted)]">이미지를 불러올 수 없습니다</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--chatdock-border-subtle)] bg-[color:var(--chatdock-bg-elev-2)]">
+      <img
+        src={imageSrc}
+        alt={name}
+        className={className}
+        onError={() => {
+          console.error('[ImageMessagePreview] img 태그 onError:', { url, name, imageSrc });
+          setError(true);
+        }}
+      />
+    </div>
+  );
+}
+
+// FILE 타입 이미지 미리보기 컴포넌트 (작은 썸네일용)
 function FileImagePreview({ url, name }: { url: string; name: string }) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -1546,16 +1622,35 @@ function ChatWindow({
               attachment,
               hasAttachment: !!attachment,
               attachmentName: attachment?.name,
+              attachmentNameType: typeof attachment?.name,
+              attachmentNameLength: attachment?.name?.length,
+              attachmentNameTrimmed: attachment?.name?.trim(),
               attachmentUrl: attachment?.url,
               attachmentDownloadUrl: attachment?.downloadUrl,
             });
           }
 
           // FILE 타입에서 이미지 확장자 판별
-          const isFileImage = m.type === "FILE" && attachment?.name && (
-            isImageFile(attachment.mimeType || "") ||
-            /\.(png|jpeg|jpg|gif|webp|bmp|svg)$/i.test(attachment.name)
+          const mimeType = attachment?.mimeType || attachment?.contentType || "";
+          const fileName = attachment?.name || "";
+          const isFileImage = m.type === "FILE" && fileName && (
+            isImageFile(mimeType) ||
+            /\.(png|jpeg|jpg|gif|webp|bmp|svg)$/i.test(fileName)
           );
+          
+          // 디버그: FILE 타입인 경우 상세 로그
+          if (m.type === "FILE") {
+            console.log('[ChatWindow] FILE 타입 이미지 판별:', {
+              messageId: m.id,
+              fileName,
+              mimeType,
+              isImageFileResult: isImageFile(mimeType),
+              extensionMatch: /\.(png|jpeg|jpg|gif|webp|bmp|svg)$/i.test(fileName),
+              isFileImage,
+              attachmentName: attachment?.name,
+              mText: m.text,
+            });
+          }
 
           const renderAttachment = () => {
             if (!attachment) return null;
@@ -1631,20 +1726,34 @@ function ChatWindow({
                 )}
                 {/* FILE 타입 메시지 - 이미지가 아닌 경우 */}
                 {m.type === "FILE" && !isFileImage && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">📄</span>
+                  <div className="w-full py-1 flex items-center gap-2">
+                    <span className="text-lg flex-shrink-0">📄</span>
                     <button
                       onClick={handleDownload}
-                      className="text-sm font-semibold text-[color:var(--color-accent)] hover:underline underline-offset-2 break-all text-left"
+                      className="text-sm font-semibold hover:underline underline-offset-2 break-words text-left flex-1 min-w-0"
                       type="button"
+                      title={attachment?.name || m.text || "파일"}
+                      style={{ 
+                        color: senderId === me.id.toString() ? '#0f0f0f' : '#007bff',
+                        textAlign: 'left',
+                        display: 'block',
+                        width: '100%',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        lineHeight: '1.5',
+                        opacity: 1,
+                        visibility: 'visible',
+                        background: 'transparent',
+                        border: 'none',
+                        padding: 0,
+                        margin: 0,
+                        cursor: 'pointer'
+                      }}
                     >
-                      {attachment.name || "파일"}
-                    </button>
-                    {attachment.size && (
-                      <span className="text-xs text-[color:var(--chatdock-fg-muted)]">
-                        ({formatFileSize(attachment.size)})
+                      <span style={{ display: 'inline-block', width: '100%', color: 'inherit' }}>
+                        {attachment?.name || m.text || "파일"}
                       </span>
-                    )}
+                    </button>
                   </div>
                 )}
                 {/* IMAGE 타입이 아닌 경우 파일 정보 표시 */}
@@ -1666,8 +1775,13 @@ function ChatWindow({
                     )}
                   </div>
                 )}
+                {/* FILE 타입이 아닌 경우에만 텍스트 표시 (FILE 타입은 위에서 attachment로 처리) */}
                 {m.text && !isImageMessage && m.type !== "FILE" && (
                   <div className="text-sm whitespace-pre-wrap break-words">{m.text}</div>
+                )}
+                {/* FILE 타입이고 이미지가 아니며 attachment.name이 없는 경우 m.text 표시 */}
+                {m.type === "FILE" && !isFileImage && !attachment?.name && m.text && (
+                  <div className="text-sm text-[color:var(--color-accent)] break-words">{m.text}</div>
                 )}
               </div>
             );
