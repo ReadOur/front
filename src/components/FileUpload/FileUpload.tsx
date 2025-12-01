@@ -125,7 +125,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         setUploadingFiles(new Map());
       }
     },
-    [attachments, disabled, maxFiles, maxFileSize, onChange, toast, uploadingFiles, tempId, onTempIdChange]
+    [
+      attachments,
+      disabled,
+      maxFiles,
+      maxFileSize,
+      onChange,
+      toast,
+      uploadingFiles,
+      tempId,
+      onTempIdChange,
+    ],
   );
 
   /**
@@ -142,19 +152,22 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         fileInputRef.current.value = '';
       }
     },
-    [handleUpload]
+    [handleUpload],
   );
 
   /**
    * 드래그 오버 핸들러
    */
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) {
-      setIsDragging(true);
-    }
-  }, [disabled]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled) {
+        setIsDragging(true);
+      }
+    },
+    [disabled],
+  );
 
   /**
    * 드래그 리브 핸들러
@@ -181,17 +194,17 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         handleUpload(files);
       }
     },
-    [disabled, handleUpload]
+    [disabled, handleUpload],
   );
 
   /**
    * 파일 삭제 핸들러
    */
   const handleRemove = useCallback(
-    (attachmentId: string) => {
-      onChange(attachments.filter((a) => a.id !== attachmentId));
+    (attachmentId: number | string) => {
+      onChange(attachments.filter((a) => String(a.id) !== String(attachmentId)));
     },
-    [attachments, onChange]
+    [attachments, onChange],
   );
 
   /**
@@ -256,9 +269,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <span className="text-sm text-[color:var(--color-fg-primary)] truncate">
                   {fileName}
                 </span>
-                <span className="text-xs text-[color:var(--color-fg-muted)] ml-2">
-                  {progress}%
-                </span>
+                <span className="text-xs text-[color:var(--color-fg-muted)] ml-2">{progress}%</span>
               </div>
               <div className="w-full bg-[color:var(--color-bg-elev-1)] rounded-full h-2">
                 <div
