@@ -10,6 +10,7 @@ import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
+import { isImageFile, uploadTempFiles } from "@/api/files";
 
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -39,6 +40,8 @@ export const BRD_06 = (): React.JSX.Element => {
   const [chatRoomDescription, setChatRoomDescription] = useState<string>("");
   const [isSpoiler, setIsSpoiler] = useState<boolean>(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [inlineUploads, setInlineUploads] = useState<Attachment[]>([]);
+  const [tempUploadId, setTempUploadId] = useState<string | undefined>(undefined);
 
   // 주의사항/태그 자동완성을 위한 추천 목록
   const suggestedWarnings = [
@@ -129,6 +132,44 @@ export const BRD_06 = (): React.JSX.Element => {
 
   const queryClient = useQueryClient();
 
+  const handleInlineImageUpload = async (
+    file: File
+  ): Promise<{ src: string; alt?: string; title?: string } | null> => {
+    if (!isImageFile(file.type)) {
+      toast.show({ title: "이미지 파일만 삽입할 수 있습니다.", variant: "warning" });
+      return null;
+    }
+
+    try {
+      const { tempId: nextTempId, attachments: uploaded } = await uploadTempFiles({
+        files: [file],
+        tempId: tempUploadId,
+      });
+
+      setTempUploadId(nextTempId);
+      setInlineUploads((prev) => {
+        const merged = [...prev];
+        uploaded.forEach((att) => {
+          if (!merged.find((item) => item.id === att.id)) {
+            merged.push(att);
+          }
+        });
+        return merged;
+      });
+
+      const attachment = uploaded[0];
+      return {
+        src: attachment.fileUrl || attachment.url,
+        alt: attachment.fileName,
+        title: attachment.fileName,
+      };
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "이미지 업로드에 실패했습니다.";
+      toast.show({ title: message, variant: "error" });
+      return null;
+    }
+  };
+
   const createPostMutation = useCreatePost({
     onSuccess: async () => {
       // 모든 posts 관련 쿼리 무효화 (BRD_04의 쿼리 포함)
@@ -185,6 +226,9 @@ export const BRD_06 = (): React.JSX.Element => {
       .replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>)+$/gi, '') // 뒤쪽 빈 태그
       .trim();
 
+    const inlineAttachmentIds = inlineUploads.map((a) => String(a.id));
+    const attachmentIds = Array.from(new Set([...(attachments.map((a) => String(a.id)) || []), ...inlineAttachmentIds]));
+
     if (isEditMode && postId) {
       // 수정 모드
       const updateData: UpdatePostRequest = {
@@ -195,7 +239,8 @@ export const BRD_06 = (): React.JSX.Element => {
         chatRoomId: category === "GROUP" ? chatRoomId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
-        attachmentIds: attachments.length > 0 ? attachments.map(a => String(a.id)) : undefined,
+        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
+        tempId: tempUploadId,
       };
       updatePostMutation.mutate({ postId, data: updateData });
     } else {
@@ -207,7 +252,8 @@ export const BRD_06 = (): React.JSX.Element => {
         bookId: category === "REVIEW" ? bookId : undefined,
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
-        attachmentIds: attachments.length > 0 ? attachments.map(a => String(a.id)) : undefined,
+        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
+        tempId: tempUploadId,
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === "GROUP" && {
           recruitmentLimit: recruitmentLimit,
@@ -465,6 +511,7 @@ export const BRD_06 = (): React.JSX.Element => {
                   onChange={setContentHtml}
                   placeholder="내용을 입력해주세요."
                   className="h-full"   // ← 부모 높이를 가득 채우도록
+                  onUploadImage={handleInlineImageUpload}
                 />
               </div>
             </div>
