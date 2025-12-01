@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       // Chat API만 /api 제거
       '/api/chat': {
-        target: 'http://localhost:8080',
+        target: 'http://16.184.24.121:8080',
         changeOrigin: true,
         secure: false,
         ws: true,
@@ -31,7 +31,7 @@ export default defineConfig({
       },
       // 나머지 API는 그대로 유지
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://16.184.24.121:8080',
         changeOrigin: true,
         secure: false,
         ws: true,

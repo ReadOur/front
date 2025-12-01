@@ -98,7 +98,7 @@ axiosInstance.interceptors.response.use(
     if (error.code === 'ECONNREFUSED' || error.message.includes('Connection refused')) {
       console.error('❌ 백엔드 서버 연결 거부:', {
         message: '백엔드 서버에 연결할 수 없습니다.',
-        expectedURL: 'http://localhost:8080',
+        expectedURL: 'http://16.184.24.121:8080',
         solution: '1. 백엔드 서버를 시작하세요.\n2. 백엔드 서버가 다른 포트에서 실행 중이라면 vite.config.ts의 프록시 설정을 업데이트하세요.',
       });
     }

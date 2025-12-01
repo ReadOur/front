@@ -1,6 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { SessionClosingPayload } from "@/types/ai";
 import MarkdownRenderer from "./MarkdownRenderer";
+import { Copy, Download, Check } from "lucide-react";
 
 interface SessionClosingSummaryProps {
   payload?: SessionClosingPayload | null;
@@ -122,6 +123,7 @@ function buildMarkdownFromPlan(plan: SessionClosingPayload["plan"]): string | nu
 export default function SessionClosingSummary({ payload, meta, fallbackText }: SessionClosingSummaryProps) {
   const disagreements = payload?.plan?.disagreements ?? [];
   const nextSteps = payload?.plan?.nextSteps ?? [];
+  const [copied, setCopied] = useState(false);
 
   const markdown = useMemo(() => {
     if (payload?.closingMarkdown) return payload.closingMarkdown;
@@ -130,6 +132,57 @@ export default function SessionClosingSummary({ payload, meta, fallbackText }: S
 
   const hasMarkdown = Boolean(markdown);
 
+  // 전체 마감문 내용을 텍스트로 변환
+  const getFullText = useMemo(() => {
+    const parts: string[] = [];
+    
+    if (markdown) {
+      parts.push(markdown);
+    }
+    
+    if (disagreements.length > 0) {
+      parts.push("\n\n## 서로 다른 의견\n");
+      disagreements.forEach((item, index) => {
+        parts.push(`\n### 의견 차이 ${index + 1}${item.title ? ` - ${item.title}` : ""}\n`);
+        if (item.viewA) parts.push(`관점 A: ${item.viewA}\n`);
+        if (item.viewB) parts.push(`관점 B: ${item.viewB}\n`);
+        if (item.summary) parts.push(`정리: ${item.summary}\n`);
+      });
+    }
+    
+    if (nextSteps.length > 0) {
+      parts.push("\n\n## 다음 모임 준비\n");
+      nextSteps.forEach((step) => {
+        parts.push(`- ${step}\n`);
+      });
+    }
+    
+    return parts.join("");
+  }, [markdown, disagreements, nextSteps]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(getFullText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("복사 실패:", err);
+    }
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([getFullText], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const date = new Date().toISOString().split("T")[0];
+    link.href = url;
+    link.download = `마감문_${date}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-2">
@@ -137,8 +190,30 @@ export default function SessionClosingSummary({ payload, meta, fallbackText }: S
           <div className="text-[10px] uppercase tracking-wide text-[color:var(--chatdock-fg-muted)]">Session Summary</div>
           <div className="text-base font-bold text-[color:var(--chatdock-fg-primary)]">세션 클로징 결과</div>
         </div>
-        <BasicInfo meta={meta} payload={payload} />
+        {hasMarkdown && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleCopy}
+              className="p-1.5 rounded-md hover:bg-[color:var(--chatdock-bg-elev-2)] transition-colors"
+              title="복사"
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 text-[color:var(--chatdock-fg-muted)]" />
+              )}
+            </button>
+            <button
+              onClick={handleExport}
+              className="p-1.5 rounded-md hover:bg-[color:var(--chatdock-bg-elev-2)] transition-colors"
+              title="내보내기"
+            >
+              <Download className="w-4 h-4 text-[color:var(--chatdock-fg-muted)]" />
+            </button>
+          </div>
+        )}
       </div>
+      <BasicInfo meta={meta} payload={payload} />
 
       <div className="h-px bg-[color:var(--chatdock-border-subtle)]" />
 
