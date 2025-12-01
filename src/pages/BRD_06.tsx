@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { RichTextEditor } from "@/components/RichTextEditor/RichTextEditor";
@@ -10,7 +10,9 @@ import { CreatePostRequest, UpdatePostRequest, Attachment } from "@/types";
 import { Loading } from "@/components/Loading";
 import { useToast } from "@/components/Toast/ToastProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import { isImageFile, uploadTempFiles } from "@/api/files";
+import { composeFileTargetId, isImageFile, uploadTempFiles } from "@/api/files";
+import { useAuth } from "@/contexts/AuthContext";
+import { extractUserIdFromToken } from "@/utils/auth";
 
 export const BRD_06 = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ export const BRD_06 = (): React.JSX.Element => {
   const [searchParams] = useSearchParams();
   const isEditMode = !!postId;
   const toast = useToast();
+  const { accessToken } = useAuth();
 
   // URL 쿼리 파라미터에서 카테고리와 bookId 읽기
   const initialCategory = searchParams.get("category") || "FREE";
@@ -42,6 +45,13 @@ export const BRD_06 = (): React.JSX.Element => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [inlineUploads, setInlineUploads] = useState<Attachment[]>([]);
   const [tempUploadId, setTempUploadId] = useState<string | undefined>(undefined);
+
+  const currentUserId = useMemo(() => extractUserIdFromToken(accessToken), [accessToken]);
+  const postIdNumber = useMemo(() => (postId ? Number(postId) : 0), [postId]);
+  const postTargetId = useMemo(
+    () => composeFileTargetId("POST", currentUserId, postIdNumber),
+    [currentUserId, postIdNumber]
+  );
 
   // 주의사항/태그 자동완성을 위한 추천 목록
   const suggestedWarnings = [
@@ -590,15 +600,15 @@ export const BRD_06 = (): React.JSX.Element => {
 
           {/* 파일 첨부 */}
           <div>
-            <FileUpload
-              attachments={attachments}
-              onChange={setAttachments}
-              targetType={213} // 213 = 게시글
-              targetId={isEditMode && postId ? parseInt(postId) : 0} // 작성 모드일 경우 0, 수정 모드일 경우 postId
-              maxFiles={10}
-              maxFileSize={10 * 1024 * 1024}
-              disabled={isPending}
-            />
+              <FileUpload
+                attachments={attachments}
+                onChange={setAttachments}
+                targetType="POST"
+                targetId={postTargetId}
+                maxFiles={10}
+                maxFileSize={10 * 1024 * 1024}
+                disabled={isPending}
+              />
           </div>
 
           {/* 등록/수정 버튼: 더 키움 */}

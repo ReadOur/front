@@ -85,12 +85,14 @@ export const COMMENT_ENDPOINTS = {
  * 파일 관련 엔드포인트
  */
 export const FILE_ENDPOINTS = {
-  UPLOAD: (targetType: string | number, targetId: string | number) =>
+  UPLOAD: (targetType: FileTargetType, targetId: string | number) =>
     `/files?targetType=${targetType}&targetId=${targetId}`,
   TEMP_UPLOAD: "/files/temp",
   METADATA: (fileId: number) => `/files/${fileId}`,
   DOWNLOAD: (fileId: number) => `/files/${fileId}/download`,
 } as const;
+
+export type FileTargetType = 'POST' | 'CHAT';
 
 /**
  * 첨부파일 관련 엔드포인트 (하위 호환성)

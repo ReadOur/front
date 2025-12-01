@@ -4,15 +4,28 @@
  */
 
 import { apiClient } from './client';
-import { FILE_ENDPOINTS } from './endpoints';
+import { FILE_ENDPOINTS, type FileTargetType } from './endpoints';
 import { Attachment } from '@/types/post';
+
+export function composeFileTargetId(
+  targetType: FileTargetType,
+  userId?: string | number | null,
+  postId?: string | number | null
+): number {
+  const prefix = targetType === 'POST' ? '1' : '2';
+  const userPart = userId !== undefined && userId !== null ? String(userId) : '0';
+  const postPart = postId !== undefined && postId !== null ? String(postId) : '0';
+  const numeric = Number(`${prefix}${userPart}${postPart}`);
+
+  return Number.isNaN(numeric) ? 0 : numeric;
+}
 
 /**
  * 파일 업로드 파라미터
  */
 export interface UploadFileParams {
   file: File;
-  targetType: number | string;
+  targetType: FileTargetType;
   targetId: number | string;
   onProgress?: (progress: number) => void;
 }
@@ -22,7 +35,7 @@ export interface UploadFileParams {
  */
 export interface UploadFilesParams {
   files: File[];
-  targetType: number | string;
+  targetType: FileTargetType;
   targetId: number | string;
   onProgress?: (progress: number) => void;
 }

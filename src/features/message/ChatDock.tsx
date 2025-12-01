@@ -17,7 +17,7 @@ import { USER_QUERY_KEYS } from "@/hooks/api/useUser";
 import { userService } from "@/services/userService";
 import { extractUserIdFromToken } from "@/utils/auth";
 import { AiCommandType, AiJobResponse, RoomMessage, RoomMessageType, SessionClosingPayload } from "@/types";
-import { formatFileSize, isImageFile, uploadFiles } from "@/api/files";
+import { composeFileTargetId, formatFileSize, isImageFile, uploadFiles } from "@/api/files";
 
 /**
  * ChatDock — Facebook DM 스타일의 우측 고정 채팅 도크
@@ -2257,13 +2257,14 @@ export default function ChatDock() {
     }
 
     const roomId = parseInt(pendingThreadId, 10);
+    const targetId = composeFileTargetId("CHAT", myUserId, roomId);
     setUploadProgress(0);
 
     try {
       const uploaded = await uploadFiles({
         files: pendingFiles,
         targetType: "CHAT",
-        targetId: roomId,
+        targetId,
         onProgress: (progress) => setUploadProgress(progress),
       });
 
