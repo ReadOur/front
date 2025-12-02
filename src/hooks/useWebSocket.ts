@@ -64,7 +64,7 @@ export function useWebSocket({
   // 웹소켓 URL 생성
   const getWebSocketUrl = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const baseUrl = import.meta.env.VITE_WS_BASE_URL || "http://16.184.24.121:8080";
+    const baseUrl = import.meta.env.VITE_WS_BASE_URL || "16.184.24.121:8080";
     const token = getAccessToken();
 
     // 토큰을 query string으로 전달
