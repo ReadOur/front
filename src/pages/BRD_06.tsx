@@ -342,7 +342,6 @@ export const BRD_06 = (): React.JSX.Element => {
 
     if (isEditMode && postId) {
       // 수정 모드 (작성 API와 동일한 형식으로 모든 필드 전달)
-      // tempId가 있으면 전송 (새로 추가된 파일이 있는 경우)
       const updateData: UpdatePostRequest = {
         title: title.trim(),
         content: safeHtml,
@@ -351,7 +350,8 @@ export const BRD_06 = (): React.JSX.Element => {
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
-        ...(tempUploadId && { tempId: tempUploadId }), // 새로 추가된 파일이 있을 때만 tempId 전송
+        // tempId는 attachmentIds가 있을 때만 전송 (파일 삭제 시 400 에러 방지)
+        ...(tempUploadId && attachmentIds.length > 0 && { tempId: tempUploadId }),
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,
@@ -376,7 +376,8 @@ export const BRD_06 = (): React.JSX.Element => {
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
-        tempId: tempUploadId,
+        // tempId는 attachmentIds가 있을 때만 전송 (파일 삭제 시 400 에러 방지)
+        ...(tempUploadId && attachmentIds.length > 0 && { tempId: tempUploadId }),
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,

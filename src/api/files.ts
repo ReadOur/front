@@ -42,7 +42,8 @@ export interface UploadFilesParams {
 }
 
 export interface TempUploadResponseFile {
-  id: number; // 파일 ID (attachmentId로 사용)
+  id?: number; // 파일 ID (attachmentId로 사용)
+  fileId?: number; // 백엔드가 fileId로 반환할 수도 있음
   url: string;
   originalFilename: string;
   contentType: string;
@@ -160,20 +161,27 @@ export async function uploadTempFiles(params: UploadTempFilesParams): Promise<{
     }
   );
 
-  const attachments = (result.files || []).map((file) => ({
-    id: file.id, // 응답의 id 필드를 그대로 사용 (attachmentId)
-    url: file.url,
-    originalFilename: file.originalFilename,
-    contentType: file.contentType,
-    size: file.size,
-    ownerUserId: file.ownerUserId,
-    downloadUrl: file.downloadUrl,
-    // 프론트엔드 호환성을 위한 계산된 필드
-    fileName: file.originalFilename,
-    fileUrl: file.url,
-    fileSize: file.size,
-    mimeType: file.contentType,
-  }));
+  const attachments = (result.files || []).map((file) => {
+    // 백엔드 응답이 id 또는 fileId를 사용할 수 있으므로 둘 다 확인
+    const fileId = file.id ?? file.fileId;
+    if (!fileId) {
+      console.error('[uploadTempFiles] 파일 ID가 없습니다:', file);
+    }
+    return {
+      id: fileId || 0, // id 또는 fileId 우선 사용
+      url: file.url,
+      originalFilename: file.originalFilename,
+      contentType: file.contentType,
+      size: file.size,
+      ownerUserId: file.ownerUserId,
+      downloadUrl: file.downloadUrl,
+      // 프론트엔드 호환성을 위한 계산된 필드
+      fileName: file.originalFilename,
+      fileUrl: file.url,
+      fileSize: file.size,
+      mimeType: file.contentType,
+    };
+  });
 
   return { tempId: result.tempId, attachments };
 }
