@@ -376,7 +376,7 @@ export const BRD_06 = (): React.JSX.Element => {
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
-        tempId: tempUploadId,
+        ...(tempUploadId && { tempId: tempUploadId }), // 파일이 업로드된 경우에만 tempId 전송
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,
