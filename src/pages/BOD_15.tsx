@@ -266,7 +266,17 @@ export default function BOD_15() {
     );
   };
 
-  const handleAddReview = () => {
+  const handleAddReview = (e?: React.MouseEvent) => {
+    // 검색 드롭다운이 열려있으면 먼저 닫기
+    if (showResults) {
+      setShowResults(false);
+    }
+
+    // 이벤트 전파 중단 (검색 드롭다운 외부 클릭 핸들러와 충돌 방지)
+    if (e) {
+      e.stopPropagation();
+    }
+
     if (!isAuthenticated) {
       alert('로그인이 필요한 기능입니다.');
       navigate('/login');
@@ -477,8 +487,9 @@ export default function BOD_15() {
           {/* 검색 결과 드롭다운 */}
           {showResults && searchQuery.length > 0 && (
             <div
-              className="absolute top-full mt-4 w-full rounded-[30px] p-6 z-10 max-h-[500px] overflow-y-auto"
+              className="absolute top-full mt-4 w-full rounded-[30px] p-6 z-[100] max-h-[500px] overflow-y-auto"
               style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+              onClick={(e) => e.stopPropagation()}
             >
               {isSearching ? (
                 <div className="text-center py-8" style={{ color: '#999' }}>
@@ -931,9 +942,9 @@ export default function BOD_15() {
                   }}
                 />
                 <button
-                  onClick={handleAddReview}
-                  disabled={createReviewMutation.isPending}
-                  className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
+                  onClick={(e) => handleAddReview(e)}
+                  disabled={createReviewMutation.isPending || isSearching}
+                  className="px-6 py-2 rounded text-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: '#90BE6D',
                     color: 'white',
