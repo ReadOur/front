@@ -65,12 +65,6 @@ export async function getRelatedPosts(
   const endpoint = BOOK_ENDPOINTS.RELATED_POSTS(bookId);
   const requestParams = { page: params?.page || 0, size: params?.size || 20 };
   
-  console.log("[bookService] 연관 게시글 조회:", {
-    bookId,
-    endpoint,
-    params: requestParams,
-  });
-  
   // Spring Page 형식으로 응답이 오므로 SpringPage 타입으로 받음
   // 인터셉터가 body를 언래핑하지만, 경우에 따라 body가 남아있을 수 있음
   const rawResponse = await apiClient.get<SpringPage<PostListItem> | { body: SpringPage<PostListItem> }>(
@@ -83,14 +77,6 @@ export async function getRelatedPosts(
     rawResponse && typeof rawResponse === 'object' && 'body' in rawResponse
       ? (rawResponse as { body: SpringPage<PostListItem> }).body
       : (rawResponse as SpringPage<PostListItem> | null);
-  
-  console.log("[bookService] 연관 게시글 응답 (Spring Page):", {
-    bookId,
-    hasBody: rawResponse && typeof rawResponse === 'object' && 'body' in rawResponse,
-    contentCount: springPage?.content?.length || 0,
-    totalElements: springPage?.totalElements || 0,
-    content: springPage?.content,
-  });
   
   // Spring Page를 PaginatedResponse로 변환
   if (!springPage) {
@@ -107,15 +93,7 @@ export async function getRelatedPosts(
     };
   }
   
-  const result = convertSpringPage(springPage);
-  
-  console.log("[bookService] 연관 게시글 변환 결과:", {
-    bookId,
-    itemsCount: result.items.length,
-    totalItems: result.meta.totalItems,
-  });
-  
-  return result;
+  return convertSpringPage(springPage);
 }
 
 /**

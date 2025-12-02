@@ -14,13 +14,15 @@ import { getAccessToken } from "@/utils/auth";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 10000;
 
-// 디버깅: 현재 API 설정 출력
-console.log('🔧 API Client Configuration:', {
-  baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT,
-  env: import.meta.env.MODE,
-  note: 'Using Vite proxy in development to avoid CORS issues',
-});
+// 개발 환경에서만 API 설정 출력
+if (import.meta.env.DEV) {
+  console.log('🔧 API Client Configuration:', {
+    baseURL: API_BASE_URL,
+    timeout: API_TIMEOUT,
+    env: import.meta.env.MODE,
+    note: 'Using Vite proxy in development to avoid CORS issues',
+  });
+}
 
 /**
  * Axios 인스턴스 생성
@@ -43,17 +45,19 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    // 디버깅: 실제 요청 URL 출력
-    const fullUrl = `${config.baseURL}${config.url}`;
-    const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
-    console.log('📡 API Request:', {
-      method: config.method?.toUpperCase(),
-      url: fullUrl + params,
-      params: config.params,
-      headers: {
-        Authorization: accessToken ? `Bearer ${accessToken.substring(0, 20)}...` : '❌ NO TOKEN',
-      },
-    });
+    // 개발 환경에서만 요청 URL 출력
+    if (import.meta.env.DEV) {
+      const fullUrl = `${config.baseURL}${config.url}`;
+      const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : '';
+      console.log('📡 API Request:', {
+        method: config.method?.toUpperCase(),
+        url: fullUrl + params,
+        params: config.params,
+        headers: {
+          Authorization: accessToken ? `Bearer ${accessToken.substring(0, 20)}...` : '❌ NO TOKEN',
+        },
+      });
+    }
 
     return config;
   },
@@ -66,16 +70,20 @@ axiosInstance.interceptors.request.use(
 // ===== 응답 인터셉터 =====
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
-    // 성공 응답 로그
-    console.log('✅ API Response:', {
-      status: response.status,
-      url: response.config.url,
-      data: response.data,
-    });
+    // 개발 환경에서만 성공 응답 로그
+    if (import.meta.env.DEV) {
+      console.log('✅ API Response:', {
+        status: response.status,
+        url: response.config.url,
+        data: response.data,
+      });
+    }
 
     // 백엔드가 { status, body, message } 형태로 래핑하는 경우 body 추출
     if (response.data && typeof response.data === 'object' && 'body' in response.data) {
-      console.log('🔄 Unwrapping response body:', response.data.body);
+      if (import.meta.env.DEV) {
+        console.log('🔄 Unwrapping response body:', response.data.body);
+      }
       return {
         ...response,
         data: response.data.body, // body를 실제 data로 사용

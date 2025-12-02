@@ -80,36 +80,7 @@ export default function BOD_15() {
     size: 6,
   });
 
-  // 디버깅: 연관 게시글 조회 상태 확인
-  useEffect(() => {
-    console.log('[BOD_15] 연관 게시글 조회 상태:', {
-      actualBookId,
-      bookId,
-      isbn,
-      bookBookId: book?.bookId,
-      hasBook: !!book,
-      isLoadingPosts,
-      relatedPostsError: relatedPostsError
-        ? {
-            message:
-              relatedPostsError instanceof Error
-                ? relatedPostsError.message
-                : String(relatedPostsError),
-            ...(relatedPostsError as any)?.response?.data,
-          }
-        : null,
-      relatedPostsData,
-      itemsCount: relatedPostsData?.items?.length || 0,
-    });
-  }, [
-    actualBookId,
-    bookId,
-    isbn,
-    book?.bookId,
-    isLoadingPosts,
-    relatedPostsError,
-    relatedPostsData,
-  ]);
+  // 연관 게시글 조회 상태는 React Query가 자동으로 관리하므로 별도 로깅 불필요
   const { data: availability, isLoading: isLoadingAvailability } = useLibraryAvailability(
     book?.isbn13 || '',
   );
