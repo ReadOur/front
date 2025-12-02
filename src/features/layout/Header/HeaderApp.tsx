@@ -4,7 +4,13 @@ import logo from "@/assets/logo.png";
 import { MessageCircle } from "lucide-react";
 import UserDropdown from "./UserDropdown";
 
-type NavItem = { key: string; label: string; active?: boolean; onClick: () => void };
+type NavItem = { 
+  key: string; 
+  label: string; 
+  active?: boolean; 
+  onClick: () => void;
+  onMouseEnter?: () => void; // 성능 최적화: 마우스 호버 시 미리 로드
+};
 type User = { name: string; } | null;
 
 interface HeaderAppProps {
@@ -60,6 +66,7 @@ export default function HeaderApp({
                 <li key={item.key} className="relative flex items-center px-2 sm:px-3 lg:px-8 xl:px-16">
                   <button
                     onClick={item.onClick}
+                    onMouseEnter={item.onMouseEnter}
                     className={[
                       "relative h-full flex items-center pb-2 sm:pb-4 cursor-pointer transition-all duration-200",
                       item.active

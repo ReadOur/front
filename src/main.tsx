@@ -14,6 +14,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 // 코드 스플리팅: 페이지 컴포넌트들을 lazy loading으로 분리
+// ⚠️ 주의: ProtectedRoute와 Suspense 순서는 절대 변경하지 마세요!
+// ProtectedRoute > Suspense > Component 순서가 보안과 UX를 보장합니다.
+
 const HOM_01 = lazy(() => import("@/pages/HOM_01"));
 const BRD_04 = lazy(() => import("@/pages/BRD_04").then(m => ({ default: m.BRD_List })));
 const BRD_05 = lazy(() => import("@/pages/BRD_05"));
@@ -32,6 +35,35 @@ const LOG_02 = lazy(() => import("@/pages/LOG_02"));
 const REG_03 = lazy(() => import("@/pages/REG_03"));
 const FID_18 = lazy(() => import("@/pages/FID_18"));
 const GRP_Create = lazy(() => import("@/pages/GRP_Create").then(m => ({ default: m.GRP_Create })));
+
+// Lazy 컴포넌트 preload 함수들 (성능 최적화용)
+// ⚠️ 주의: preload는 ProtectedRoute 체크 전에 실행될 수 있지만,
+// 실제 렌더링은 ProtectedRoute가 제어하므로 안전합니다.
+// 
+// React.lazy()의 내부 구조에 접근하여 미리 로드합니다.
+// 타입 안전성을 위해 any를 사용하지만, 런타임에서만 접근합니다.
+function preloadLazyComponent(component: React.LazyExoticComponent<React.ComponentType<any>>): void {
+  try {
+    // React.lazy()는 내부적으로 Promise를 가지고 있음
+    // 컴포넌트를 한 번 호출하면 자동으로 로드됨
+    const payload = (component as any)._payload;
+    if (payload?._result) {
+      // Promise를 미리 시작 (에러는 무시)
+      payload._result.catch(() => {});
+    }
+  } catch {
+    // 실패해도 무시 (나중에 자동으로 로드됨)
+  }
+}
+
+export const preloadRoutes = {
+  boards: () => preloadLazyComponent(BRD_04),
+  calendar: () => preloadLazyComponent(CAL_11),
+  mypage: () => preloadLazyComponent(PRF_10),
+  library: () => preloadLazyComponent(MYB_14),
+  chat: () => preloadLazyComponent(CHT_17),
+  settings: () => preloadLazyComponent(SET_13),
+} as const;
 
 // Suspense Fallback 컴포넌트
 const PageLoader = () => <Loading message="페이지를 불러오는 중..." />;

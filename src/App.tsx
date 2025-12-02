@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { logout as logoutApi } from "@/services/authService";
 import { useMyPage } from "@/hooks/api/useUser";
 // import { useUnreadCount } from "@/hooks/api/useChat"; // TODO: 백엔드 API 준비되면 활성화
+import { preloadRoutes } from "@/main";
 import "@/style/tokens.css"
 import "@/style/globals.css"
 
@@ -20,41 +21,48 @@ export default function App() {
   const chatUnreadCount = 0; // 임시로 0 설정
 
   // 중앙 탭 라우팅 (SPA로 이동)
+  // 성능 최적화: 마우스 호버 시 미리 로드 (클릭 시 즉시 표시)
   const navItems = [
     {
       key: "board",
       label: "게시판",
       onClick: () => navigate("/boards"),
+      onMouseEnter: () => preloadRoutes.boards(),
       active: pathname.startsWith("/boards"),
     },
     {
       key: "calendar",
       label: "캘린더",
       onClick: () => navigate("/calendar"),
+      onMouseEnter: () => preloadRoutes.calendar(),
       active: pathname.startsWith("/calendar"),
     },
     {
       key: "mypage",
       label: "마이페이지",
       onClick: () => navigate("/mypage"),
+      onMouseEnter: () => preloadRoutes.mypage(),
       active: pathname.startsWith("/mypage"),
     },
     {
       key: "library",
       label: "내서재",
       onClick: () => navigate("/my-library"),
+      onMouseEnter: () => preloadRoutes.library(),
       active: pathname.startsWith("/my-library"),
     },
     {
       key: "chat",
       label: "채팅",
       onClick: () => navigate("/chat"),
+      onMouseEnter: () => preloadRoutes.chat(),
       active: pathname.startsWith("/chat"),
     },
     {
       key: "settings",
       label: "설정",
       onClick: () => navigate("/settings"),
+      onMouseEnter: () => preloadRoutes.settings(),
       active: pathname.startsWith("/settings"),
     },
   ];

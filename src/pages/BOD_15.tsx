@@ -1,7 +1,7 @@
 // BOD_15.tsx - 책 상세 페이지
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useBookDetail,
   useBookDetailByISBN,
@@ -16,8 +16,8 @@ import {
   useCreateBookReview,
   useUpdateBookReview,
   useDeleteBookReview,
-} from "@/hooks/api";
-import { useAuth } from "@/contexts/AuthContext";
+} from '@/hooks/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * HTML 엔티티를 디코딩하는 함수
@@ -36,21 +36,21 @@ export default function BOD_15() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newHighlightContent, setNewHighlightContent] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [newHighlightContent, setNewHighlightContent] = useState('');
   const [newHighlightPage, setNewHighlightPage] = useState<number | undefined>();
-  const [activeTab, setActiveTab] = useState<"summary" | "reviews" | "highlights">("summary");
+  const [activeTab, setActiveTab] = useState<'summary' | 'reviews' | 'highlights'>('summary');
 
   // 리뷰 관련 상태
-  const [newReviewContent, setNewReviewContent] = useState("");
+  const [newReviewContent, setNewReviewContent] = useState('');
   const [newReviewRating, setNewReviewRating] = useState<number>(5);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
-  const [editReviewContent, setEditReviewContent] = useState("");
+  const [editReviewContent, setEditReviewContent] = useState('');
   const [editReviewRating, setEditReviewRating] = useState<number>(5);
 
   // 하이라이트 수정 관련 상태
   const [editingHighlightId, setEditingHighlightId] = useState<number | null>(null);
-  const [editHighlightContent, setEditHighlightContent] = useState("");
+  const [editHighlightContent, setEditHighlightContent] = useState('');
   const [editHighlightPage, setEditHighlightPage] = useState<number | undefined>();
 
   // 펼치기/접기 상태
@@ -58,27 +58,62 @@ export default function BOD_15() {
   const [expandedHighlights, setExpandedHighlights] = useState<Set<number>>(new Set());
 
   // API 호출 - ISBN 또는 bookId 중 하나를 사용
-  const { data: bookByISBN, isLoading: isLoadingBookByISBN } = useBookDetailByISBN(isbn || "");
-  const { data: bookById, isLoading: isLoadingBookById } = useBookDetail(bookId || "");
+  const { data: bookByISBN, isLoading: isLoadingBookByISBN } = useBookDetailByISBN(isbn || '');
+  const { data: bookById, isLoading: isLoadingBookById } = useBookDetail(bookId || '');
 
   // ISBN 또는 bookId 중 하나로 가져온 책 정보 사용
   const book = isbn ? bookByISBN : bookById;
   const isLoadingBook = isbn ? isLoadingBookByISBN : isLoadingBookById;
 
   // book.bookId를 문자열로 변환하여 사용
-  const actualBookId = book?.bookId ? book.bookId.toString() : bookId || "";
+  const actualBookId = book?.bookId ? book.bookId.toString() : bookId || '';
 
-  const { data: relatedPostsData, isLoading: isLoadingPosts } = useRelatedPosts(actualBookId, {
+  const {
+    data: relatedPostsData,
+    isLoading: isLoadingPosts,
+    error: relatedPostsError,
+  } = useRelatedPosts(actualBookId, {
     page: 0,
     size: 6,
   });
-  const { data: availability, isLoading: isLoadingAvailability } = useLibraryAvailability(
-    book?.isbn13 || ""
-  );
-  const { data: highlightsData, isLoading: isLoadingHighlights } = useBookHighlights(
+
+  // 디버깅: 연관 게시글 조회 상태 확인
+  useEffect(() => {
+    console.log('[BOD_15] 연관 게시글 조회 상태:', {
+      actualBookId,
+      bookId,
+      isbn,
+      bookBookId: book?.bookId,
+      hasBook: !!book,
+      isLoadingPosts,
+      relatedPostsError: relatedPostsError
+        ? {
+            message:
+              relatedPostsError instanceof Error
+                ? relatedPostsError.message
+                : String(relatedPostsError),
+            ...(relatedPostsError as any)?.response?.data,
+          }
+        : null,
+      relatedPostsData,
+      itemsCount: relatedPostsData?.items?.length || 0,
+    });
+  }, [
     actualBookId,
-    { page: 0, size: 20 }
+    bookId,
+    isbn,
+    book?.bookId,
+    isLoadingPosts,
+    relatedPostsError,
+    relatedPostsData,
+  ]);
+  const { data: availability, isLoading: isLoadingAvailability } = useLibraryAvailability(
+    book?.isbn13 || '',
   );
+  const { data: highlightsData, isLoading: isLoadingHighlights } = useBookHighlights(actualBookId, {
+    page: 0,
+    size: 20,
+  });
   const { data: reviews, isLoading: isLoadingReviews } = useBookReviews(actualBookId);
 
   // 위시리스트 mutation
@@ -109,21 +144,21 @@ export default function BOD_15() {
       },
       {
         onError: () => {
-          alert("위시리스트 추가/제거에 실패했습니다.");
+          alert('위시리스트 추가/제거에 실패했습니다.');
         },
-      }
+      },
     );
   };
 
   const handleAddHighlight = () => {
     if (!isAuthenticated) {
-      alert("로그인이 필요한 기능입니다.");
-      navigate("/login");
+      alert('로그인이 필요한 기능입니다.');
+      navigate('/login');
       return;
     }
 
     if (!actualBookId || !newHighlightContent.trim()) {
-      alert("하이라이트 내용을 입력해주세요.");
+      alert('하이라이트 내용을 입력해주세요.');
       return;
     }
 
@@ -135,14 +170,15 @@ export default function BOD_15() {
       },
       {
         onSuccess: () => {
-          setNewHighlightContent("");
+          setNewHighlightContent('');
           setNewHighlightPage(undefined);
         },
         onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || error.message || "하이라이트 추가에 실패했습니다.";
+          const errorMessage =
+            error.response?.data?.message || error.message || '하이라이트 추가에 실패했습니다.';
           alert(errorMessage);
         },
-      }
+      },
     );
   };
 
@@ -154,13 +190,13 @@ export default function BOD_15() {
 
   const handleCancelEditHighlight = () => {
     setEditingHighlightId(null);
-    setEditHighlightContent("");
+    setEditHighlightContent('');
     setEditHighlightPage(undefined);
   };
 
   const handleUpdateHighlight = (highlightId: number) => {
     if (!actualBookId || !editHighlightContent.trim()) {
-      alert("하이라이트 내용을 입력해주세요.");
+      alert('하이라이트 내용을 입력해주세요.');
       return;
     }
 
@@ -174,20 +210,21 @@ export default function BOD_15() {
       {
         onSuccess: () => {
           setEditingHighlightId(null);
-          setEditHighlightContent("");
+          setEditHighlightContent('');
           setEditHighlightPage(undefined);
         },
         onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || error.message || "하이라이트 수정에 실패했습니다.";
+          const errorMessage =
+            error.response?.data?.message || error.message || '하이라이트 수정에 실패했습니다.';
           alert(errorMessage);
         },
-      }
+      },
     );
   };
 
   const handleDeleteHighlight = (highlightId: number) => {
     if (!actualBookId) return;
-    if (!confirm("하이라이트를 삭제하시겠습니까?")) return;
+    if (!confirm('하이라이트를 삭제하시겠습니까?')) return;
 
     deleteHighlightMutation.mutate(
       {
@@ -196,27 +233,28 @@ export default function BOD_15() {
       },
       {
         onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || error.message || "하이라이트 삭제에 실패했습니다.";
+          const errorMessage =
+            error.response?.data?.message || error.message || '하이라이트 삭제에 실패했습니다.';
           alert(errorMessage);
         },
-      }
+      },
     );
   };
 
   const handleAddReview = () => {
     if (!isAuthenticated) {
-      alert("로그인이 필요한 기능입니다.");
-      navigate("/login");
+      alert('로그인이 필요한 기능입니다.');
+      navigate('/login');
       return;
     }
 
     if (!actualBookId || !newReviewContent.trim()) {
-      alert("리뷰 내용을 입력해주세요.");
+      alert('리뷰 내용을 입력해주세요.');
       return;
     }
 
     if (newReviewRating < 1 || newReviewRating > 5) {
-      alert("평점은 1~5 사이로 선택해주세요.");
+      alert('평점은 1~5 사이로 선택해주세요.');
       return;
     }
 
@@ -228,20 +266,21 @@ export default function BOD_15() {
       },
       {
         onSuccess: () => {
-          setNewReviewContent("");
+          setNewReviewContent('');
           setNewReviewRating(5);
           // 책 상세 정보와 리뷰 목록 갱신
-          queryClient.invalidateQueries({ queryKey: ["book-detail", actualBookId] });
-          queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
-          queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ['book-detail', actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ['book-detail-isbn', isbn] });
+          queryClient.invalidateQueries({ queryKey: ['book-reviews', actualBookId] });
           // 리뷰 작성 후 게시글 작성 페이지로 이동
           navigate(`/boards/write?category=REVIEW&bookId=${actualBookId}`);
         },
         onError: (error: any) => {
-          const errorMessage = error.response?.data?.message || error.message || "리뷰 작성에 실패했습니다.";
+          const errorMessage =
+            error.response?.data?.message || error.message || '리뷰 작성에 실패했습니다.';
           alert(errorMessage);
         },
-      }
+      },
     );
   };
 
@@ -253,13 +292,13 @@ export default function BOD_15() {
 
   const handleCancelEditReview = () => {
     setEditingReviewId(null);
-    setEditReviewContent("");
+    setEditReviewContent('');
     setEditReviewRating(5);
   };
 
   const handleUpdateReview = (reviewId: string) => {
     if (!actualBookId || !editReviewContent.trim()) {
-      alert("리뷰 내용을 입력해주세요.");
+      alert('리뷰 내용을 입력해주세요.');
       return;
     }
 
@@ -273,23 +312,23 @@ export default function BOD_15() {
       {
         onSuccess: () => {
           setEditingReviewId(null);
-          setEditReviewContent("");
+          setEditReviewContent('');
           setEditReviewRating(5);
           // 책 상세 정보와 리뷰 목록 갱신
-          queryClient.invalidateQueries({ queryKey: ["book-detail", actualBookId] });
-          queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
-          queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ['book-detail', actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ['book-detail-isbn', isbn] });
+          queryClient.invalidateQueries({ queryKey: ['book-reviews', actualBookId] });
         },
         onError: () => {
-          alert("리뷰 수정에 실패했습니다.");
+          alert('리뷰 수정에 실패했습니다.');
         },
-      }
+      },
     );
   };
 
   const handleDeleteReview = (reviewId: string) => {
     if (!actualBookId) return;
-    if (!confirm("리뷰를 삭제하시겠습니까?")) return;
+    if (!confirm('리뷰를 삭제하시겠습니까?')) return;
 
     deleteReviewMutation.mutate(
       {
@@ -299,14 +338,14 @@ export default function BOD_15() {
       {
         onSuccess: () => {
           // 책 상세 정보와 리뷰 목록 갱신
-          queryClient.invalidateQueries({ queryKey: ["book-detail", actualBookId] });
-          queryClient.invalidateQueries({ queryKey: ["book-detail-isbn", isbn] });
-          queryClient.invalidateQueries({ queryKey: ["book-reviews", actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ['book-detail', actualBookId] });
+          queryClient.invalidateQueries({ queryKey: ['book-detail-isbn', isbn] });
+          queryClient.invalidateQueries({ queryKey: ['book-reviews', actualBookId] });
         },
         onError: () => {
-          alert("리뷰 삭제에 실패했습니다.");
+          alert('리뷰 삭제에 실패했습니다.');
         },
-      }
+      },
     );
   };
 
@@ -344,9 +383,9 @@ export default function BOD_15() {
     return (
       <div
         className="w-full min-h-screen p-8 flex items-center justify-center"
-        style={{ background: "#FFF9F2" }}
+        style={{ background: '#FFF9F2' }}
       >
-        <div className="text-2xl" style={{ color: "black" }}>
+        <div className="text-2xl" style={{ color: 'black' }}>
           로딩 중...
         </div>
       </div>
@@ -357,9 +396,9 @@ export default function BOD_15() {
     return (
       <div
         className="w-full min-h-screen p-8 flex items-center justify-center"
-        style={{ background: "#FFF9F2" }}
+        style={{ background: '#FFF9F2' }}
       >
-        <div className="text-2xl" style={{ color: "black" }}>
+        <div className="text-2xl" style={{ color: 'black' }}>
           책 정보를 찾을 수 없습니다.
         </div>
       </div>
@@ -370,15 +409,15 @@ export default function BOD_15() {
   const relatedPosts = relatedPostsData?.items || [];
 
   return (
-    <div className="w-full min-h-screen p-8" style={{ background: "#FFF9F2" }}>
+    <div className="w-full min-h-screen p-8" style={{ background: '#FFF9F2' }}>
       <div className="max-w-[1400px] mx-auto">
         {/* 검색바 */}
         <div className="mb-12">
           <div
             className="flex items-center gap-4 px-6 py-6 rounded-full"
             style={{
-              background: "white",
-              border: "1px solid #D9D9D9",
+              background: 'white',
+              border: '1px solid #D9D9D9',
             }}
           >
             <input
@@ -386,11 +425,11 @@ export default function BOD_15() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleSearch();
+                if (e.key === 'Enter') handleSearch();
               }}
               placeholder="찾고싶은 제목, 저자명을 입력해주세요"
               className="flex-1 outline-none text-2xl"
-              style={{ color: "#1E1E1E" }}
+              style={{ color: '#1E1E1E' }}
             />
             <button
               onClick={handleSearch}
@@ -424,9 +463,9 @@ export default function BOD_15() {
             ) : (
               <div
                 className="w-full h-full flex items-center justify-center"
-                style={{ background: "#D9D9D9" }}
+                style={{ background: '#D9D9D9' }}
               >
-                <span style={{ color: "black", fontSize: "24px" }}>No Image</span>
+                <span style={{ color: 'black', fontSize: '24px' }}>No Image</span>
               </div>
             )}
           </div>
@@ -434,7 +473,7 @@ export default function BOD_15() {
           {/* 책 정보 */}
           <div className="flex-1">
             <div className="flex items-center gap-4 mb-4">
-              <h1 className="text-3xl font-bold" style={{ color: "black" }}>
+              <h1 className="text-3xl font-bold" style={{ color: 'black' }}>
                 {decodeHtmlEntities(book.bookname)}
               </h1>
               {/* 위시리스트 하트 버튼 */}
@@ -442,14 +481,14 @@ export default function BOD_15() {
                 onClick={handleToggleWishlist}
                 disabled={wishlistMutation.isPending}
                 className="p-2 rounded-full hover:bg-gray-200 transition-colors"
-                aria-label={book.isWishlisted ? "위시리스트에서 제거" : "위시리스트에 추가"}
+                aria-label={book.isWishlisted ? '위시리스트에서 제거' : '위시리스트에 추가'}
               >
-                <span className="text-3xl">{book.isWishlisted ? "❤️" : "🤍"}</span>
+                <span className="text-3xl">{book.isWishlisted ? '❤️' : '🤍'}</span>
               </button>
             </div>
 
             {/* 작가 및 출판사 */}
-            <div className="text-xl mb-4" style={{ color: "#6B4F3F" }}>
+            <div className="text-xl mb-4" style={{ color: '#6B4F3F' }}>
               {book.authors && <span>{decodeHtmlEntities(book.authors)}</span>}
               {book.authors && book.publisher && <span className="mx-2">|</span>}
               {book.publisher && <span>{decodeHtmlEntities(book.publisher)}</span>}
@@ -457,15 +496,15 @@ export default function BOD_15() {
             </div>
 
             {/* 평점 */}
-            <div className="text-2xl mb-4" style={{ color: "black" }}>
-              평점: {book.averageRating ? book.averageRating.toFixed(2) : "평가 없음"}{" "}
+            <div className="text-2xl mb-4" style={{ color: 'black' }}>
+              평점: {book.averageRating ? book.averageRating.toFixed(2) : '평가 없음'}{' '}
               {book.reviewCount > 0 && <span className="text-lg">({book.reviewCount}개 리뷰)</span>}
             </div>
 
             {/* 도서관 대출 가능 여부 */}
             {!isLoadingAvailability && availability && availability.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-xl font-semibold mb-2" style={{ color: "#6B4F3F" }}>
+                <h3 className="text-xl font-semibold mb-2" style={{ color: '#6B4F3F' }}>
                   선호 도서관 대출 가능 여부
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -477,19 +516,19 @@ export default function BOD_15() {
 
                     if (!lib.hasBook) {
                       // 책이 해당 도서관에 없음
-                      background = "#D9D9D9";
-                      color = "#6B4F3F";
-                      statusText = "책이 해당 도서관에 없습니다";
+                      background = '#D9D9D9';
+                      color = '#6B4F3F';
+                      statusText = '책이 해당 도서관에 없습니다';
                     } else if (lib.loanAvailable) {
                       // 대출 가능
-                      background = "#90BE6D";
-                      color = "white";
-                      statusText = "대출 가능";
+                      background = '#90BE6D';
+                      color = 'white';
+                      statusText = '대출 가능';
                     } else {
                       // 대출 중
-                      background = "#F4A261";
-                      color = "white";
-                      statusText = "대출 중";
+                      background = '#F4A261';
+                      color = 'white';
+                      statusText = '대출 중';
                     }
 
                     return (
@@ -512,36 +551,36 @@ export default function BOD_15() {
         </div>
 
         {/* 탭 네비게이션 */}
-        <div className="flex gap-4 mb-8 border-b-2" style={{ borderColor: "#E9E5DC" }}>
+        <div className="flex gap-4 mb-8 border-b-2" style={{ borderColor: '#E9E5DC' }}>
           <button
-            onClick={() => setActiveTab("summary")}
+            onClick={() => setActiveTab('summary')}
             className="px-6 py-3 text-xl font-semibold transition"
             style={{
-              color: activeTab === "summary" ? "#6B4F3F" : "#999",
-              borderBottom: activeTab === "summary" ? "3px solid #6B4F3F" : "none",
-              marginBottom: "-2px",
+              color: activeTab === 'summary' ? '#6B4F3F' : '#999',
+              borderBottom: activeTab === 'summary' ? '3px solid #6B4F3F' : 'none',
+              marginBottom: '-2px',
             }}
           >
             요약
           </button>
           <button
-            onClick={() => setActiveTab("reviews")}
+            onClick={() => setActiveTab('reviews')}
             className="px-6 py-3 text-xl font-semibold transition"
             style={{
-              color: activeTab === "reviews" ? "#6B4F3F" : "#999",
-              borderBottom: activeTab === "reviews" ? "3px solid #6B4F3F" : "none",
-              marginBottom: "-2px",
+              color: activeTab === 'reviews' ? '#6B4F3F' : '#999',
+              borderBottom: activeTab === 'reviews' ? '3px solid #6B4F3F' : 'none',
+              marginBottom: '-2px',
             }}
           >
             리뷰
           </button>
           <button
-            onClick={() => setActiveTab("highlights")}
+            onClick={() => setActiveTab('highlights')}
             className="px-6 py-3 text-xl font-semibold transition"
             style={{
-              color: activeTab === "highlights" ? "#6B4F3F" : "#999",
-              borderBottom: activeTab === "highlights" ? "3px solid #6B4F3F" : "none",
-              marginBottom: "-2px",
+              color: activeTab === 'highlights' ? '#6B4F3F' : '#999',
+              borderBottom: activeTab === 'highlights' ? '3px solid #6B4F3F' : 'none',
+              marginBottom: '-2px',
             }}
           >
             하이라이트
@@ -549,44 +588,55 @@ export default function BOD_15() {
         </div>
 
         {/* 요약 탭 */}
-        {activeTab === "summary" && (
+        {activeTab === 'summary' && (
           <div>
             {/* 책 설명 */}
-            <p className="text-xl mb-8 whitespace-pre-wrap" style={{ color: "black" }}>
+            <p className="text-xl mb-8 whitespace-pre-wrap" style={{ color: 'black' }}>
               {decodeHtmlEntities(book.description)}
             </p>
 
             {/* 연관 게시글 섹션 */}
             <div>
-              <h2 className="text-2xl font-bold mb-6" style={{ color: "black" }}>
+              <h2 className="text-2xl font-bold mb-6" style={{ color: 'black' }}>
                 이 책과 관련된 게시글
               </h2>
-              {isLoadingPosts ? (
-                <div className="text-xl" style={{ color: "#999" }}>
+              {!actualBookId ? (
+                <div className="text-xl text-center py-12" style={{ color: '#999' }}>
+                  책 정보를 불러오는 중...
+                </div>
+              ) : isLoadingPosts ? (
+                <div className="text-xl" style={{ color: '#999' }}>
                   로딩 중...
+                </div>
+              ) : relatedPostsError ? (
+                <div className="text-xl text-center py-12" style={{ color: '#F4A261' }}>
+                  연관 게시글을 불러오는 중 오류가 발생했습니다.
                 </div>
               ) : relatedPosts.length > 0 ? (
                 <div className="space-y-4">
                   {relatedPosts.map((post) => (
                     <div
-                      key={post.id}
-                      onClick={() => handlePostClick(post.id)}
+                      key={post.postId}
+                      onClick={() => handlePostClick(post.postId)}
                       className="p-5 rounded cursor-pointer hover:opacity-80 transition"
-                      style={{ background: "#E9E5DC" }}
+                      style={{ background: '#E9E5DC' }}
                     >
-                      <h3 className="text-xl font-bold mb-2" style={{ color: "black" }}>
+                      <h3 className="text-xl font-bold mb-2" style={{ color: 'black' }}>
                         {decodeHtmlEntities(post.title)}
                       </h3>
-                      <div className="flex items-center gap-4 text-base" style={{ color: "#6B4F3F" }}>
+                      <div
+                        className="flex items-center gap-4 text-base"
+                        style={{ color: '#6B4F3F' }}
+                      >
                         <span>{post.authorNickname}</span>
-                        <span>조회 {post.viewCount}</span>
+                        <span>조회 {post.hit}</span>
                         <span>좋아요 {post.likeCount}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-xl text-center py-12" style={{ color: "#999" }}>
+                <div className="text-xl text-center py-12" style={{ color: '#999' }}>
                   관련 게시글이 없습니다.
                 </div>
               )}
@@ -595,11 +645,11 @@ export default function BOD_15() {
         )}
 
         {/* 리뷰 탭 */}
-        {activeTab === "reviews" && (
+        {activeTab === 'reviews' && (
           <div>
             {/* 리뷰 목록 */}
             {isLoadingReviews ? (
-              <div className="text-xl mb-6" style={{ color: "#999" }}>
+              <div className="text-xl mb-6" style={{ color: '#999' }}>
                 로딩 중...
               </div>
             ) : Array.isArray(reviews) && reviews.length > 0 ? (
@@ -608,14 +658,14 @@ export default function BOD_15() {
                   <div
                     key={review.reviewId}
                     className="p-5 rounded"
-                    style={{ background: "#E9E5DC" }}
+                    style={{ background: '#E9E5DC' }}
                   >
                     {editingReviewId === review.reviewId ? (
                       // 수정 모드
                       <div>
                         <div className="mb-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
+                            <span className="text-base font-semibold" style={{ color: '#6B4F3F' }}>
                               평점:
                             </span>
                             <select
@@ -623,14 +673,14 @@ export default function BOD_15() {
                               onChange={(e) => setEditReviewRating(parseInt(e.target.value))}
                               className="px-3 py-1 rounded outline-none text-base"
                               style={{
-                                background: "white",
-                                border: "1px solid #E9E5DC",
-                                color: "#6B4F3F",
+                                background: 'white',
+                                border: '1px solid #E9E5DC',
+                                color: '#6B4F3F',
                               }}
                             >
                               {[5, 4, 3, 2, 1].map((rating) => (
                                 <option key={rating} value={rating}>
-                                  {"⭐".repeat(rating)} ({rating}점)
+                                  {'⭐'.repeat(rating)} ({rating}점)
                                 </option>
                               ))}
                             </select>
@@ -643,10 +693,10 @@ export default function BOD_15() {
                           className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
                           rows={4}
                           style={{
-                            color: "#6B4F3F",
-                            fontSize: "18px",
-                            background: "white",
-                            border: "1px solid #E9E5DC",
+                            color: '#6B4F3F',
+                            fontSize: '18px',
+                            background: 'white',
+                            border: '1px solid #E9E5DC',
                           }}
                         />
                         <div className="flex gap-2">
@@ -654,14 +704,14 @@ export default function BOD_15() {
                             onClick={() => handleUpdateReview(review.reviewId)}
                             disabled={updateReviewMutation.isPending}
                             className="px-4 py-2 rounded text-base hover:opacity-90 transition"
-                            style={{ background: "#90BE6D", color: "white", fontWeight: 600 }}
+                            style={{ background: '#90BE6D', color: 'white', fontWeight: 600 }}
                           >
-                            {updateReviewMutation.isPending ? "수정 중..." : "수정 완료"}
+                            {updateReviewMutation.isPending ? '수정 중...' : '수정 완료'}
                           </button>
                           <button
                             onClick={handleCancelEditReview}
                             className="px-4 py-2 rounded text-base hover:opacity-90 transition"
-                            style={{ background: "#999", color: "white" }}
+                            style={{ background: '#999', color: 'white' }}
                           >
                             취소
                           </button>
@@ -673,19 +723,26 @@ export default function BOD_15() {
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <span className="text-base font-semibold mr-3" style={{ color: "#6B4F3F" }}>
+                              <span
+                                className="text-base font-semibold mr-3"
+                                style={{ color: '#6B4F3F' }}
+                              >
                                 {review.authorNickname}
                               </span>
-                              <span className="text-xl" style={{ color: "#F4A261" }}>
-                                {"⭐".repeat(review.rating)}
+                              <span className="text-xl" style={{ color: '#F4A261' }}>
+                                {'⭐'.repeat(review.rating)}
                               </span>
-                              <span className="text-sm" style={{ color: "#999" }}>
+                              <span className="text-sm" style={{ color: '#999' }}>
                                 {new Date(review.createdAt).toLocaleDateString()}
                               </span>
                             </div>
                             <div>
-                              <p className="text-lg whitespace-pre-wrap" style={{ color: "#1E1E1E" }}>
-                                {review.content.length > 100 && !expandedReviews.has(review.reviewId)
+                              <p
+                                className="text-lg whitespace-pre-wrap"
+                                style={{ color: '#1E1E1E' }}
+                              >
+                                {review.content.length > 100 &&
+                                !expandedReviews.has(review.reviewId)
                                   ? `${decodeHtmlEntities(review.content.substring(0, 100))}...`
                                   : decodeHtmlEntities(review.content)}
                               </p>
@@ -693,9 +750,9 @@ export default function BOD_15() {
                                 <button
                                   onClick={() => toggleReviewExpand(review.reviewId)}
                                   className="mt-2 text-sm hover:underline"
-                                  style={{ color: "#6B4F3F" }}
+                                  style={{ color: '#6B4F3F' }}
                                 >
-                                  {expandedReviews.has(review.reviewId) ? "접기" : "펼치기"}
+                                  {expandedReviews.has(review.reviewId) ? '접기' : '펼치기'}
                                 </button>
                               )}
                             </div>
@@ -704,17 +761,21 @@ export default function BOD_15() {
                             <div className="ml-4 flex gap-2">
                               <button
                                 onClick={() =>
-                                  handleStartEditReview(review.reviewId, review.content, review.rating)
+                                  handleStartEditReview(
+                                    review.reviewId,
+                                    review.content,
+                                    review.rating,
+                                  )
                                 }
                                 className="px-3 py-1 rounded hover:opacity-70 transition text-base"
-                                style={{ background: "#90BE6D", color: "white" }}
+                                style={{ background: '#90BE6D', color: 'white' }}
                               >
                                 수정
                               </button>
                               <button
                                 onClick={() => handleDeleteReview(review.reviewId)}
                                 className="px-3 py-1 rounded hover:opacity-70 transition text-base"
-                                style={{ background: "#F4A261", color: "white" }}
+                                style={{ background: '#F4A261', color: 'white' }}
                               >
                                 삭제
                               </button>
@@ -727,19 +788,22 @@ export default function BOD_15() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-xl mb-6" style={{ color: "#999" }}>
+              <div className="text-center py-8 text-xl mb-6" style={{ color: '#999' }}>
                 아직 작성된 리뷰가 없습니다.
               </div>
             )}
 
             {/* 리뷰 작성 폼 */}
             {isAuthenticated ? (
-              <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
-                <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
+              <div className="p-6 rounded" style={{ background: '#E9E5DC' }}>
+                <h3 className="text-xl font-semibold mb-4" style={{ color: 'black' }}>
                   리뷰 작성
                 </h3>
                 <div className="mb-3">
-                  <label className="text-base font-semibold mb-2 block" style={{ color: "#6B4F3F" }}>
+                  <label
+                    className="text-base font-semibold mb-2 block"
+                    style={{ color: '#6B4F3F' }}
+                  >
                     평점
                   </label>
                   <select
@@ -747,14 +811,14 @@ export default function BOD_15() {
                     onChange={(e) => setNewReviewRating(parseInt(e.target.value))}
                     className="px-4 py-2 rounded text-lg outline-none"
                     style={{
-                      background: "white",
-                      border: "1px solid #E9E5DC",
-                      color: "#6B4F3F",
+                      background: 'white',
+                      border: '1px solid #E9E5DC',
+                      color: '#6B4F3F',
                     }}
                   >
                     {[5, 4, 3, 2, 1].map((rating) => (
                       <option key={rating} value={rating}>
-                        {"⭐".repeat(rating)} ({rating}점)
+                        {'⭐'.repeat(rating)} ({rating}점)
                       </option>
                     ))}
                   </select>
@@ -766,10 +830,10 @@ export default function BOD_15() {
                   className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
                   rows={4}
                   style={{
-                    color: "#6B4F3F",
-                    fontSize: "18px",
-                    background: "white",
-                    border: "1px solid #E9E5DC",
+                    color: '#6B4F3F',
+                    fontSize: '18px',
+                    background: 'white',
+                    border: '1px solid #E9E5DC',
                   }}
                 />
                 <button
@@ -777,25 +841,25 @@ export default function BOD_15() {
                   disabled={createReviewMutation.isPending}
                   className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
                   style={{
-                    background: "#90BE6D",
-                    color: "white",
+                    background: '#90BE6D',
+                    color: 'white',
                     fontWeight: 600,
                   }}
                 >
-                  {createReviewMutation.isPending ? "작성 중..." : "리뷰 작성"}
+                  {createReviewMutation.isPending ? '작성 중...' : '리뷰 작성'}
                 </button>
               </div>
             ) : (
-              <div className="p-6 rounded text-center" style={{ background: "#E9E5DC" }}>
-                <p className="text-lg mb-4" style={{ color: "#6B4F3F" }}>
+              <div className="p-6 rounded text-center" style={{ background: '#E9E5DC' }}>
+                <p className="text-lg mb-4" style={{ color: '#6B4F3F' }}>
                   리뷰를 작성하려면 로그인이 필요합니다.
                 </p>
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate('/login')}
                   className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
                   style={{
-                    background: "#90BE6D",
-                    color: "white",
+                    background: '#90BE6D',
+                    color: 'white',
                     fontWeight: 600,
                   }}
                 >
@@ -807,11 +871,11 @@ export default function BOD_15() {
         )}
 
         {/* 하이라이트 탭 */}
-        {activeTab === "highlights" && (
+        {activeTab === 'highlights' && (
           <div>
             {/* 하이라이트 목록 */}
             {isLoadingHighlights ? (
-              <div className="text-xl mb-6" style={{ color: "#999" }}>
+              <div className="text-xl mb-6" style={{ color: '#999' }}>
                 로딩 중...
               </div>
             ) : highlights.length > 0 ? (
@@ -820,7 +884,7 @@ export default function BOD_15() {
                   <div
                     key={highlight.highlightId}
                     className="p-5 rounded"
-                    style={{ background: "#E9E5DC" }}
+                    style={{ background: '#E9E5DC' }}
                   >
                     {editingHighlightId === highlight.highlightId ? (
                       // 수정 모드
@@ -832,30 +896,32 @@ export default function BOD_15() {
                           className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
                           rows={3}
                           style={{
-                            color: "#6B4F3F",
-                            fontSize: "18px",
-                            background: "white",
-                            border: "1px solid #E9E5DC",
+                            color: '#6B4F3F',
+                            fontSize: '18px',
+                            background: 'white',
+                            border: '1px solid #E9E5DC',
                           }}
                         />
                         <div className="flex items-center gap-3 mb-3">
-                          <label className="text-base font-semibold" style={{ color: "#6B4F3F" }}>
+                          <label className="text-base font-semibold" style={{ color: '#6B4F3F' }}>
                             페이지 번호 (선택):
                           </label>
                           <input
                             type="number"
-                            value={editHighlightPage || ""}
+                            value={editHighlightPage || ''}
                             onChange={(e) =>
-                              setEditHighlightPage(e.target.value ? parseInt(e.target.value) : undefined)
+                              setEditHighlightPage(
+                                e.target.value ? parseInt(e.target.value) : undefined,
+                              )
                             }
                             placeholder="예: 123"
                             className="px-3 py-2 rounded outline-none"
                             style={{
-                              width: "120px",
-                              color: "#6B4F3F",
-                              fontSize: "16px",
-                              background: "white",
-                              border: "1px solid #E9E5DC",
+                              width: '120px',
+                              color: '#6B4F3F',
+                              fontSize: '16px',
+                              background: 'white',
+                              border: '1px solid #E9E5DC',
                             }}
                           />
                         </div>
@@ -864,14 +930,14 @@ export default function BOD_15() {
                             onClick={() => handleUpdateHighlight(highlight.highlightId)}
                             disabled={updateHighlightMutation.isPending}
                             className="px-4 py-2 rounded text-base hover:opacity-90 transition"
-                            style={{ background: "#90BE6D", color: "white", fontWeight: 600 }}
+                            style={{ background: '#90BE6D', color: 'white', fontWeight: 600 }}
                           >
-                            {updateHighlightMutation.isPending ? "수정 중..." : "수정 완료"}
+                            {updateHighlightMutation.isPending ? '수정 중...' : '수정 완료'}
                           </button>
                           <button
                             onClick={handleCancelEditHighlight}
                             className="px-4 py-2 rounded text-base hover:opacity-90 transition"
-                            style={{ background: "#999", color: "white" }}
+                            style={{ background: '#999', color: 'white' }}
                           >
                             취소
                           </button>
@@ -881,23 +947,29 @@ export default function BOD_15() {
                       // 보기 모드
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2 text-base" style={{ color: "#6B4F3F" }}>
+                          <div
+                            className="flex items-center gap-3 mb-2 text-base"
+                            style={{ color: '#6B4F3F' }}
+                          >
                             <span className="font-semibold mr-3">{highlight.authorNickname}</span>
                             {highlight.pageNumber && <span>p.{highlight.pageNumber}</span>}
                           </div>
                           <div>
-                            <p className="text-xl mb-2" style={{ color: "#1E1E1E" }}>
-                              "{highlight.content.length > 100 && !expandedHighlights.has(highlight.highlightId)
+                            <p className="text-xl mb-2" style={{ color: '#1E1E1E' }}>
+                              "
+                              {highlight.content.length > 100 &&
+                              !expandedHighlights.has(highlight.highlightId)
                                 ? `${decodeHtmlEntities(highlight.content.substring(0, 100))}...`
-                                : decodeHtmlEntities(highlight.content)}"
+                                : decodeHtmlEntities(highlight.content)}
+                              "
                             </p>
                             {highlight.content.length > 100 && (
                               <button
                                 onClick={() => toggleHighlightExpand(highlight.highlightId)}
                                 className="text-sm hover:underline"
-                                style={{ color: "#6B4F3F" }}
+                                style={{ color: '#6B4F3F' }}
                               >
-                                {expandedHighlights.has(highlight.highlightId) ? "접기" : "펼치기"}
+                                {expandedHighlights.has(highlight.highlightId) ? '접기' : '펼치기'}
                               </button>
                             )}
                           </div>
@@ -909,18 +981,18 @@ export default function BOD_15() {
                                 handleStartEditHighlight(
                                   highlight.highlightId,
                                   highlight.content,
-                                  highlight.pageNumber
+                                  highlight.pageNumber,
                                 )
                               }
                               className="px-3 py-1 rounded hover:opacity-70 transition text-base"
-                              style={{ background: "#90BE6D", color: "white" }}
+                              style={{ background: '#90BE6D', color: 'white' }}
                             >
                               수정
                             </button>
                             <button
                               onClick={() => handleDeleteHighlight(highlight.highlightId)}
                               className="px-3 py-1 rounded hover:opacity-70 transition text-base"
-                              style={{ background: "#F4A261", color: "white" }}
+                              style={{ background: '#F4A261', color: 'white' }}
                             >
                               삭제
                             </button>
@@ -932,15 +1004,15 @@ export default function BOD_15() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-xl mb-6" style={{ color: "#999" }}>
+              <div className="text-center py-8 text-xl mb-6" style={{ color: '#999' }}>
                 아직 추가된 하이라이트가 없습니다.
               </div>
             )}
 
             {/* 하이라이트 입력 */}
             {isAuthenticated ? (
-              <div className="p-6 rounded" style={{ background: "#E9E5DC" }}>
-                <h3 className="text-xl font-semibold mb-4" style={{ color: "black" }}>
+              <div className="p-6 rounded" style={{ background: '#E9E5DC' }}>
+                <h3 className="text-xl font-semibold mb-4" style={{ color: 'black' }}>
                   하이라이트 추가
                 </h3>
                 <textarea
@@ -950,26 +1022,26 @@ export default function BOD_15() {
                   className="w-full px-4 py-3 mb-3 rounded outline-none resize-none"
                   rows={3}
                   style={{
-                    color: "#6B4F3F",
-                    fontSize: "18px",
-                    background: "white",
-                    border: "1px solid #E9E5DC",
+                    color: '#6B4F3F',
+                    fontSize: '18px',
+                    background: 'white',
+                    border: '1px solid #E9E5DC',
                   }}
                 />
                 <div className="flex gap-3 items-center">
                   <input
                     type="number"
-                    value={newHighlightPage || ""}
+                    value={newHighlightPage || ''}
                     onChange={(e) =>
                       setNewHighlightPage(e.target.value ? parseInt(e.target.value) : undefined)
                     }
                     placeholder="페이지 번호 (선택)"
                     className="px-4 py-2 rounded text-lg outline-none"
                     style={{
-                      width: "200px",
-                      background: "white",
-                      border: "1px solid #E9E5DC",
-                      color: "#6B4F3F",
+                      width: '200px',
+                      background: 'white',
+                      border: '1px solid #E9E5DC',
+                      color: '#6B4F3F',
                     }}
                   />
                   <button
@@ -977,26 +1049,26 @@ export default function BOD_15() {
                     disabled={createHighlightMutation.isPending}
                     className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
                     style={{
-                      background: "#90BE6D",
-                      color: "white",
+                      background: '#90BE6D',
+                      color: 'white',
                       fontWeight: 600,
                     }}
                   >
-                    {createHighlightMutation.isPending ? "추가 중..." : "추가"}
+                    {createHighlightMutation.isPending ? '추가 중...' : '추가'}
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="p-6 rounded text-center" style={{ background: "#E9E5DC" }}>
-                <p className="text-lg mb-4" style={{ color: "#6B4F3F" }}>
+              <div className="p-6 rounded text-center" style={{ background: '#E9E5DC' }}>
+                <p className="text-lg mb-4" style={{ color: '#6B4F3F' }}>
                   하이라이트를 추가하려면 로그인이 필요합니다.
                 </p>
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate('/login')}
                   className="px-6 py-2 rounded text-lg hover:opacity-90 transition"
                   style={{
-                    background: "#90BE6D",
-                    color: "white",
+                    background: '#90BE6D',
+                    color: 'white',
                     fontWeight: 600,
                   }}
                 >
