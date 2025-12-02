@@ -1615,7 +1615,8 @@ function ChatWindow({
           const isImageMessage = m.type === "IMAGE" && attachment?.url;
           
           // 로컬에서 생성한 메시지인지 확인 (user-ai- 또는 ai-로 시작하는 ID)
-          // 로컬 메시지는 Date.now()로 생성되므로 이미 로컬 시간, 9시간을 더하면 안 됨
+          // 참고: Date.now()는 UTC 타임스탬프이지만, new Date()로 변환하면 브라우저가 자동으로 로컬 시간으로 변환
+          // 하지만 서버 메시지도 동일한 방식으로 처리하므로 일관성을 위해 모두 동일하게 처리
           const isLocalMessage = m.id.startsWith('user-ai-') || m.id.startsWith('ai-');
           
           // 디버그 로그
@@ -1940,10 +1941,7 @@ function ChatWindow({
                     )}>
                       {renderMessageContent()}
                       <div className="mt-1 text-[10px] opacity-80">
-                        {isLocalMessage 
-                          ? new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-                          : new Date(m.createdAt + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-                        }
+                        {new Date(m.createdAt + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true })}
                       </div>
                     </div>
                   </>
@@ -1966,10 +1964,7 @@ function ChatWindow({
                       )}
                       {renderMessageContent()}
                       <div className="mt-1 text-[10px] text-[color:var(--chatdock-fg-muted)]">
-                        {isLocalMessage 
-                          ? new Date(m.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-                          : new Date(m.createdAt + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-                        }
+                        {new Date(m.createdAt + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true })}
                       </div>
                     </div>
 
