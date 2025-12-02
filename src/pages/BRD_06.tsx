@@ -351,7 +351,8 @@ export const BRD_06 = (): React.JSX.Element => {
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
         // tempId는 attachmentIds가 있을 때만 전송 (파일 삭제 시 400 에러 방지)
-        ...(tempUploadId && attachmentIds.length > 0 && { tempId: tempUploadId }),
+        // 큰 숫자는 정밀도 손실을 방지하기 위해 문자열로 변환
+        ...(tempUploadId && attachmentIds.length > 0 && { tempId: String(tempUploadId) }),
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,
@@ -377,7 +378,8 @@ export const BRD_06 = (): React.JSX.Element => {
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
         // tempId는 attachmentIds가 있을 때만 전송 (파일 삭제 시 400 에러 방지)
-        ...(tempUploadId && attachmentIds.length > 0 && { tempId: tempUploadId }),
+        // 큰 숫자는 정밀도 손실을 방지하기 위해 문자열로 변환
+        ...(tempUploadId && attachmentIds.length > 0 && { tempId: String(tempUploadId) }),
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,
