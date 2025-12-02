@@ -19,7 +19,6 @@ import {
   PaginatedResponse,
   PostListItem,
 } from "@/types";
-import { SpringPage } from "@/types/spring";
 
 /**
  * 책 검색
