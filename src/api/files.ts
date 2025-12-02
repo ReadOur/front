@@ -53,7 +53,7 @@ export interface TempUploadResponseFile {
 }
 
 export interface TempUploadResponse {
-  tempId: string;
+  tempId: string | number; // API가 number로 반환할 수 있음 (큰 숫자 주의)
   files: TempUploadResponseFile[];
 }
 
@@ -133,12 +133,17 @@ export async function uploadFiles(params: UploadFilesParams): Promise<Attachment
 }
 
 /**
+ * 임시 파일 업로드 응답 (프론트엔드에서 사용)
+ */
+export interface TempUploadResult {
+  tempId: string; // 항상 문자열로 반환 (큰 숫자 정밀도 손실 방지)
+  attachments: Attachment[];
+}
+
+/**
  * 임시 파일 업로드 (게시글 초안용)
  */
-export async function uploadTempFiles(params: UploadTempFilesParams): Promise<{
-  tempId: string;
-  attachments: Attachment[];
-}> {
+export async function uploadTempFiles(params: UploadTempFilesParams): Promise<TempUploadResult> {
   const { files, tempId, onProgress } = params;
   const formData = new FormData();
 
@@ -160,6 +165,13 @@ export async function uploadTempFiles(params: UploadTempFilesParams): Promise<{
       }
     }
   );
+
+  console.log('[uploadTempFiles] API 원본 응답:', {
+    rawResult: result,
+    tempIdType: typeof result.tempId,
+    tempIdValue: result.tempId,
+    tempIdAsString: String(result.tempId),
+  });
 
   const attachments = (result.files || []).map((file) => {
     // 백엔드 응답이 id 또는 fileId를 사용할 수 있으므로 둘 다 확인
@@ -183,7 +195,15 @@ export async function uploadTempFiles(params: UploadTempFilesParams): Promise<{
     };
   });
 
-  return { tempId: result.tempId, attachments };
+  // tempId를 문자열로 변환하여 반환 (큰 숫자 정밀도 손실 방지)
+  const tempIdString = String(result.tempId);
+  console.log('[uploadTempFiles] 반환할 tempId:', {
+    original: result.tempId,
+    converted: tempIdString,
+    isSame: String(result.tempId) === tempIdString,
+  });
+
+  return { tempId: tempIdString, attachments };
 }
 
 /**

@@ -208,12 +208,15 @@ export const BRD_06 = (): React.JSX.Element => {
 
       console.log('[BRD_06] 인라인 이미지 업로드 성공:', {
         tempId: nextTempId,
+        tempIdType: typeof nextTempId,
         uploaded: uploaded,
         uploadedIds: uploaded.map((a) => a.id),
         previousTempId: tempUploadId,
+        previousTempIdType: typeof tempUploadId,
       });
 
       setTempUploadId(nextTempId);
+      console.log('[BRD_06] setTempUploadId 호출 완료:', nextTempId);
       setInlineUploads((prev) => {
         const merged = [...prev];
         uploaded.forEach((att) => {
@@ -338,6 +341,8 @@ export const BRD_06 = (): React.JSX.Element => {
       inlineAttachmentIds: inlineAttachmentIds,
       finalAttachmentIds: attachmentIds,
       tempUploadId: tempUploadId,
+      tempUploadIdType: typeof tempUploadId,
+      tempUploadIdAsString: String(tempUploadId),
     });
 
     if (isEditMode && postId) {
@@ -392,6 +397,8 @@ export const BRD_06 = (): React.JSX.Element => {
         attachmentIds: createData.attachmentIds,
         attachmentIdsLength: createData.attachmentIds?.length || 0,
         tempId: createData.tempId,
+        tempIdType: typeof createData.tempId,
+        tempIdInPayload: JSON.stringify({ tempId: createData.tempId }),
       });
       createPostMutation.mutate(createData);
     }
