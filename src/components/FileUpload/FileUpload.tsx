@@ -100,11 +100,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           },
         });
 
+        console.log('[FileUpload] uploadTempFiles 응답 받음:', {
+          nextTempId: nextTempId,
+          nextTempIdType: typeof nextTempId,
+          uploadedAttachments: uploadedAttachments,
+          uploadedIds: uploadedAttachments.map((a) => a.id),
+        });
+
         // tempId 업데이트
         if (onTempIdChange && nextTempId) {
           console.log('[FileUpload] tempId 업데이트:', {
             previousTempId: tempId,
+            previousTempIdType: typeof tempId,
             newTempId: nextTempId,
+            newTempIdType: typeof nextTempId,
           });
           onTempIdChange(nextTempId);
         }
