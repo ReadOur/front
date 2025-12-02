@@ -382,9 +382,8 @@ export const BRD_06 = (): React.JSX.Element => {
         isSpoiler: isSpoiler,
         warnings: warnings.length > 0 ? warnings : undefined,
         attachmentIds: attachmentIds.length > 0 ? attachmentIds : [],
-        // tempId는 attachmentIds가 있을 때만 전송 (파일 삭제 시 400 에러 방지)
-        // 큰 숫자는 정밀도 손실을 방지하기 위해 문자열로 변환
-        ...(tempUploadId && attachmentIds.length > 0 && { tempId: String(tempUploadId) }),
+        // TEMP: tempId 전송 비활성화 (백엔드 디버깅용)
+        // ...(tempUploadId && attachmentIds.length > 0 && { tempId: String(tempUploadId) }),
         // GROUP 카테고리일 때 모임 관련 필드 추가
         ...(category === 'GROUP' && {
           recruitmentLimit: recruitmentLimit,
@@ -392,13 +391,12 @@ export const BRD_06 = (): React.JSX.Element => {
           chatRoomDescription: chatRoomDescription.trim() || safeHtml,
         }),
       };
-      console.log('[BRD_06] 작성 API 전송 데이터:', {
+      console.log('[BRD_06] 작성 API 전송 데이터 (tempId 비활성화):', {
         createData,
         attachmentIds: createData.attachmentIds,
         attachmentIdsLength: createData.attachmentIds?.length || 0,
         tempId: createData.tempId,
         tempIdType: typeof createData.tempId,
-        tempIdInPayload: JSON.stringify({ tempId: createData.tempId }),
       });
       createPostMutation.mutate(createData);
     }
