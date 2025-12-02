@@ -272,8 +272,8 @@ export default function BOD_15() {
           queryClient.invalidateQueries({ queryKey: ['book-detail', actualBookId] });
           queryClient.invalidateQueries({ queryKey: ['book-detail-isbn', isbn] });
           queryClient.invalidateQueries({ queryKey: ['book-reviews', actualBookId] });
-          // 리뷰 작성 후 게시글 작성 페이지로 이동
-          navigate(`/boards/write?category=REVIEW&bookId=${actualBookId}`);
+          // 리뷰 작성 성공 메시지 (선택사항)
+          // alert('리뷰가 작성되었습니다.');
         },
         onError: (error: any) => {
           const errorMessage =

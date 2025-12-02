@@ -53,8 +53,8 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(() => getInitialPosition());
-  const dragInfo = useRef<{ isDragging: boolean; offsetX: number; offsetY: number }>({
-    isDragging: false,
+  const [isDragging, setIsDragging] = useState(false);
+  const dragInfo = useRef<{ offsetX: number; offsetY: number }>({
     offsetX: 0,
     offsetY: 0,
   });
@@ -65,18 +65,7 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleDragStart = (e: React.PointerEvent) => {
-    dragInfo.current = {
-      isDragging: true,
-      offsetX: e.clientX - position.x,
-      offsetY: e.clientY - position.y,
-    };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handleDragMove = (e: React.PointerEvent) => {
-    if (!dragInfo.current.isDragging) return;
-
+  const handleDragMove = useCallback((e: PointerEvent) => {
     const x = e.clientX - dragInfo.current.offsetX;
     const y = e.clientY - dragInfo.current.offsetY;
 
@@ -90,16 +79,36 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
       x: Math.min(Math.max(margin, x), maxX),
       y: Math.min(Math.max(margin, y), maxY),
     });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleDragStart = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    dragInfo.current = {
+      offsetX: e.clientX - position.x,
+      offsetY: e.clientY - position.y,
+    };
+    setIsDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
-  const handleDragEnd = (e: React.PointerEvent) => {
-    dragInfo.current.isDragging = false;
-    try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // 이미 해제된 경우 무시
+  // 전역 이벤트 리스너 등록/해제
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('pointermove', handleDragMove);
+      window.addEventListener('pointerup', handleDragEnd);
+      window.addEventListener('pointercancel', handleDragEnd);
+      
+      return () => {
+        window.removeEventListener('pointermove', handleDragMove);
+        window.removeEventListener('pointerup', handleDragEnd);
+        window.removeEventListener('pointercancel', handleDragEnd);
+      };
     }
-  };
+  }, [isDragging, handleDragMove, handleDragEnd]);
 
   const handleSend = async () => {
     if (!inputText.trim() || isLoading || !onSend) return;
@@ -120,7 +129,7 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
 
   return (
     <div
-      className="fixed right-4 bottom-4 w-96 h-[600px] flex flex-col overflow-hidden rounded-[var(--radius-lg)] bg-[color:var(--chatdock-bg-elev-2)] border border-[color:var(--chatdock-border-strong)] shadow-2xl z-50"
+      className="fixed right-4 bottom-4 w-96 h-[600px] flex flex-col overflow-hidden rounded-[var(--radius-lg)] bg-[color:var(--chatdock-bg-elev-2)] border border-[color:var(--chatdock-border-strong)] shadow-2xl z-[150]"
       style={{
         maxHeight: "calc(100vh - 2rem)",
         left: position.x,
@@ -129,42 +138,13 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
         bottom: "auto",
       }}
     >
-      <button
-        className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
+      {/* 헤더 - 드래그 가능 영역 */}
+      <div 
+        className="h-14 flex items-center gap-2 px-4 border-b border-[color:var(--chatdock-border-subtle)] bg-gradient-to-r from-purple-500 to-blue-500 cursor-grab active:cursor-grabbing select-none"
         onPointerDown={handleDragStart}
-        onPointerMove={handleDragMove}
-        onPointerUp={handleDragEnd}
-        onPointerCancel={handleDragEnd}
-        aria-label="창 위치 이동"
-      />
-      <button
-        className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
-        onPointerDown={handleDragStart}
-        onPointerMove={handleDragMove}
-        onPointerUp={handleDragEnd}
-        onPointerCancel={handleDragEnd}
-        aria-label="창 위치 이동"
-      />
-      <button
-        className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
-        onPointerDown={handleDragStart}
-        onPointerMove={handleDragMove}
-        onPointerUp={handleDragEnd}
-        onPointerCancel={handleDragEnd}
-        aria-label="창 위치 이동"
-      />
-      <button
-        className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full bg-[color:var(--chatdock-bg-elev-3)] border border-[color:var(--chatdock-border-subtle)] cursor-grab active:cursor-grabbing"
-        onPointerDown={handleDragStart}
-        onPointerMove={handleDragMove}
-        onPointerUp={handleDragEnd}
-        onPointerCancel={handleDragEnd}
-        aria-label="창 위치 이동"
-      />
-      {/* 헤더 */}
-      <div className="h-14 flex items-center gap-2 px-4 border-b border-[color:var(--chatdock-border-subtle)] bg-gradient-to-r from-purple-500 to-blue-500">
-        <Sparkles className="w-5 h-5 text-white" />
-        <div className="flex-1">
+      >
+        <Sparkles className="w-5 h-5 text-white pointer-events-none" />
+        <div className="flex-1 pointer-events-none">
           <div className="text-sm font-bold text-white">AI</div>
           {threadCategory === "GROUP" && (
             <div className="text-xs text-white/80">@ai [질문생성/요점정리]</div>
@@ -172,16 +152,24 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
         </div>
         {onMinimize && (
           <button
-            onClick={onMinimize}
-            className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMinimize();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white pointer-events-auto"
             title="최소화"
           >
             <Minimize2 className="w-4 h-4" />
           </button>
         )}
         <button
-          onClick={onClose}
-          className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="w-8 h-8 grid place-items-center rounded-[var(--radius-md)] hover:bg-white/20 text-white pointer-events-auto"
           title="닫기"
         >
           <X className="w-4 h-4" />
