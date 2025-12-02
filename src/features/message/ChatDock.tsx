@@ -2785,6 +2785,7 @@ export default function ChatDock() {
   const [loadingMessages, setLoadingMessages] = useState<Record<string, boolean>>({});
   const [messageLimits, setMessageLimits] = useState<Record<string, number>>({});
   const [messageHasMore, setMessageHasMore] = useState<Record<string, boolean>>({});
+  const [messageNextBefore, setMessageNextBefore] = useState<Record<string, string | null>>({});
   const [typing] = useState<Record<string, string[]>>({});
   const [panelOpen, setPanelOpen] = useState(false); // for mobile/tap
   const [activeDropThreadId, setActiveDropThreadId] = useState<string | null>(null);
@@ -2964,7 +2965,11 @@ export default function ChatDock() {
         }));
 
         setMessageLimits((prev) => ({ ...prev, [threadId]: limit }));
-        setMessageHasMore((prev) => ({ ...prev, [threadId]: response.items.length >= limit }));
+
+        // 커서 기반 페이징: nextBefore 존재 여부로 hasMore 판단
+        const hasMore = response.paging.nextBefore !== null;
+        setMessageHasMore((prev) => ({ ...prev, [threadId]: hasMore }));
+        setMessageNextBefore((prev) => ({ ...prev, [threadId]: response.paging.nextBefore }));
 
         // 메시지 조회 성공 시 백엔드에서 자동으로 읽음 처리되므로
         // 채팅방 목록을 다시 가져와서 unreadCount 업데이트
@@ -2985,14 +2990,22 @@ export default function ChatDock() {
         return false;
       }
 
-      const currentLimit = messageLimits[threadId] ?? DEFAULT_MESSAGE_LIMIT;
-      const nextLimit = currentLimit + 40;
+      // 커서 기반 페이징: before 파라미터 사용
+      const beforeCursor = messageNextBefore[threadId];
+      if (!beforeCursor) {
+        // nextBefore가 없으면 더 이상 가져올 메시지가 없음
+        return false;
+      }
 
       setLoadingMessages((prev) => ({ ...prev, [threadId]: true }));
 
       try {
         const roomId = parseInt(threadId, 10);
-        const response = await chatService.getRoomMessages({ roomId, limit: nextLimit });
+        const response = await chatService.getRoomMessages({
+          roomId,
+          before: beforeCursor,
+          limit: 40 // 고정값으로 40개씩 로드
+        });
 
         const convertedMessages: ChatMessage[] = response.items
           .filter((msg) => !shouldHideAiMessage(msg))
@@ -3002,15 +3015,21 @@ export default function ChatDock() {
         let added = false;
         setMessages((prev) => {
           const existing = prev[threadId] || [];
-          added = convertedMessages.length > existing.length;
-          return {
-            ...prev,
-            [threadId]: convertedMessages,
-          };
+          if (convertedMessages.length > 0) {
+            added = true;
+            // 새로운 메시지를 기존 배열 앞에 추가 (prepend)
+            return {
+              ...prev,
+              [threadId]: [...convertedMessages, ...existing],
+            };
+          }
+          return prev;
         });
 
-        setMessageLimits((prev) => ({ ...prev, [threadId]: nextLimit }));
-        setMessageHasMore((prev) => ({ ...prev, [threadId]: response.items.length >= nextLimit }));
+        // 다음 페이지 커서 업데이트
+        const hasMore = response.paging.nextBefore !== null;
+        setMessageHasMore((prev) => ({ ...prev, [threadId]: hasMore }));
+        setMessageNextBefore((prev) => ({ ...prev, [threadId]: response.paging.nextBefore }));
 
         return added;
       } catch (error) {
@@ -3020,7 +3039,7 @@ export default function ChatDock() {
         setLoadingMessages((prev) => ({ ...prev, [threadId]: false }));
       }
     },
-    [loadingMessages, messageLimits]
+    [loadingMessages, messageNextBefore]
   );
 
   // ===== 웹소켓 연결 관리 =====
