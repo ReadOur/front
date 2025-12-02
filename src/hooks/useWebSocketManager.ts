@@ -63,7 +63,7 @@ export function useWebSocketManager({
   // 웹소켓 URL 생성
   const getWebSocketUrl = useCallback((roomId: number) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const baseUrl = import.meta.env.VITE_WS_BASE_URL || "localhost:8080";
+    const baseUrl = import.meta.env.VITE_WS_BASE_URL || "16.184.24.121:8080";
     const token = getAccessToken();
 
     const url = `${protocol}//${baseUrl}/ws/chat/${roomId}${token ? `?token=${token}` : ""}`;
