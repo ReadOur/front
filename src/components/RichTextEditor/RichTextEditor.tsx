@@ -52,8 +52,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         class:
           "prose max-w-none outline-none bg-transparent min-h-full pl-[10px] pr-0 py-0 " +
           "text-[color:var(--color-fg-primary)] selection:bg-[color:var(--color-accent)]/20 " +
-           // ↓ 행간/간격 조정 (약 절반 느낌)
-          "leading-[0.6] prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1",
+           // ↓ 행간/간격 조정 (정상적인 줄 간격)
+          "leading-relaxed prose-p:my-2 prose-li:my-1 prose-ul:my-2 prose-ol:my-2",
       },
     },
   });

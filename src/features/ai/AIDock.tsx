@@ -211,7 +211,7 @@ export default function AIDock({ isOpen, onClose, onMinimize, anchorRef, message
                   msg.type === "user" ? "text-white/70" : "text-[color:var(--chatdock-fg-muted)]"
                 }`}
               >
-                {new Date(msg.timestamp).toLocaleTimeString()}
+                {new Date(msg.timestamp + 9 * 60 * 60 * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           </div>

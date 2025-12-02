@@ -175,13 +175,66 @@ export default function SessionClosingSummary({
     return parts.join('');
   }, [markdown, disagreements, nextSteps]);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e?: React.MouseEvent) => {
+    // 이벤트 전파 중단
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    // 디버깅: 복사할 내용 확인
+    console.log('[SessionClosingSummary] 복사 시도:', {
+      hasFullText: !!getFullText,
+      fullTextLength: getFullText?.length || 0,
+      hasMarkdown: !!markdown,
+      markdownLength: markdown?.length || 0,
+      disagreementsCount: disagreements.length,
+      nextStepsCount: nextSteps.length,
+    });
+
+    // 복사할 내용이 없으면 경고
+    if (!getFullText || getFullText.trim().length === 0) {
+      console.warn('[SessionClosingSummary] 복사할 내용이 없습니다.');
+      alert('복사할 내용이 없습니다.');
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(getFullText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Clipboard API 사용 (최신 방법)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(getFullText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        // Fallback: 구형 브라우저나 HTTP 환경을 위한 대체 방법
+        const textArea = document.createElement('textarea');
+        textArea.value = getFullText;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } else {
+            throw new Error('execCommand 실패');
+          }
+        } catch (err) {
+          console.error('복사 실패 (fallback):', err);
+          alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요.');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
     } catch (err) {
       console.error('복사 실패:', err);
+      // 사용자에게 알림
+      alert('복사에 실패했습니다. 텍스트를 직접 선택해서 복사해주세요.');
     }
   };
 
@@ -229,9 +282,11 @@ export default function SessionClosingSummary({
               마감문 결과 활용
             </span>
             <button
-              onClick={handleCopy}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              onClick={(e) => handleCopy(e)}
+              type="button"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="마감문 전체 복사"
+              disabled={!getFullText || getFullText.trim().length === 0}
             >
               {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
               <span>복사</span>
