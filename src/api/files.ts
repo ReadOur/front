@@ -288,37 +288,68 @@ export async function getImageBlobUrl(imageUrl: string): Promise<string> {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
     const apiBase = baseUrl.startsWith('http') ? baseUrl : `${window.location.origin}${baseUrl}`;
     
-    // API URL이 아니면 (S3 등) 인증 헤더와 함께 fetch 시도
+    // API URL이 아니면 (S3 등) 처리
     if (!absoluteUrl.includes(apiBase) && !absoluteUrl.includes('/api/')) {
-      console.log('[getImageBlobUrl] S3 URL 감지, 인증 헤더와 함께 fetch 시도:', absoluteUrl);
-      
-      // S3 URL도 인증이 필요할 수 있으므로 Authorization 헤더 포함
+      let host = '';
+      try {
+        host = new URL(absoluteUrl).hostname;
+      } catch (error) {
+        console.warn('[getImageBlobUrl] URL 파싱 실패, 원본 사용:', error);
+        return absoluteUrl;
+      }
+
+      const isPublicS3 = host.includes('readour-file-storage.s3');
+
+      if (isPublicS3) {
+        console.log('[getImageBlobUrl] 공개 S3 URL 감지, 인증/쿠키 없이 fetch 시도:', absoluteUrl);
+        try {
+          const response = await fetch(absoluteUrl, {
+            mode: 'cors',
+            credentials: 'omit',
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            console.log('[getImageBlobUrl] 공개 S3 fetch 성공, blob URL 생성:', blobUrl);
+            return blobUrl;
+          }
+
+          console.warn('[getImageBlobUrl] 공개 S3 fetch 실패, 상태 코드:', response.status, '-> 원본 URL 사용');
+        } catch (error) {
+          console.warn('[getImageBlobUrl] 공개 S3 fetch 에러, 원본 URL 사용:', error);
+        }
+
+        return absoluteUrl;
+      }
+
+      // 기타 외부 도메인: 필요한 경우에만 Authorization 헤더 사용
       try {
         const token = getAccessToken();
         const headers: HeadersInit = {};
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
-        
-        const response = await fetch(absoluteUrl, { 
+
+        console.log('[getImageBlobUrl] 외부 URL fetch 시도 (Authorization 있을 수 있음):', absoluteUrl);
+        const response = await fetch(absoluteUrl, {
           headers,
           mode: 'cors',
-          credentials: 'omit'
+          credentials: 'omit',
         });
-        
+
         if (response.ok) {
           const blob = await response.blob();
           const blobUrl = URL.createObjectURL(blob);
-          console.log('[getImageBlobUrl] S3 URL fetch 성공 (인증 포함), blob URL 생성:', blobUrl);
+          console.log('[getImageBlobUrl] 외부 URL fetch 성공, blob URL 생성:', blobUrl);
           return blobUrl;
-        } else {
-          console.warn('[getImageBlobUrl] S3 URL fetch 실패 (status:', response.status, '), 원본 URL 사용');
         }
+
+        console.warn('[getImageBlobUrl] 외부 URL fetch 실패, 상태 코드:', response.status, '-> 원본 URL 사용');
       } catch (error) {
-        console.warn('[getImageBlobUrl] S3 URL fetch 실패 (CORS/인증 등), 원본 URL 사용:', error);
+        console.warn('[getImageBlobUrl] 외부 URL fetch 에러, 원본 URL 사용:', error);
       }
-      
-      // fetch 실패 시 원본 URL 반환 (브라우저가 직접 시도)
+
       return absoluteUrl;
     }
   }
