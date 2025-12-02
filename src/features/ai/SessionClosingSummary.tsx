@@ -146,6 +146,9 @@ export default function SessionClosingSummary({
   }, [payload?.closingMarkdown, payload?.plan]);
 
   const hasMarkdown = Boolean(markdown);
+  
+  // closingMarkdown이 있으면 plan의 내용은 이미 포함되어 있으므로 중복 렌더링하지 않음
+  const hasClosingMarkdown = Boolean(payload?.closingMarkdown);
 
   // 전체 마감문 내용을 텍스트로 변환
   const getFullText = useMemo(() => {
@@ -155,6 +158,12 @@ export default function SessionClosingSummary({
       parts.push(markdown);
     }
 
+    // closingMarkdown이 있으면 이미 모든 내용이 포함되어 있으므로 plan의 내용을 추가하지 않음
+    if (hasClosingMarkdown) {
+      return parts.join('');
+    }
+
+    // closingMarkdown이 없을 때만 plan에서 추가
     if (disagreements.length > 0) {
       parts.push('\n\n## 서로 다른 의견\n');
       disagreements.forEach((item, index) => {
@@ -173,7 +182,7 @@ export default function SessionClosingSummary({
     }
 
     return parts.join('');
-  }, [markdown, disagreements, nextSteps]);
+  }, [markdown, disagreements, nextSteps, hasClosingMarkdown]);
 
   const handleCopy = async (e?: React.MouseEvent) => {
     // 이벤트 전파 중단
@@ -303,7 +312,8 @@ export default function SessionClosingSummary({
         </div>
       )}
 
-      {disagreements.length > 0 && (
+      {/* closingMarkdown이 있으면 이미 모든 내용이 포함되어 있으므로 plan의 내용을 중복 렌더링하지 않음 */}
+      {!hasClosingMarkdown && disagreements.length > 0 && (
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[color:var(--chatdock-fg-primary)]">
             서로 다른 의견
@@ -322,7 +332,7 @@ export default function SessionClosingSummary({
         </div>
       )}
 
-      {nextSteps.length > 0 && (
+      {!hasClosingMarkdown && nextSteps.length > 0 && (
         <div className="space-y-2">
           <div className="text-sm font-semibold text-[color:var(--chatdock-fg-primary)]">
             다음 모임 준비
