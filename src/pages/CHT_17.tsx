@@ -373,7 +373,7 @@ export default function CHT_17() {
               threadId: room.roomId.toString(),
               fromId: "unknown",
               text: room.lastMsg.preview,
-              createdAt: new Date(room.lastMsg.createdAt).getTime(),
+              createdAt: new Date(room.lastMsg.createdAt).getTime() + (9 * 60 * 60 * 1000), // 한국 시간대 (+9시간)
             }
           : undefined,
       };
