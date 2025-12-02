@@ -21,7 +21,10 @@ import { extractUserIdFromToken } from "@/utils/auth";
 
 
 function formatRelativeTime(ms: number): string {
-  const diff = Date.now() - ms;
+  // 한국 시간대(KST) 기준으로 계산
+  const now = Date.now();
+  const kstOffset = 9 * 60 * 60 * 1000; // +9시간
+  const diff = now - ms + kstOffset;
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
@@ -373,7 +376,7 @@ export default function CHT_17() {
               threadId: room.roomId.toString(),
               fromId: "unknown",
               text: room.lastMsg.preview,
-              createdAt: new Date(room.lastMsg.createdAt).getTime() + (9 * 60 * 60 * 1000), // 한국 시간대 (+9시간)
+              createdAt: new Date(room.lastMsg.createdAt).getTime(),
             }
           : undefined,
       };
